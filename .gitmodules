@@ -1,0 +1,3 @@
+[submodule "src/services/proto"]
+	path = src/services/proto
+	url = git@github.com:OptimatistOpenSource/psh-proto.git

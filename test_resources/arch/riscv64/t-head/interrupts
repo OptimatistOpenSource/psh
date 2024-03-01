@@ -1,0 +1,38 @@
+           CPU0       CPU1       CPU2       CPU3       
+  4:        963          0          0          0  SiFive PLIC  36  ttyS0
+  5:   22391443   26968010   40951618   41241292  RISC-V INTC   5  riscv-timer
+  8:       3215          0          0          0  SiFive PLIC  40  ttyS4
+ 10:          0          0          0          0  SiFive PLIC  61  fffff51000.adc
+ 11:          4          0          0          0  SiFive PLIC  54  ffe700c000.spi
+ 12:          0          0          0          0  SiFive PLIC  53  fff8000000.spi
+ 13:          0          0          0          0  SiFive PLIC 101  galcore:2d
+ 15:          0          0          0          0  SiFive PLIC 111  ffef540000.dw-hdmi-tx
+ 16:       4726          0          0          0  SiFive PLIC  93  ffef600000.dc8200
+ 17:          0          0          0          0  SiFive PLIC  24  ffefc30000.watchdog
+ 18:          0          0          0          0  SiFive PLIC  25  ffefc31000.watchdog
+ 19:          0          0          0          0  SiFive PLIC  74  fffff40000.rtc
+ 20:         93        105         92         24  RISC-V INTC  17  c9xx-pmu-v1
+ 21:       1980          0          0          0  SiFive PLIC  27  dw_axi_dmac_platform
+ 22:       1832          0          0          0  SiFive PLIC 167  dw_axi_dmac_platform
+ 23:          0          0          0          0  SiFive PLIC  66  end0
+ 24:          0          0          0          0  SiFive PLIC  67  end1
+ 25:    3759387          0          0          0  SiFive PLIC  62  mmc0
+ 26:          0          0          0          0  SiFive PLIC  64  mmc1
+ 27:  322164227          0          0          0  SiFive PLIC  71  mmc2
+ 29:     529574          0          0          0  SiFive PLIC 102  pvrsrvkm
+ 39:         38          0          0          0  SiFive PLIC  44  ffe7f20000.i2c
+ 40:         28          0          0          0  SiFive PLIC  45  ffe7f24000.i2c
+ 41:          0          0          0          0  SiFive PLIC  46  ffec00c000.i2c
+ 42:         70          0          0          0  SiFive PLIC  47  ffec014000.i2c
+ 43:          0          0          0          0  SiFive PLIC  48  ffe7f28000.i2c
+ 44:       2716          0          0          0  SiFive PLIC 182  ffcb01a000.i2c
+ 45:          0          0          0          0  SiFive PLIC 183  ffcb01b000.i2c
+ 61:   70028031          0          0          0  SiFive PLIC  28  light_mbox_chan[1]
+ 74:          0          0          0          0  gpio-dwapb  19  Volume Down Key
+ 75:          0          0          0          0  gpio-dwapb  25  Volume Up Key
+ 76:         82          0          0          0  SiFive PLIC  68  xhci-hcd:usb1
+IPI0:     38367     321177     350879     156056  Rescheduling interrupts
+IPI1:  10197523   36788206   67752200   26568036  Function call interrupts
+IPI2:         0          0          0          0  CPU stop interrupts
+IPI3:         0          0          0          0  CPU stop (for crash dump) interrupts
+IPI4:  27306156   13531662   23777131    7994791  IRQ work interrupts

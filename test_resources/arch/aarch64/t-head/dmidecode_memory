@@ -1,0 +1,396 @@
+# dmidecode 3.3
+Getting SMBIOS data from sysfs.
+SMBIOS 3.3.0 present.
+
+Handle 0x0002, DMI type 17, 92 bytes
+Memory Device
+	Array Handle: 0x0000
+	Error Information Handle: Not Provided
+	Total Width: 80 bits
+	Data Width: 64 bits
+	Size: 32 GB
+	Form Factor: DIMM
+	Set: None
+	Locator: DIMM000
+	Bank Locator: SOCKET0 IMC0 DIMM0
+	Type: DDR5
+	Type Detail: Synchronous
+	Speed: 4800 MT/s
+	Manufacturer: Hynix
+	Serial Number: 2A0B811280AD012319878E8DB4
+	Asset Tag: DIMM000_Asserttag
+	Part Number: HMCG88MEBRA115N     
+	Rank: 2
+	Configured Memory Speed: 4800 MT/s
+	Minimum Voltage: 1.1 V
+	Maximum Voltage: 1.1 V
+	Configured Voltage: 1.1 V
+	Memory Technology: DRAM
+	Memory Operating Mode Capability: None
+	Firmware Version: Not Specified
+	Module Manufacturer ID: Unknown
+	Module Product ID: Unknown
+	Memory Subsystem Controller Manufacturer ID: Unknown
+	Memory Subsystem Controller Product ID: Unknown
+	Non-Volatile Size: None
+	Volatile Size: None
+	Cache Size: None
+	Logical Size: None
+
+Handle 0x0004, DMI type 17, 92 bytes
+Memory Device
+	Array Handle: 0x0000
+	Error Information Handle: Not Provided
+	Total Width: Unknown
+	Data Width: Unknown
+	Size: No Module Installed
+	Form Factor: Unknown
+	Set: None
+	Locator: DIMM001
+	Bank Locator: SOCKET0 IMC0 DIMM1
+	Type: Unknown
+	Type Detail: Unknown
+
+Handle 0x0005, DMI type 17, 92 bytes
+Memory Device
+	Array Handle: 0x0000
+	Error Information Handle: Not Provided
+	Total Width: 80 bits
+	Data Width: 64 bits
+	Size: 32 GB
+	Form Factor: DIMM
+	Set: None
+	Locator: DIMM010
+	Bank Locator: SOCKET0 IMC1 DIMM0
+	Type: DDR5
+	Type Detail: Synchronous
+	Speed: 4800 MT/s
+	Manufacturer: Hynix
+	Serial Number: 2A0B811280AD012319878E8E06
+	Asset Tag: DIMM010_Asserttag
+	Part Number: HMCG88MEBRA115N     
+	Rank: 2
+	Configured Memory Speed: 4800 MT/s
+	Minimum Voltage: 1.1 V
+	Maximum Voltage: 1.1 V
+	Configured Voltage: 1.1 V
+	Memory Technology: DRAM
+	Memory Operating Mode Capability: None
+	Firmware Version: Not Specified
+	Module Manufacturer ID: Unknown
+	Module Product ID: Unknown
+	Memory Subsystem Controller Manufacturer ID: Unknown
+	Memory Subsystem Controller Product ID: Unknown
+	Non-Volatile Size: None
+	Volatile Size: None
+	Cache Size: None
+	Logical Size: None
+
+Handle 0x0007, DMI type 17, 92 bytes
+Memory Device
+	Array Handle: 0x0000
+	Error Information Handle: Not Provided
+	Total Width: Unknown
+	Data Width: Unknown
+	Size: No Module Installed
+	Form Factor: Unknown
+	Set: None
+	Locator: DIMM011
+	Bank Locator: SOCKET0 IMC1 DIMM1
+	Type: Unknown
+	Type Detail: Unknown
+
+Handle 0x0008, DMI type 17, 92 bytes
+Memory Device
+	Array Handle: 0x0000
+	Error Information Handle: Not Provided
+	Total Width: 80 bits
+	Data Width: 64 bits
+	Size: 32 GB
+	Form Factor: DIMM
+	Set: None
+	Locator: DIMM020
+	Bank Locator: SOCKET0 IMC2 DIMM0
+	Type: DDR5
+	Type Detail: Synchronous
+	Speed: 4800 MT/s
+	Manufacturer: Hynix
+	Serial Number: 2A0B811280AD012319878E8D7A
+	Asset Tag: DIMM020_Asserttag
+	Part Number: HMCG88MEBRA115N     
+	Rank: 2
+	Configured Memory Speed: 4800 MT/s
+	Minimum Voltage: 1.1 V
+	Maximum Voltage: 1.1 V
+	Configured Voltage: 1.1 V
+	Memory Technology: DRAM
+	Memory Operating Mode Capability: None
+	Firmware Version: Not Specified
+	Module Manufacturer ID: Unknown
+	Module Product ID: Unknown
+	Memory Subsystem Controller Manufacturer ID: Unknown
+	Memory Subsystem Controller Product ID: Unknown
+	Non-Volatile Size: None
+	Volatile Size: None
+	Cache Size: None
+	Logical Size: None
+
+Handle 0x000A, DMI type 17, 92 bytes
+Memory Device
+	Array Handle: 0x0000
+	Error Information Handle: Not Provided
+	Total Width: Unknown
+	Data Width: Unknown
+	Size: No Module Installed
+	Form Factor: Unknown
+	Set: None
+	Locator: DIMM021
+	Bank Locator: SOCKET0 IMC2 DIMM1
+	Type: Unknown
+	Type Detail: Unknown
+
+Handle 0x000B, DMI type 17, 92 bytes
+Memory Device
+	Array Handle: 0x0000
+	Error Information Handle: Not Provided
+	Total Width: 80 bits
+	Data Width: 64 bits
+	Size: 32 GB
+	Form Factor: DIMM
+	Set: None
+	Locator: DIMM030
+	Bank Locator: SOCKET0 IMC3 DIMM0
+	Type: DDR5
+	Type Detail: Synchronous
+	Speed: 4800 MT/s
+	Manufacturer: Hynix
+	Serial Number: 2A0B811280AD012319878E8E33
+	Asset Tag: DIMM030_Asserttag
+	Part Number: HMCG88MEBRA115N     
+	Rank: 2
+	Configured Memory Speed: 4800 MT/s
+	Minimum Voltage: 1.1 V
+	Maximum Voltage: 1.1 V
+	Configured Voltage: 1.1 V
+	Memory Technology: DRAM
+	Memory Operating Mode Capability: None
+	Firmware Version: Not Specified
+	Module Manufacturer ID: Unknown
+	Module Product ID: Unknown
+	Memory Subsystem Controller Manufacturer ID: Unknown
+	Memory Subsystem Controller Product ID: Unknown
+	Non-Volatile Size: None
+	Volatile Size: None
+	Cache Size: None
+	Logical Size: None
+
+Handle 0x000D, DMI type 17, 92 bytes
+Memory Device
+	Array Handle: 0x0000
+	Error Information Handle: Not Provided
+	Total Width: Unknown
+	Data Width: Unknown
+	Size: No Module Installed
+	Form Factor: Unknown
+	Set: None
+	Locator: DIMM031
+	Bank Locator: SOCKET0 IMC3 DIMM1
+	Type: Unknown
+	Type Detail: Unknown
+
+Handle 0x000E, DMI type 17, 92 bytes
+Memory Device
+	Array Handle: 0x0000
+	Error Information Handle: Not Provided
+	Total Width: 80 bits
+	Data Width: 64 bits
+	Size: 32 GB
+	Form Factor: DIMM
+	Set: None
+	Locator: DIMM040
+	Bank Locator: SOCKET0 IMC4 DIMM0
+	Type: DDR5
+	Type Detail: Synchronous
+	Speed: 4800 MT/s
+	Manufacturer: Hynix
+	Serial Number: 2A0B811280AD012319878E8D2D
+	Asset Tag: DIMM040_Asserttag
+	Part Number: HMCG88MEBRA115N     
+	Rank: 2
+	Configured Memory Speed: 4800 MT/s
+	Minimum Voltage: 1.1 V
+	Maximum Voltage: 1.1 V
+	Configured Voltage: 1.1 V
+	Memory Technology: DRAM
+	Memory Operating Mode Capability: None
+	Firmware Version: Not Specified
+	Module Manufacturer ID: Unknown
+	Module Product ID: Unknown
+	Memory Subsystem Controller Manufacturer ID: Unknown
+	Memory Subsystem Controller Product ID: Unknown
+	Non-Volatile Size: None
+	Volatile Size: None
+	Cache Size: None
+	Logical Size: None
+
+Handle 0x0010, DMI type 17, 92 bytes
+Memory Device
+	Array Handle: 0x0000
+	Error Information Handle: Not Provided
+	Total Width: Unknown
+	Data Width: Unknown
+	Size: No Module Installed
+	Form Factor: Unknown
+	Set: None
+	Locator: DIMM041
+	Bank Locator: SOCKET0 IMC4 DIMM1
+	Type: Unknown
+	Type Detail: Unknown
+
+Handle 0x0011, DMI type 17, 92 bytes
+Memory Device
+	Array Handle: 0x0000
+	Error Information Handle: Not Provided
+	Total Width: 80 bits
+	Data Width: 64 bits
+	Size: 32 GB
+	Form Factor: DIMM
+	Set: None
+	Locator: DIMM050
+	Bank Locator: SOCKET0 IMC5 DIMM0
+	Type: DDR5
+	Type Detail: Synchronous
+	Speed: 4800 MT/s
+	Manufacturer: Hynix
+	Serial Number: 2A0B811280AD012319878E8D52
+	Asset Tag: DIMM050_Asserttag
+	Part Number: HMCG88MEBRA115N     
+	Rank: 2
+	Configured Memory Speed: 4800 MT/s
+	Minimum Voltage: 1.1 V
+	Maximum Voltage: 1.1 V
+	Configured Voltage: 1.1 V
+	Memory Technology: DRAM
+	Memory Operating Mode Capability: None
+	Firmware Version: Not Specified
+	Module Manufacturer ID: Unknown
+	Module Product ID: Unknown
+	Memory Subsystem Controller Manufacturer ID: Unknown
+	Memory Subsystem Controller Product ID: Unknown
+	Non-Volatile Size: None
+	Volatile Size: None
+	Cache Size: None
+	Logical Size: None
+
+Handle 0x0013, DMI type 17, 92 bytes
+Memory Device
+	Array Handle: 0x0000
+	Error Information Handle: Not Provided
+	Total Width: Unknown
+	Data Width: Unknown
+	Size: No Module Installed
+	Form Factor: Unknown
+	Set: None
+	Locator: DIMM051
+	Bank Locator: SOCKET0 IMC5 DIMM1
+	Type: Unknown
+	Type Detail: Unknown
+
+Handle 0x0014, DMI type 17, 92 bytes
+Memory Device
+	Array Handle: 0x0000
+	Error Information Handle: Not Provided
+	Total Width: 80 bits
+	Data Width: 64 bits
+	Size: 32 GB
+	Form Factor: DIMM
+	Set: None
+	Locator: DIMM060
+	Bank Locator: SOCKET0 IMC6 DIMM0
+	Type: DDR5
+	Type Detail: Synchronous
+	Speed: 4800 MT/s
+	Manufacturer: Hynix
+	Serial Number: 2A0B811280AD012319878E8DBC
+	Asset Tag: DIMM060_Asserttag
+	Part Number: HMCG88MEBRA115N     
+	Rank: 2
+	Configured Memory Speed: 4800 MT/s
+	Minimum Voltage: 1.1 V
+	Maximum Voltage: 1.1 V
+	Configured Voltage: 1.1 V
+	Memory Technology: DRAM
+	Memory Operating Mode Capability: None
+	Firmware Version: Not Specified
+	Module Manufacturer ID: Unknown
+	Module Product ID: Unknown
+	Memory Subsystem Controller Manufacturer ID: Unknown
+	Memory Subsystem Controller Product ID: Unknown
+	Non-Volatile Size: None
+	Volatile Size: None
+	Cache Size: None
+	Logical Size: None
+
+Handle 0x0016, DMI type 17, 92 bytes
+Memory Device
+	Array Handle: 0x0000
+	Error Information Handle: Not Provided
+	Total Width: Unknown
+	Data Width: Unknown
+	Size: No Module Installed
+	Form Factor: Unknown
+	Set: None
+	Locator: DIMM061
+	Bank Locator: SOCKET0 IMC6 DIMM1
+	Type: Unknown
+	Type Detail: Unknown
+
+Handle 0x0017, DMI type 17, 92 bytes
+Memory Device
+	Array Handle: 0x0000
+	Error Information Handle: Not Provided
+	Total Width: 80 bits
+	Data Width: 64 bits
+	Size: 32 GB
+	Form Factor: DIMM
+	Set: None
+	Locator: DIMM070
+	Bank Locator: SOCKET0 IMC7 DIMM0
+	Type: DDR5
+	Type Detail: Synchronous
+	Speed: 4800 MT/s
+	Manufacturer: Hynix
+	Serial Number: 2A0B811280AD012319878E8DBD
+	Asset Tag: DIMM070_Asserttag
+	Part Number: HMCG88MEBRA115N     
+	Rank: 2
+	Configured Memory Speed: 4800 MT/s
+	Minimum Voltage: 1.1 V
+	Maximum Voltage: 1.1 V
+	Configured Voltage: 1.1 V
+	Memory Technology: DRAM
+	Memory Operating Mode Capability: None
+	Firmware Version: Not Specified
+	Module Manufacturer ID: Unknown
+	Module Product ID: Unknown
+	Memory Subsystem Controller Manufacturer ID: Unknown
+	Memory Subsystem Controller Product ID: Unknown
+	Non-Volatile Size: None
+	Volatile Size: None
+	Cache Size: None
+	Logical Size: None
+
+Handle 0x0019, DMI type 17, 92 bytes
+Memory Device
+	Array Handle: 0x0000
+	Error Information Handle: Not Provided
+	Total Width: Unknown
+	Data Width: Unknown
+	Size: No Module Installed
+	Form Factor: Unknown
+	Set: None
+	Locator: DIMM071
+	Bank Locator: SOCKET0 IMC7 DIMM1
+	Type: Unknown
+	Type Detail: Unknown
+
