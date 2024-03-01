@@ -9,7 +9,7 @@ fn parse_x86_64_cpu_info(reader: BufReader<File>) -> io::Result<Vec<X86_64CpuInf
     let mut cpu_info_list = Vec::new();
     let mut current_cpu_info = X86_64CpuInfo::new();
 
-    for line in reader.lines().flatten() {
+    for line in reader.lines().map_while(Result::ok) {
         let parts: Vec<&str> = line.split(':').map(|s| s.trim()).collect();
 
         if parts.len() == 2 {
@@ -150,7 +150,7 @@ fn parse_aarch64_cpu_info(reader: BufReader<File>) -> io::Result<Vec<Arm64CpuInf
     let mut cpu_info_list = Vec::new();
     let mut current_cpu_info = Arm64CpuInfo::new();
 
-    for line in reader.lines().flatten() {
+    for line in reader.lines().map_while(Result::ok) {
         let parts: Vec<&str> = line.split(':').map(|s| s.trim()).collect();
 
         if parts.len() == 2 {

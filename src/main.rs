@@ -33,10 +33,7 @@ fn main() {
     }
 
     // detect if we were ran as netdata plugin
-    let netdata_plugin = match std::env::var("NETDATA_HOST_PREFIX") {
-        Ok(_) => true,
-        Err(_) => false,
-    };
+    let netdata_plugin = std::env::var("NETDATA_HOST_PREFIX").is_ok();
 
     if netdata_plugin {
         // format of netdata external plugin command line parameter
@@ -61,7 +58,7 @@ fn main() {
         let mut writer = std::io::stdout();
         let mut c = Collector::new(&mut writer);
 
-        c.add_chart(&mut Chart {
+        c.add_chart(&Chart {
             type_id: "arm64.PMU",
             name: "Arm64 PMU ",
             title: "Arm64 CPU PMU Statistics",
