@@ -14,6 +14,7 @@
 
 pub mod cpu_info;
 pub mod interrupts;
+pub mod irq;
 pub mod mem_info;
 pub mod memory_module;
 pub mod utils;
@@ -338,6 +339,25 @@ impl InterruptDetails {
             cpu_counts,
             interrupt_type,
             description,
+        }
+    }
+}
+
+#[allow(dead_code)]
+struct IrqDetails {
+    irq_number: String,
+    smp_affinity: Option<String>,
+    smp_affinity_list: Option<String>,
+    node: Option<String>,
+}
+
+impl IrqDetails {
+    fn new(irq_number: String) -> IrqDetails {
+        IrqDetails {
+            irq_number,
+            smp_affinity: None,
+            smp_affinity_list: None,
+            node: None,
         }
     }
 }
