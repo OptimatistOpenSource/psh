@@ -15,15 +15,21 @@
 mod cmd;
 mod file;
 
+mod args;
+mod infra;
+mod op;
+mod resources;
+mod runtime;
+mod security;
+mod services;
+
+use args::Args;
 use clap::Parser;
 use cmd::run_program;
 use file::write_file;
 use netdata_plugin::collector::Collector;
 use netdata_plugin::{Chart, Dimension};
 use std::path::Path;
-
-use psh_internal::args::Args;
-use psh_internal::runtime;
 
 fn main() {
     fn run_script(script_path: &str) {
