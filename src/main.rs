@@ -12,18 +12,18 @@
 // You should have received a copy of the GNU Lesser General Public License along with Perf-event-rs. If not,
 // see <https://www.gnu.org/licenses/>.
 
-mod args;
 mod cmd;
 mod file;
-mod infra;
 
-use crate::args::Args;
 use clap::Parser;
 use cmd::run_program;
 use file::write_file;
 use netdata_plugin::collector::Collector;
 use netdata_plugin::{Chart, Dimension};
 use std::path::Path;
+
+use psh_internal::args::Args;
+use psh_internal::runtime;
 
 fn main() {
     fn run_script(script_path: &str) {

@@ -12,10 +12,12 @@
 // You should have received a copy of the GNU Lesser General Public License along with Perf-event-rs. If not,
 // see <https://www.gnu.org/licenses/>.
 
-mod args;
-mod infra;
-mod op;
-mod resources;
-mod runtime;
-mod security;
-mod services;
+pub mod args;
+pub mod infra;
+pub mod op;
+pub mod resources;
+pub mod runtime;
+pub mod security;
+pub mod services;
+
+wasmtime::component::bindgen!();
