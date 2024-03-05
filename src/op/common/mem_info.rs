@@ -113,7 +113,7 @@ fn parse_meminfo_line(reader: BufReader<File>) -> io::Result<MemInfo> {
 }
 
 #[allow(dead_code)]
-fn do_parse_meminfo(path: &str) -> io::Result<MemInfo> {
+pub fn do_parse_meminfo(path: &str) -> io::Result<MemInfo> {
     let file = File::open(path)?;
     let reader = io::BufReader::new(file);
 
@@ -125,12 +125,14 @@ fn do_parse_meminfo(path: &str) -> io::Result<MemInfo> {
 #[allow(unused_macros)]
 macro_rules! parse_meminfo {
     ($path:expr) => {
-        super::do_parse_meminfo($path)
+        crate::op::common::mem_info::do_parse_meminfo($path)
     };
     () => {
-        super::do_parse_meminfo("/proc/meminfo")
+        crate::op::common::mem_info::do_parse_meminfo("/proc/meminfo")
     };
 }
+
+pub(crate) use parse_meminfo;
 
 #[cfg(test)]
 mod tests {
