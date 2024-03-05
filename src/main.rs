@@ -31,6 +31,8 @@ use netdata_plugin::collector::Collector;
 use netdata_plugin::{Chart, Dimension};
 use std::path::Path;
 
+use wasmtime_wasi::preview2::WasiCtxBuilder;
+
 fn main() {
     fn run_script(script_path: &str) {
         let log_path = format!("{}.log", script_path);
@@ -175,4 +177,14 @@ fn main() {
             run_script(&path);
         }
     }
+
+    let wasi_ctx = WasiCtxBuilder::new().inherit_stdio().build();
+
+    let mut wasi_builder = runtime::PshWasiConfigBuilder::new(wasi_ctx);
+    wasi_builder
+        .set_component_path("target/wasm32-wasi/debug/get_memory_info.wasm")
+        .enable_memory_ops();
+    let wasi_config = wasi_builder.build();
+
+    runtime::run_wasmtime_engine(wasi_config).unwrap();
 }
