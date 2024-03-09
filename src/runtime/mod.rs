@@ -120,7 +120,7 @@ impl ServerWasiView {
         Self {
             table,
             ctx: wasi_ctx,
-            name: "Psh_wasm_view".to_string(),
+            name: "PSH Wasi Runtime".to_string(),
         }
     }
 }
@@ -161,6 +161,8 @@ pub fn run_wasmtime_engine(psh_wasi_config: PshWasiConfig) -> wasmtime::Result<(
     // structure so no projection is necessary here.
     let mut linker = Linker::new(&engine);
     command::sync::add_to_linker(&mut linker).context("Failed to link command world")?;
+
+    Bindings::add_root_to_linker(&mut linker, |state: &mut ServerWasiView| state)?;
 
     if psh_wasi_config.memory_ops {
         psh::profiling::memory::add_to_linker(&mut linker, |state: &mut ServerWasiView| state)?;
