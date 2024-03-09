@@ -17,7 +17,7 @@ use std::{
     io::{self, BufRead, BufReader},
 };
 
-use super::{AddressSizes, Arm64CpuInfo, CPUArch, TlbSize, X86_64CpuInfo};
+use super::{AddressSizes, Arm64CpuInfo, CPUInfo, TlbSize, X86_64CpuInfo};
 
 fn parse_x86_64_cpu_info(reader: BufReader<File>) -> io::Result<Vec<X86_64CpuInfo>> {
     let mut cpu_info_list = Vec::new();
@@ -225,7 +225,7 @@ fn parse_aarch64_cpu_info(reader: BufReader<File>) -> io::Result<Vec<Arm64CpuInf
 }
 
 #[allow(dead_code)]
-fn do_parse_cpuinfo(path: &str, arch: &str) -> io::Result<CPUArch> {
+fn do_parse_cpuinfo(path: &str, arch: &str) -> io::Result<CPUInfo> {
     let file = File::open(path)?;
     let reader = io::BufReader::new(file);
 
@@ -234,13 +234,13 @@ fn do_parse_cpuinfo(path: &str, arch: &str) -> io::Result<CPUArch> {
     let cpu_info = match arch {
         "x86_64" => {
             let x86_64_cpu_info = parse_x86_64_cpu_info(reader).unwrap();
-            CPUArch::X86_64(x86_64_cpu_info)
+            CPUInfo::X86_64(x86_64_cpu_info)
         }
         "aarch64" => {
             let aarch64_cpu_info = parse_aarch64_cpu_info(reader).unwrap();
-            CPUArch::Arm64(aarch64_cpu_info)
+            CPUInfo::Arm64(aarch64_cpu_info)
         }
-        _ => CPUArch::Unknown(format!("unknown architecture {}", arch).to_string()),
+        _ => CPUInfo::Unsupported(format!("unsupported architecture {}", arch).to_string()),
     };
 
     Ok(cpu_info)
@@ -260,7 +260,7 @@ macro_rules! parse_cpuinfo {
 mod test {
     use std::path::PathBuf;
 
-    use crate::op::common::{AddressSizes, Arm64CpuInfo, CPUArch, TlbSize, X86_64CpuInfo};
+    use crate::op::common::{AddressSizes, Arm64CpuInfo, CPUInfo, TlbSize, X86_64CpuInfo};
 
     #[test]
     #[cfg(target_os = "linux")]
@@ -268,10 +268,10 @@ mod test {
         let cpus = num_cpus::get();
         let cpu_info = parse_cpuinfo!().unwrap();
         match cpu_info {
-            CPUArch::X86_64(x86_64_cpu_info) => {
+            CPUInfo::X86_64(x86_64_cpu_info) => {
                 assert_eq!(cpus, x86_64_cpu_info.len());
             }
-            CPUArch::Arm64(aarch64_cpu_info) => {
+            CPUInfo::Arm64(aarch64_cpu_info) => {
                 assert_eq!(cpus, aarch64_cpu_info.len());
             }
             _ => {
@@ -290,10 +290,10 @@ mod test {
         let cpus = 128;
         let cpu_info = parse_cpuinfo!(cpuinfo_path, "aarch64").unwrap();
         match cpu_info {
-            CPUArch::X86_64(_) => {
+            CPUInfo::X86_64(_) => {
                 panic!("Should not reach here");
             }
-            CPUArch::Arm64(cpu_vec) => {
+            CPUInfo::Arm64(cpu_vec) => {
                 let cpu126 = Arm64CpuInfo {
                     processor: 126,
                     bogomips: 100.0,
@@ -372,7 +372,7 @@ mod test {
         let cpus = 2;
         let cpu_info = parse_cpuinfo!(cpuinfo_path, "x86_64").unwrap();
         match cpu_info {
-            CPUArch::X86_64(cpu_vec) => {
+            CPUInfo::X86_64(cpu_vec) => {
                 let cpu0 = X86_64CpuInfo {
                     processor: 0,
                     vendor_id: "GenuineIntel".to_string(),
@@ -508,7 +508,7 @@ mod test {
                 assert_eq!(cpu0, cpu_vec[0]);
                 assert_eq!(cpus, cpu_vec.len());
             }
-            CPUArch::Arm64(_) => {
+            CPUInfo::Arm64(_) => {
                 panic!("Should not reach here");
             }
             _ => {
@@ -527,7 +527,7 @@ mod test {
         let cpus = 16;
         let cpu_info = parse_cpuinfo!(cpuinfo_path, "x86_64").unwrap();
         match cpu_info {
-            CPUArch::X86_64(cpu_vec) => {
+            CPUInfo::X86_64(cpu_vec) => {
                 let cpu0 = X86_64CpuInfo {
                     processor: 0,
                     vendor_id: "AuthenticAMD".to_string(),
@@ -724,7 +724,7 @@ mod test {
                 assert_eq!(cpu0, cpu_vec[0]);
                 assert_eq!(cpus, cpu_vec.len());
             }
-            CPUArch::Arm64(_) => {
+            CPUInfo::Arm64(_) => {
                 panic!("Should not reach here");
             }
             _ => {

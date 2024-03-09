@@ -128,10 +128,10 @@ impl X86_64CpuInfo {
 }
 
 #[derive(Debug)]
-pub enum CPUArch {
+pub enum CPUInfo {
     X86_64(Vec<X86_64CpuInfo>),
     Arm64(Vec<Arm64CpuInfo>),
-    Unknown(String),
+    Unsupported(String),
 }
 
 #[derive(Debug, PartialEq)]
