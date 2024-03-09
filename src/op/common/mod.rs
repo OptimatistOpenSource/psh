@@ -23,27 +23,27 @@ pub mod utils;
 
 #[derive(Debug, PartialEq)]
 pub struct TlbSize {
-    count: u32,
-    unit: u32,
+    pub count: u32,
+    pub unit: u32,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct AddressSizes {
-    phy: u8,  // physical bits.
-    virt: u8, // virtual bits.
+    pub phy: u8,  // physical bits.
+    pub virt: u8, // virtual bits.
 }
 
 #[derive(Debug, PartialEq)]
 pub struct Arm64CpuInfo {
-    processor: usize,
-    bogomips: f32,
-    features: Vec<String>,
-    cpu_implementer: u16,
-    cpu_architecture: u16,
-    cpu_variant: u16,
-    cpu_part: u16,
-    cpu_revision: u16,
-    address_sizes: AddressSizes,
+    pub processor: usize,
+    pub bogomips: f32,
+    pub features: Vec<String>,
+    pub cpu_implementer: u16,
+    pub cpu_architecture: u16,
+    pub cpu_variant: u16,
+    pub cpu_part: u16,
+    pub cpu_revision: u16,
+    pub address_sizes: AddressSizes,
 }
 
 impl Arm64CpuInfo {
@@ -64,33 +64,33 @@ impl Arm64CpuInfo {
 
 #[derive(Debug, PartialEq)]
 pub struct X86_64CpuInfo {
-    processor: usize,
-    vendor_id: String,
-    model_name: String,
-    cpu_family: usize,
-    model: usize,
-    stepping: usize,
-    microcode: String,
-    cpu_mhz: f64,
-    cache_size: u32,
-    physical_id: usize,
-    siblings: usize,
-    core_id: usize,
-    cpu_cores: usize,
-    apicid: usize,
-    initial_apicid: usize,
-    fpu: bool,
-    fpu_exception: bool,
-    cpuid_level: usize,
-    wp: bool, // wp stands for ?
-    flags: Vec<String>,
-    bugs: Vec<String>,
-    bogomips: f32,
-    tlb_size: TlbSize,
-    clflush_size: u8,
-    cache_alignment: u8,
-    address_sizes: AddressSizes,
-    power_management: Vec<String>, // Add other fields you want to extract
+    pub processor: usize,
+    pub vendor_id: String,
+    pub model_name: String,
+    pub cpu_family: usize,
+    pub model: usize,
+    pub stepping: usize,
+    pub microcode: String,
+    pub cpu_mhz: f64,
+    pub cache_size: u32,
+    pub physical_id: usize,
+    pub siblings: usize,
+    pub core_id: usize,
+    pub cpu_cores: usize,
+    pub apicid: usize,
+    pub initial_apicid: usize,
+    pub fpu: bool,
+    pub fpu_exception: bool,
+    pub cpuid_level: usize,
+    pub wp: bool, // wp stands for ?
+    pub flags: Vec<String>,
+    pub bugs: Vec<String>,
+    pub bogomips: f32,
+    pub tlb_size: TlbSize,
+    pub clflush_size: u8,
+    pub cache_alignment: u8,
+    pub address_sizes: AddressSizes,
+    pub power_management: Vec<String>, // Add other fields you want to extract
 }
 
 impl X86_64CpuInfo {

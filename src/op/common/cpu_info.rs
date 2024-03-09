@@ -225,7 +225,7 @@ fn parse_aarch64_cpu_info(reader: BufReader<File>) -> io::Result<Vec<Arm64CpuInf
 }
 
 #[allow(dead_code)]
-fn do_parse_cpuinfo(path: &str, arch: &str) -> io::Result<CPUInfo> {
+pub fn do_parse_cpuinfo(path: &str, arch: &str) -> io::Result<CPUInfo> {
     let file = File::open(path)?;
     let reader = io::BufReader::new(file);
 
@@ -249,12 +249,14 @@ fn do_parse_cpuinfo(path: &str, arch: &str) -> io::Result<CPUInfo> {
 #[allow(unused_macros)]
 macro_rules! parse_cpuinfo {
     ($path:expr, $arch:expr) => {
-        super::do_parse_cpuinfo($path, $arch)
+        crate::op::common::cpu_info::do_parse_cpuinfo($path, $arch)
     };
     () => {
-        super::do_parse_cpuinfo("/proc/cpuinfo", &std::env::consts::ARCH)
+        crate::op::common::cpu_info::do_parse_cpuinfo("/proc/cpuinfo", &std::env::consts::ARCH)
     };
 }
+
+pub(crate) use parse_cpuinfo;
 
 #[cfg(test)]
 mod test {
