@@ -17,6 +17,7 @@ pub mod interrupts;
 pub mod irq;
 pub mod mem_info;
 pub mod memory_module;
+pub mod rps;
 pub mod utils;
 
 #[derive(Debug, PartialEq)]
@@ -360,4 +361,12 @@ impl IrqDetails {
             node: None,
         }
     }
+}
+
+#[allow(dead_code)]
+struct RpsDetails {
+    dev: String,
+    rx: Vec<String>,
+    rps_cpus: Vec<Option<String>>,
+    rps_flow_cnt: Vec<Option<String>>,
 }
