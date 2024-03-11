@@ -19,6 +19,7 @@ pub mod mem_info;
 pub mod memory_module;
 pub mod rps;
 pub mod utils;
+pub mod system;
 
 #[derive(Debug, PartialEq)]
 pub struct TlbSize {

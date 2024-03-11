@@ -25,6 +25,7 @@ pub struct PshWasiConfigBuilder {
 
     component_path: String,
     memory_ops: bool,
+    system_ops: bool,
     cpu_ops: bool,
     interrupts_ops: bool,
     built: bool,
@@ -36,6 +37,7 @@ pub struct PshWasiConfig {
 
     component_path: String,
     memory_ops: bool,
+    system_ops: bool,
     cpu_ops: bool,
     interrupts_ops: bool,
 }
@@ -47,6 +49,7 @@ impl PshWasiConfigBuilder {
             wasi_ctx,
             component_path: "".to_string(),
             memory_ops: false,
+            system_ops: false,
             cpu_ops: false,
             interrupts_ops: false,
             built: false,
@@ -60,6 +63,11 @@ impl PshWasiConfigBuilder {
 
     pub fn enable_memory_ops(&mut self) -> &mut Self {
         self.memory_ops = true;
+        self
+    }
+
+    pub fn enable_system_ops(&mut self) -> &mut Self {
+        self.system_ops = true;
         self
     }
 
@@ -80,6 +88,7 @@ impl PshWasiConfigBuilder {
             wasi_ctx,
             component_path: componenet_path,
             memory_ops,
+            system_ops,
             cpu_ops,
             interrupts_ops,
             built: _,
@@ -92,6 +101,7 @@ impl PshWasiConfigBuilder {
             server_wasi_view: sever_wasi_view,
             component_path: componenet_path,
             memory_ops,
+            system_ops,
             cpu_ops,
             interrupts_ops,
         }
@@ -154,6 +164,10 @@ pub fn run_wasmtime_engine(psh_wasi_config: PshWasiConfig) -> wasmtime::Result<(
 
     if psh_wasi_config.memory_ops {
         psh::profiling::memory::add_to_linker(&mut linker, |state: &mut ServerWasiView| state)?;
+    }
+
+    if psh_wasi_config.system_ops {
+        psh::profiling::system::add_to_linker(&mut linker, |state: &mut ServerWasiView| state)?;
     }
 
     // As with the core wasm API of Wasmtime instantiation occurs within a

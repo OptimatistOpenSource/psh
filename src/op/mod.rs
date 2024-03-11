@@ -14,10 +14,11 @@
 
 pub mod common;
 
-use crate::runtime::psh::profiling::memory;
+use crate::runtime::psh::profiling::{memory, system};
 use crate::runtime::ServerWasiView;
 
 use self::common::mem_info::parse_meminfo;
+use self::common::system::{get_kernel_version, parse_os_version};
 
 impl memory::Host for ServerWasiView {
     fn get_memory_info(&mut self) -> wasmtime::Result<Result<memory::MemoryInfo, String>> {
@@ -77,5 +78,15 @@ impl memory::Host for ServerWasiView {
             direct_map2_m: mem_info.direct_map2_m,
             direct_map1_g: mem_info.direct_map1_g,
         }))
+    }
+}
+
+impl system::Host for ServerWasiView {
+    fn os_version(&mut self) -> wasmtime::Result<Option<String>> {
+        parse_os_version!().map_err(wasmtime::Error::from)
+    }
+
+    fn kernel_version(&mut self) -> wasmtime::Result<String> {
+        get_kernel_version().map_err(wasmtime::Error::from)
     }
 }
