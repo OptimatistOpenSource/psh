@@ -1,3 +1,4 @@
+#[rustfmt::skip]
 mod bindings;
 
 use crate::bindings::psh::profiling::memory;
