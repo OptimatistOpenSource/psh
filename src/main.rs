@@ -187,4 +187,12 @@ fn main() {
     let wasi_config = wasi_builder.build();
 
     runtime::run_wasmtime_engine(wasi_config).unwrap();
+
+    let wasi_ctx = WasiCtxBuilder::new().inherit_stdio().build();
+    let mut wasi_builder = runtime::PshWasiConfigBuilder::new(wasi_ctx);
+    wasi_builder
+        .set_component_path("target/wasm32-wasi/debug/get_system_info.wasm")
+        .enable_system_ops();
+    let wasi_config = wasi_builder.build();
+    runtime::run_wasmtime_engine(wasi_config).unwrap();
 }
