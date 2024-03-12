@@ -1,0 +1,10 @@
+[package]
+name = "host-op-perf"
+version.workspace = true
+edition = "2021"
+
+[dependencies]
+wasmtime = "18.0.1"
+anyhow = "1.0.80"
+wasmtime-wasi = "18.0.1"
+perf-event-rs = { git = "https://github.com/OptimatistOpenSource/perf-event-rs.git" }
