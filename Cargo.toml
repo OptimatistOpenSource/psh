@@ -1,10 +1,20 @@
-workspace = { members = ["examples/wasi/get_memory_info", "examples/wasi/get_system_info"] }
 [package]
 name = "psh"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[workspace]
+members = [
+  "examples/wasi/get_memory_info",
+  "examples/wasi/get_system_info",
+  "crates/op/*",
+]
+exclude = ["test_resources/profiling"]
+
+[workspace.package]
+version = "0.1.0"
 
 [dependencies]
 libc = "0.2.151"
