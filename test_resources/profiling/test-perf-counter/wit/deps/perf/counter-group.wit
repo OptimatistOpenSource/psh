@@ -1,0 +1,31 @@
+package profiling:perf@0.0.0;
+
+interface counter-group {
+    use config.{config, process, cpu};
+    use counter.{counter-stat};
+
+    resource counter-group {
+        new       : static func(process: process, cpu: cpu) -> result<counter-group, string>;
+        add-member: func(cfg: config) -> result<counter-guard, string>;
+        enable    : static func(counter-group: counter-group) -> result<fixed-counter-group, string>;
+        stat      : func() -> result<counter-group-stat, string>;
+    }
+
+    resource fixed-counter-group {
+        enable : func() -> result<_, string>;
+        disable: func() -> result<_, string>;
+        reset  : func() -> result<_, string>;
+        stat   : func() -> result<counter-group-stat, string>;
+    }
+
+    record counter-group-stat {
+        time-enabled : u64,
+        time-running : u64,
+        member-counts: list<tuple<u64, u64>>,
+    }
+
+    resource counter-guard {
+        event-id: func() -> u64;
+        stat: func() -> result<counter-stat, string>;
+    }
+}

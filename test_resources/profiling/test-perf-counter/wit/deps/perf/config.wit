@@ -1,0 +1,155 @@
+package profiling:perf@0.0.0;
+
+interface config {
+    variant event {
+        hardware   (hardware-event),
+        software   (software-event),
+        raw        (raw-event),
+        tracepoint (tracepoint-event),
+        breakpoint (breakpoint-event),
+        dynamic-pmu(dynamic-pmu-event),
+    }
+
+    variant hardware-event {
+        cpu-cycles,
+        instructions,
+        cache-references,
+        cache-misses,
+        branch-instructions,
+        branch-misses,
+        bus-cycles,
+        stalled-cycles-frontend,
+        stalled-cycles-backend,
+        ref-cpu-cycles,
+        cache-l1d (tuple<cache-op, cache-op-result>),
+        cache-l1i (tuple<cache-op, cache-op-result>),
+        cache-ll  (tuple<cache-op, cache-op-result>),
+        cache-dtlb(tuple<cache-op, cache-op-result>),
+        cache-itlb(tuple<cache-op, cache-op-result>),
+        cache-bpu (tuple<cache-op, cache-op-result>),
+        cache-node(tuple<cache-op, cache-op-result>),
+    }
+
+    enum software-event {
+        cpu-clock,
+        task-clock,
+        page-faults,
+        context-switches,
+        cpu-migrations,
+        page-faults-min,
+        page-faults-maj,
+        alignment-faults,
+        emulation-faults,
+        dummy,
+        bpf-output,
+        cgroup-switches,
+    }
+
+    record raw-event {
+        config: u64,
+    }
+
+    record tracepoint-event {
+        id: u64,
+    }
+
+    record breakpoint-event {
+        bp-type: breakpoint-type,
+    }
+
+    variant breakpoint-type {
+        r (tuple<u64, breakpoint-len>),
+        w (tuple<u64, breakpoint-len>),
+        rw(tuple<u64, breakpoint-len>),
+        x (u64),
+    }
+
+    enum breakpoint-len {
+        len1,
+        len2,
+        len3,
+        len4,
+        len5,
+        len6,
+        len7,
+        len8,
+    }
+
+    variant dynamic-pmu-event {
+        other (dp-other-config ),
+        kprobe(dp-kprobe-config),
+        uprobe(dp-uprobe-config),
+    }
+
+    record dp-other-config {
+        ty    : u32,
+        config: u64,
+    }
+
+    record dp-kprobe-config {
+        ty      : u32,
+        retprobe: bool,
+        var     : dp-kprobe-config-var,
+    }
+
+    variant dp-kprobe-config-var {
+        func-and-offset(tuple<list<u8>, u64>),
+        kprobe-addr    (u64),
+    }
+
+    record dp-uprobe-config {
+        ty          : u32,
+        retprobe    : bool,
+        uprobe-path : list<u8>,
+        probe-offset: u64,
+    }
+
+    enum cache-op {
+        read,
+        write,
+        prefetch,
+    }
+
+    enum cache-op-result {
+        access,
+        miss,
+    }
+
+    enum event-scope {
+        user,
+        kernel,
+        hv,
+        idle,
+        host,
+        guest,
+    }
+
+    record extra-config {
+        pinned   : bool,
+        exclusive: bool,
+
+        inherit       : bool,
+        inherit-stat  : bool,
+        inherit-thread: bool,
+
+        enable-on-exec: bool,
+        remove-on-exec: bool,
+    }
+
+    record config {
+        event       : event,
+        scopes      : list<event-scope>,
+        extra-config: extra-config,
+    }
+
+    variant process {
+        any,
+        current,
+        pid(u32),
+    }
+
+    variant cpu {
+        any,
+        id(u32),
+    }
+}
