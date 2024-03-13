@@ -2,14 +2,11 @@ mod raw;
 
 use crate::convert::Wrap;
 use crate::profiling::perf::counter_group::*;
-use crate::{FixedCounterGroup, PerfView};
+use crate::{FixedCounterGroup, PerfCtx};
 use perf_event_rs::counting::{CounterGroup, CounterGuard};
 use wasmtime::component::Resource;
 
-impl<T> HostCounterGroup for T
-where
-    T: PerfView,
-{
+impl HostCounterGroup for PerfCtx {
     fn new(
         &mut self,
         process: Process,
@@ -17,7 +14,7 @@ where
     ) -> wasmtime::Result<Result<Resource<CounterGroup>, String>> {
         let mut f = || -> anyhow::Result<_> {
             let counter_group = raw::counter_group_new(&process, &cpu)?;
-            let handle = PerfView::table_mut(self).push(counter_group)?;
+            let handle = self.table.push(counter_group)?;
             Ok(handle)
         };
         Ok(f().map_err(|e| e.to_string()))
@@ -29,9 +26,9 @@ where
         cfg: Config,
     ) -> wasmtime::Result<Result<Resource<CounterGuard>, String>> {
         let mut f = || -> anyhow::Result<_> {
-            let counter_group: &mut CounterGroup = PerfView::table_mut(self).get_mut(&self_)?;
+            let counter_group: &mut CounterGroup = self.table.get_mut(&self_)?;
             let guard = raw::counter_group_add_member(counter_group, &cfg)?;
-            let handle = PerfView::table_mut(self).push(guard)?;
+            let handle = self.table.push(guard)?;
             Ok(handle)
         };
         Ok(f().map_err(|e| e.to_string()))
@@ -42,9 +39,9 @@ where
         counter_group: Resource<CounterGroup>,
     ) -> wasmtime::Result<Result<Resource<FixedCounterGroup>, String>> {
         let f = || -> anyhow::Result<_> {
-            let counter_group: CounterGroup = PerfView::table_mut(self).delete(counter_group)?;
+            let counter_group: CounterGroup = self.table.delete(counter_group)?;
             let fixed_counter_group = raw::counter_group_enable(counter_group)?;
-            let handle = PerfView::table_mut(self).push(fixed_counter_group)?;
+            let handle = self.table.push(fixed_counter_group)?;
             Ok(handle)
         };
         Ok(f().map_err(|e| e.to_string()))
@@ -55,7 +52,7 @@ where
         self_: Resource<CounterGroup>,
     ) -> wasmtime::Result<Result<CounterGroupStat, String>> {
         let mut f = || -> anyhow::Result<_> {
-            let counter_group: &mut CounterGroup = PerfView::table_mut(self).get_mut(&self_)?;
+            let counter_group: &mut CounterGroup = self.table.get_mut(&self_)?;
             let stat = raw::counter_group_stat(counter_group)?;
             let stat = Wrap::<CounterGroupStat>::from(&stat).into_inner();
             Ok(stat)
@@ -64,21 +61,18 @@ where
     }
 
     fn drop(&mut self, rep: Resource<CounterGroup>) -> wasmtime::Result<()> {
-        PerfView::table_mut(self).delete(rep)?;
+        self.table.delete(rep)?;
         Ok(())
     }
 }
 
-impl<T> HostFixedCounterGroup for T
-where
-    T: PerfView,
-{
+impl HostFixedCounterGroup for PerfCtx {
     fn enable(
         &mut self,
         self_: Resource<FixedCounterGroup>,
     ) -> wasmtime::Result<Result<(), String>> {
         let f = || -> anyhow::Result<_> {
-            let fixed_counter_group: &FixedCounterGroup = PerfView::table(self).get(&self_)?;
+            let fixed_counter_group: &FixedCounterGroup = self.table.get(&self_)?;
             raw::fixed_counter_group_enable(fixed_counter_group)?;
             Ok(())
         };
@@ -90,7 +84,7 @@ where
         self_: Resource<FixedCounterGroup>,
     ) -> wasmtime::Result<Result<(), String>> {
         let f = || -> anyhow::Result<_> {
-            let fixed_counter_group: &FixedCounterGroup = PerfView::table(self).get(&self_)?;
+            let fixed_counter_group: &FixedCounterGroup = self.table.get(&self_)?;
             raw::fixed_counter_group_disable(fixed_counter_group)?;
             Ok(())
         };
@@ -102,7 +96,7 @@ where
         self_: Resource<FixedCounterGroup>,
     ) -> wasmtime::Result<Result<(), String>> {
         let f = || -> anyhow::Result<_> {
-            let fixed_counter_group: &FixedCounterGroup = PerfView::table(self).get(&self_)?;
+            let fixed_counter_group: &FixedCounterGroup = self.table.get(&self_)?;
             raw::fixed_counter_group_reset(fixed_counter_group)?;
             Ok(())
         };
@@ -114,8 +108,7 @@ where
         self_: Resource<FixedCounterGroup>,
     ) -> wasmtime::Result<Result<CounterGroupStat, String>> {
         let mut f = || -> anyhow::Result<_> {
-            let fixed_counter_group: &mut FixedCounterGroup =
-                PerfView::table_mut(self).get_mut(&self_)?;
+            let fixed_counter_group: &mut FixedCounterGroup = self.table.get_mut(&self_)?;
             let stat = raw::fixed_counter_group_stat(fixed_counter_group)?;
             let stat = Wrap::<CounterGroupStat>::from(&stat).into_inner();
             Ok(stat)
@@ -124,17 +117,14 @@ where
     }
 
     fn drop(&mut self, rep: Resource<FixedCounterGroup>) -> wasmtime::Result<()> {
-        PerfView::table_mut(self).delete(rep)?;
+        self.table.delete(rep)?;
         Ok(())
     }
 }
 
-impl<T> HostCounterGuard for T
-where
-    T: PerfView,
-{
+impl HostCounterGuard for PerfCtx {
     fn event_id(&mut self, self_: Resource<CounterGuard>) -> wasmtime::Result<u64> {
-        let counter_guard: &CounterGuard = PerfView::table(self).get(&self_)?;
+        let counter_guard: &CounterGuard = self.table.get(&self_)?;
         let event_id = raw::counter_guard_event_id(counter_guard);
         Ok(event_id)
     }
@@ -143,7 +133,7 @@ where
         self_: Resource<CounterGuard>,
     ) -> wasmtime::Result<Result<CounterStat, String>> {
         let mut f = || -> anyhow::Result<_> {
-            let counter_guard: &mut CounterGuard = PerfView::table_mut(self).get_mut(&self_)?;
+            let counter_guard: &mut CounterGuard = self.table.get_mut(&self_)?;
             let stat = raw::counter_guard_stat(counter_guard)?;
             let stat = Wrap::<CounterStat>::from(&stat).into_inner();
             Ok(stat)
@@ -151,7 +141,7 @@ where
         Ok(f().map_err(|e| e.to_string()))
     }
     fn drop(&mut self, rep: Resource<CounterGuard>) -> wasmtime::Result<()> {
-        PerfView::table_mut(self).delete(rep)?;
+        self.table.delete(rep)?;
         Ok(())
     }
 }

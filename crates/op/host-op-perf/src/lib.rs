@@ -23,30 +23,25 @@ wasmtime::component::bindgen!({
 });
 
 pub struct PerfCtx {
-    // TODO
+    table: ResourceTable,
 }
 
 #[allow(clippy::new_without_default)]
 impl PerfCtx {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            table: ResourceTable::new(),
+        }
     }
 }
 
-pub trait PerfView {
-    fn table(&self) -> &ResourceTable;
-    fn table_mut(&mut self) -> &mut ResourceTable;
-    fn ctx(&self) -> &PerfCtx;
-    fn ctx_mut(&mut self) -> &mut PerfCtx;
-}
+impl profiling::perf::config::Host for PerfCtx {}
+impl profiling::perf::counter::Host for PerfCtx {}
+impl profiling::perf::counter_group::Host for PerfCtx {}
 
-impl<T> profiling::perf::config::Host for T where T: PerfView {}
-impl<T> profiling::perf::counter::Host for T where T: PerfView {}
-impl<T> profiling::perf::counter_group::Host for T where T: PerfView {}
-
-pub fn add_to_linker<T>(linker: &mut Linker<T>) -> anyhow::Result<()>
-where
-    T: PerfView,
-{
-    crate::Imports::add_to_linker(linker, |t| t)
+pub fn add_to_linker<T>(
+    l: &mut Linker<T>,
+    f: impl (Fn(&mut T) -> &mut PerfCtx) + Copy + Send + Sync + 'static,
+) -> anyhow::Result<()> {
+    crate::Imports::add_to_linker(l, f)
 }

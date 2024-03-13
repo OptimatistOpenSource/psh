@@ -1,5 +1,5 @@
 use crate::tests::compile_component;
-use crate::{PerfCtx, PerfView};
+use crate::PerfCtx;
 use wasmtime::component::{Component, Instance, Linker, ResourceTable};
 use wasmtime::{Config, Engine, Store};
 use wasmtime_wasi::preview2::{command, WasiCtx, WasiCtxBuilder, WasiView};
@@ -20,24 +20,6 @@ impl WasiView for State {
     }
 }
 
-impl PerfView for State {
-    fn table(&self) -> &ResourceTable {
-        &self.table
-    }
-
-    fn table_mut(&mut self) -> &mut ResourceTable {
-        &mut self.table
-    }
-
-    fn ctx(&self) -> &PerfCtx {
-        &self.perf_ctx
-    }
-
-    fn ctx_mut(&mut self) -> &mut PerfCtx {
-        &mut self.perf_ctx
-    }
-}
-
 #[test]
 fn test_counter() {
     let mut config = Config::new();
@@ -52,7 +34,7 @@ fn test_counter() {
         },
     );
     let mut linker: Linker<State> = Linker::new(&engine);
-    crate::add_to_linker(&mut linker).unwrap();
+    crate::add_to_linker(&mut linker, |t| &mut t.perf_ctx).unwrap();
     command::sync::add_to_linker(&mut linker).unwrap();
 
     let path = "../../../test_resources/profiling/test-perf-counter";
