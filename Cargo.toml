@@ -7,8 +7,7 @@ edition = "2021"
 
 [workspace]
 members = [
-  "examples/wasi/get_memory_info",
-  "examples/wasi/get_system_info",
+  "examples/wasi/*",
   "crates/op/*",
 ]
 exclude = ["test_resources/profiling"]

@@ -866,6 +866,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "get_cpu_info"
+version = "0.1.0"
+dependencies = [
+ "wit-bindgen",
+]
+
+[[package]]
 name = "get_memory_info"
 version = "0.1.0"
 dependencies = [
