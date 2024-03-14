@@ -110,7 +110,7 @@ impl PshWasiConfigBuilder {
 
 pub struct State {
     table: ResourceTable,
-    ctx: WasiCtx,
+    wasi_ctx: WasiCtx,
     name: String,
 }
 
@@ -119,7 +119,7 @@ impl State {
         let table = ResourceTable::new();
         Self {
             table,
-            ctx: wasi_ctx,
+            wasi_ctx,
             name: "PSH Wasi Runtime".to_string(),
         }
     }
@@ -131,7 +131,7 @@ impl WasiView for State {
     }
 
     fn ctx(&mut self) -> &mut WasiCtx {
-        &mut self.ctx
+        &mut self.wasi_ctx
     }
 }
 
