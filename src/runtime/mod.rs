@@ -170,6 +170,10 @@ pub fn run_wasmtime_engine(psh_wasi_config: PshWasiConfig) -> wasmtime::Result<(
         psh::profiling::system::add_to_linker(&mut linker, |state: &mut ServerWasiView| state)?;
     }
 
+    if psh_wasi_config.cpu_ops {
+        psh::profiling::cpu::add_to_linker(&mut linker, |state: &mut ServerWasiView| state)?;
+    }
+
     // As with the core wasm API of Wasmtime instantiation occurs within a
     // `Store`. The bindings structure contains an `instantiate` method which
     // takes the store, component, and linker. This returns the `bindings`
