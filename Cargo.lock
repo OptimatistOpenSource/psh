@@ -1478,7 +1478,7 @@ checksum = "e3148f5046208a5d56bcfc03053e3ca6334e51da8dfb19b6cdc8b306fae3283e"
 [[package]]
 name = "perf-event-rs"
 version = "0.0.0"
-source = "git+https://github.com/OptimatistOpenSource/perf-event-rs.git#1fd602b0a48a0d74f82ac235c668006a349e5bd4"
+source = "git+https://github.com/OptimatistOpenSource/perf-event-rs.git#0ef09e4997880a43c1e9963f49e35a3df5c2a341"
 dependencies = [
  "bindgen",
  "libc",
@@ -1644,6 +1644,7 @@ name = "psh"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "host-op-perf",
  "libc",
  "netdata-plugin",
  "nix",
@@ -2095,9 +2096,9 @@ dependencies = [
 
 [[package]]
 name = "tokio-stream"
-version = "0.1.14"
+version = "0.1.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "397c988d37662c7dda6d2208364a706264bf3d6138b11d436cbac0ad38832842"
+checksum = "267ac89e0bec6e691e5813911606935d77c476ff49024f98abcea3e7b15e37af"
 dependencies = [
  "futures-core",
  "pin-project-lite",
