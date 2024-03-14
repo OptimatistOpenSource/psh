@@ -28,6 +28,10 @@ wasmtime = "18.0.2"
 wasmtime-wasi = "18.0.2"
 wit-bindgen = "0.20.0"
 uname = "0.1.1"
+host-op-perf = { workspace = true }
+
+[workspace.dependencies]
+host-op-perf = { path = "crates/op/host-op-perf" }
 
 [build-dependencies]
 tonic-build = "0.10"
