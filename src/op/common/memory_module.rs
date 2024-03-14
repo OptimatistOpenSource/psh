@@ -5,7 +5,7 @@ pub fn parse_memory_module(input: &str) -> Vec<MemoryModule> {
     let mut memory_modules = Vec::new();
     let mut current_module = MemoryModule::new();
 
-    fn is_unknown_or<T>(value: &str, conv: &dyn Fn(&str) -> T) -> Option<T> {
+    fn is_unknown_or<T>(value: &str, conv: impl FnOnce(&str) -> T) -> Option<T> {
         match value {
             "Not Provided" | "Unknown" | "Not Specified" | "None" => None,
             _ => Some(conv(value)),
@@ -54,93 +54,91 @@ pub fn parse_memory_module(input: &str) -> Vec<MemoryModule> {
                 "Array Handle" => current_module.array_handle = hex_str_to_number!(value, u32),
                 "Error Information Handle" => {
                     current_module.error_info_handle =
-                        is_unknown_or(value, &|v: &str| hex_str_to_number!(v, u32));
+                        is_unknown_or(value, |v: &str| hex_str_to_number!(v, u32));
                 }
                 "Total Width" => {
-                    current_module.total_width = is_unknown_or(value, &parse_width_str);
+                    current_module.total_width = is_unknown_or(value, parse_width_str);
                 }
                 "Data Width" => {
-                    current_module.data_width = is_unknown_or(value, &parse_width_str);
+                    current_module.data_width = is_unknown_or(value, parse_width_str);
                 }
                 "Size" => {
                     current_module.size = parse_size_str(value);
                 }
                 "Form Factor" => current_module.form_factor = value.to_string(),
-                "Set" => current_module.set = is_unknown_or(value, &|v: &str| v.to_string()),
+                "Set" => current_module.set = is_unknown_or(value, |v: &str| v.to_string()),
                 "Locator" => current_module.locator = value.to_string(),
                 "Bank Locator" => {
-                    current_module.bank_locator = is_unknown_or(value, &|v: &str| v.to_string())
+                    current_module.bank_locator = is_unknown_or(value, |v: &str| v.to_string())
                 }
                 "Type" => current_module.r#type = value.to_string(),
                 "Type Detail" => current_module.type_detail = value.to_string(),
-                "Speed" => current_module.speed = is_unknown_or(value, &|v: &str| v.to_string()),
+                "Speed" => current_module.speed = is_unknown_or(value, |v: &str| v.to_string()),
                 "Manufacturer" => {
-                    current_module.manufacturer = is_unknown_or(value, &|v: &str| v.to_string())
+                    current_module.manufacturer = is_unknown_or(value, |v: &str| v.to_string())
                 }
                 "Serial Number" => {
-                    current_module.serial_number = is_unknown_or(value, &|v: &str| v.to_string())
+                    current_module.serial_number = is_unknown_or(value, |v: &str| v.to_string())
                 }
                 "Asset Tag" => {
-                    current_module.asset_tag = is_unknown_or(value, &|v: &str| v.to_string())
+                    current_module.asset_tag = is_unknown_or(value, |v: &str| v.to_string())
                 }
                 "Part Number" => {
-                    current_module.part_number = is_unknown_or(value, &|v: &str| v.to_string())
+                    current_module.part_number = is_unknown_or(value, |v: &str| v.to_string())
                 }
                 "Rank" => {
-                    current_module.rank = is_unknown_or(value, &|v: &str| v.parse().unwrap_or(0))
+                    current_module.rank = is_unknown_or(value, |v: &str| v.parse().unwrap_or(0))
                 }
                 "Configured Memory Speed" => {
                     current_module.configured_memory_speed =
-                        is_unknown_or(value, &|v: &str| v.to_string())
+                        is_unknown_or(value, |v: &str| v.to_string())
                 }
                 "Minimum Voltage" => {
-                    current_module.min_voltage = is_unknown_or(value, &|v: &str| v.to_string())
+                    current_module.min_voltage = is_unknown_or(value, |v: &str| v.to_string())
                 }
                 "Maximum Voltage" => {
-                    current_module.max_voltage = is_unknown_or(value, &|v: &str| v.to_string())
+                    current_module.max_voltage = is_unknown_or(value, |v: &str| v.to_string())
                 }
                 "Configured Voltage" => {
                     current_module.configured_voltage =
-                        is_unknown_or(value, &|v: &str| v.to_string())
+                        is_unknown_or(value, |v: &str| v.to_string())
                 }
                 "Memory Technology" => {
-                    current_module.memory_technology =
-                        is_unknown_or(value, &|v: &str| v.to_string())
+                    current_module.memory_technology = is_unknown_or(value, |v: &str| v.to_string())
                 }
                 "Memory Operating Mode Capability" => {
                     current_module.memory_operating_mode_capability =
-                        is_unknown_or(value, &|v: &str| v.to_string())
+                        is_unknown_or(value, |v: &str| v.to_string())
                 }
                 "Firmware Version" => {
-                    current_module.firmware_version = is_unknown_or(value, &|v: &str| v.to_string())
+                    current_module.firmware_version = is_unknown_or(value, |v: &str| v.to_string())
                 }
                 "Module Manufacturer ID" => {
                     current_module.module_manufacturer_id =
-                        is_unknown_or(value, &|v: &str| v.to_string())
+                        is_unknown_or(value, |v: &str| v.to_string())
                 }
                 "Module Product ID" => {
-                    current_module.module_product_id =
-                        is_unknown_or(value, &|v: &str| v.to_string())
+                    current_module.module_product_id = is_unknown_or(value, |v: &str| v.to_string())
                 }
                 "Memory Subsystem Controller Manufacturer ID" => {
                     current_module.memory_subsystem_controller_manufacturer_id =
-                        is_unknown_or(value, &|v: &str| v.to_string())
+                        is_unknown_or(value, |v: &str| v.to_string())
                 }
                 "Memory Subsystem Controller Product ID" => {
                     current_module.memory_subsystem_controller_product_id =
-                        is_unknown_or(value, &|v: &str| v.to_string())
+                        is_unknown_or(value, |v: &str| v.to_string())
                 }
                 "Non-Volatile Size" => {
-                    current_module.non_volatile_size = is_unknown_or(value, &parse_size_str);
+                    current_module.non_volatile_size = is_unknown_or(value, parse_size_str);
                 }
                 "Volatile Size" => {
-                    current_module.volatile_size = is_unknown_or(value, &parse_size_str);
+                    current_module.volatile_size = is_unknown_or(value, parse_size_str);
                 }
                 "Cache Size" => {
-                    current_module.cache_size = is_unknown_or(value, &parse_size_str);
+                    current_module.cache_size = is_unknown_or(value, parse_size_str);
                 }
                 "Logical Size" => {
-                    current_module.logical_size = is_unknown_or(value, &parse_size_str);
+                    current_module.logical_size = is_unknown_or(value, parse_size_str);
                 }
                 // Add more fields as needed...
                 _ => {}
