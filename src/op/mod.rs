@@ -20,7 +20,7 @@ use crate::runtime::ServerWasiView;
 use self::common::cpu_info::parse_cpuinfo;
 use self::common::mem_info::parse_meminfo;
 use self::common::system::{get_kernel_version, parse_os_version};
-use self::common::{AddressSizes, Arm64CpuInfo, TlbSize, X86_64CpuInfo};
+use self::common::{Arm64CpuInfo as HostArm64CpuInfo, X86_64CpuInfo as HostX86_64CpuInfo};
 
 impl memory::Host for ServerWasiView {
     fn get_memory_info(&mut self) -> wasmtime::Result<Result<memory::MemoryInfo, String>> {
@@ -93,70 +93,61 @@ impl system::Host for ServerWasiView {
     }
 }
 
-impl<T: AsRef<AddressSizes>> From<T> for cpu::AddressSizes {
-    fn from(value: T) -> Self {
-        cpu::AddressSizes {
-            phy: value.as_ref().phy,
-            virt: value.as_ref().virt,
-        }
-    }
-}
-
-impl<T: AsRef<TlbSize>> From<T> for cpu::TlbSize {
-    fn from(value: T) -> Self {
-        cpu::TlbSize {
-            count: value.as_ref().count,
-            unit: value.as_ref().unit,
-        }
-    }
-}
-
-impl<T: AsRef<Arm64CpuInfo>> From<T> for cpu::Arm64CpuInfo {
-    fn from(value: T) -> Self {
+impl From<&HostArm64CpuInfo> for cpu::Arm64CpuInfo {
+    fn from(value: &HostArm64CpuInfo) -> Self {
         cpu::Arm64CpuInfo {
-            processor: value.as_ref().processor as u32,
-            bogomips: value.as_ref().bogomips,
-            features: value.as_ref().features.clone(),
-            cpu_implementer: value.as_ref().cpu_implementer,
-            cpu_architecture: value.as_ref().cpu_architecture,
-            cpu_variant: value.as_ref().cpu_variant,
-            cpu_part: value.as_ref().cpu_part,
-            cpu_revision: value.as_ref().cpu_revision,
-            address_sizes: value.as_ref().address_sizes.as_ref().into(),
+            processor: value.processor as u32,
+            bogomips: value.bogomips,
+            features: value.features.clone(),
+            cpu_implementer: value.cpu_implementer,
+            cpu_architecture: value.cpu_architecture,
+            cpu_variant: value.cpu_variant,
+            cpu_part: value.cpu_part,
+            cpu_revision: value.cpu_revision,
+            address_sizes: cpu::AddressSizes {
+                phy: value.address_sizes.phy,
+                virt: value.address_sizes.virt,
+            },
         }
     }
 }
 
-impl<T: AsRef<X86_64CpuInfo>> From<T> for cpu::X64CpuInfo {
-    fn from(value: T) -> Self {
+impl From<&HostX86_64CpuInfo> for cpu::X64CpuInfo {
+    fn from(value: &HostX86_64CpuInfo) -> Self {
         cpu::X64CpuInfo {
-            processor: value.as_ref().processor as u32,
-            vendor_id: value.as_ref().vendor_id.clone(),
-            model_name: value.as_ref().model_name.clone(),
-            cpu_family: value.as_ref().cpu_family as u32,
-            model: value.as_ref().model as u32,
-            stepping: value.as_ref().stepping as u32,
-            microcode: value.as_ref().microcode.clone(),
-            cpu_mhz: value.as_ref().cpu_mhz,
-            cache_size: value.as_ref().cache_size,
-            physical_id: value.as_ref().physical_id as u32,
-            siblings: value.as_ref().siblings as u32,
-            core_id: value.as_ref().core_id as u32,
-            cpu_cores: value.as_ref().cpu_cores as u32,
-            apicid: value.as_ref().apicid as u32,
-            initial_apicid: value.as_ref().initial_apicid as u32,
-            fpu: value.as_ref().fpu,
-            fpu_exception: value.as_ref().fpu_exception,
-            cpuid_level: value.as_ref().cpuid_level as u32,
-            wp: value.as_ref().wp,
-            flag: value.as_ref().flags.clone(),
-            bugs: value.as_ref().bugs.clone(),
-            bogomips: value.as_ref().bogomips,
-            tlb_size: value.as_ref().tlb_size.as_ref().into(),
-            clflush_size: value.as_ref().clflush_size,
-            cache_alignment: value.as_ref().cache_alignment,
-            address_sizes: value.as_ref().address_sizes.as_ref().into(),
-            power_management: value.as_ref().power_management.clone(),
+            processor: value.processor as u32,
+            vendor_id: value.vendor_id.clone(),
+            model_name: value.model_name.clone(),
+            cpu_family: value.cpu_family as u32,
+            model: value.model as u32,
+            stepping: value.stepping as u32,
+            microcode: value.microcode.clone(),
+            cpu_mhz: value.cpu_mhz,
+            cache_size: value.cache_size,
+            physical_id: value.physical_id as u32,
+            siblings: value.siblings as u32,
+            core_id: value.core_id as u32,
+            cpu_cores: value.cpu_cores as u32,
+            apicid: value.apicid as u32,
+            initial_apicid: value.initial_apicid as u32,
+            fpu: value.fpu,
+            fpu_exception: value.fpu_exception,
+            cpuid_level: value.cpuid_level as u32,
+            wp: value.wp,
+            flag: value.flags.clone(),
+            bugs: value.bugs.clone(),
+            bogomips: value.bogomips,
+            tlb_size: cpu::TlbSize {
+                count: value.tlb_size.count,
+                unit: value.tlb_size.unit,
+            },
+            clflush_size: value.clflush_size,
+            cache_alignment: value.cache_alignment,
+            address_sizes: cpu::AddressSizes {
+                phy: value.address_sizes.phy,
+                virt: value.address_sizes.virt,
+            },
+            power_management: value.power_management.clone(),
         }
     }
 }

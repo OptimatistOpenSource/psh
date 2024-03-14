@@ -27,22 +27,10 @@ pub struct TlbSize {
     pub unit: u32,
 }
 
-impl AsRef<TlbSize> for TlbSize {
-    fn as_ref(&self) -> &TlbSize {
-        self
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct AddressSizes {
     pub phy: u8,  // physical bits.
     pub virt: u8, // virtual bits.
-}
-
-impl AsRef<AddressSizes> for AddressSizes {
-    fn as_ref(&self) -> &AddressSizes {
-        self
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -56,12 +44,6 @@ pub struct Arm64CpuInfo {
     pub cpu_part: u16,
     pub cpu_revision: u16,
     pub address_sizes: AddressSizes,
-}
-
-impl AsRef<Arm64CpuInfo> for Arm64CpuInfo {
-    fn as_ref(&self) -> &Arm64CpuInfo {
-        self
-    }
 }
 
 impl Arm64CpuInfo {
@@ -109,12 +91,6 @@ pub struct X86_64CpuInfo {
     pub cache_alignment: u8,
     pub address_sizes: AddressSizes,
     pub power_management: Vec<String>, // Add other fields you want to extract
-}
-
-impl AsRef<X86_64CpuInfo> for X86_64CpuInfo {
-    fn as_ref(&self) -> &X86_64CpuInfo {
-        self
-    }
 }
 
 impl X86_64CpuInfo {
