@@ -33,7 +33,7 @@ pub struct PshWasiConfigBuilder {
 
 #[allow(dead_code)]
 pub struct PshWasiConfig {
-    server_wasi_view: ServerWasiView,
+    state: State,
 
     component_path: String,
     memory_ops: bool,
@@ -95,10 +95,10 @@ impl PshWasiConfigBuilder {
         } = mem::replace(self, Self::new(WasiCtxBuilder::new().build()));
         self.built = true;
 
-        let sever_wasi_view = ServerWasiView::new(wasi_ctx);
+        let state = State::new(wasi_ctx);
 
         PshWasiConfig {
-            server_wasi_view: sever_wasi_view,
+            state,
             component_path: componenet_path,
             memory_ops,
             system_ops,
@@ -108,13 +108,13 @@ impl PshWasiConfigBuilder {
     }
 }
 
-pub struct ServerWasiView {
+pub struct State {
     table: ResourceTable,
     ctx: WasiCtx,
     name: String,
 }
 
-impl ServerWasiView {
+impl State {
     fn new(wasi_ctx: WasiCtx) -> Self {
         let table = ResourceTable::new();
         Self {
@@ -125,7 +125,7 @@ impl ServerWasiView {
     }
 }
 
-impl WasiView for ServerWasiView {
+impl WasiView for State {
     fn table(&mut self) -> &mut ResourceTable {
         &mut self.table
     }
@@ -135,7 +135,7 @@ impl WasiView for ServerWasiView {
     }
 }
 
-impl BindingsImports for ServerWasiView {
+impl BindingsImports for State {
     fn name(&mut self) -> wasmtime::Result<String> {
         Ok(self.name.clone())
     }
@@ -162,14 +162,14 @@ pub fn run_wasmtime_engine(psh_wasi_config: PshWasiConfig) -> wasmtime::Result<(
     let mut linker = Linker::new(&engine);
     command::sync::add_to_linker(&mut linker).context("Failed to link command world")?;
 
-    Bindings::add_root_to_linker(&mut linker, |state: &mut ServerWasiView| state)?;
+    Bindings::add_root_to_linker(&mut linker, |state: &mut State| state)?;
 
     if psh_wasi_config.memory_ops {
-        psh::profiling::memory::add_to_linker(&mut linker, |state: &mut ServerWasiView| state)?;
+        psh::profiling::memory::add_to_linker(&mut linker, |state: &mut State| state)?;
     }
 
     if psh_wasi_config.system_ops {
-        psh::profiling::system::add_to_linker(&mut linker, |state: &mut ServerWasiView| state)?;
+        psh::profiling::system::add_to_linker(&mut linker, |state: &mut State| state)?;
     }
 
     if psh_wasi_config.cpu_ops {
@@ -181,7 +181,7 @@ pub fn run_wasmtime_engine(psh_wasi_config: PshWasiConfig) -> wasmtime::Result<(
     // takes the store, component, and linker. This returns the `bindings`
     // structure which is an instance of `HelloWorld` and supports typed access
     // to the exports of the component.
-    let mut store = Store::new(&engine, psh_wasi_config.server_wasi_view);
+    let mut store = Store::new(&engine, psh_wasi_config.state);
     let (cmd, _instance) = command::sync::Command::instantiate(&mut store, &component, &linker)?;
 
     let result = cmd.wasi_cli_run().call_run(&mut store)?;

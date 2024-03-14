@@ -15,14 +15,14 @@
 pub mod common;
 
 use crate::runtime::psh::profiling::{cpu, memory, system};
-use crate::runtime::ServerWasiView;
+use crate::runtime::State;
 
 use self::common::cpu_info::parse_cpuinfo;
 use self::common::mem_info::parse_meminfo;
 use self::common::system::{get_kernel_version, parse_os_version};
 use self::common::{Arm64CpuInfo as HostArm64CpuInfo, X86_64CpuInfo as HostX86_64CpuInfo};
 
-impl memory::Host for ServerWasiView {
+impl memory::Host for State {
     fn get_memory_info(&mut self) -> wasmtime::Result<Result<memory::MemoryInfo, String>> {
         let mem_info = parse_meminfo!().unwrap();
         Ok(Ok(memory::MemoryInfo {
@@ -83,7 +83,7 @@ impl memory::Host for ServerWasiView {
     }
 }
 
-impl system::Host for ServerWasiView {
+impl system::Host for State {
     fn os_version(&mut self) -> wasmtime::Result<Option<String>> {
         parse_os_version!().map_err(wasmtime::Error::from)
     }
@@ -152,7 +152,7 @@ impl From<&HostX86_64CpuInfo> for cpu::X64CpuInfo {
     }
 }
 
-impl cpu::Host for ServerWasiView {
+impl cpu::Host for State {
     fn get_cpu_info(&mut self) -> wasmtime::Result<Result<cpu::CpuInfo, String>> {
         let cpu_info = parse_cpuinfo!().unwrap();
         let res = match cpu_info {
