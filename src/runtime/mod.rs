@@ -15,6 +15,7 @@
 use std::mem;
 
 use __internal::anyhow::{self, Context};
+use host_op_perf::PerfCtx;
 use wasmtime::{component::*, Config, Engine, Store};
 use wasmtime_wasi::preview2::{command, WasiCtx, WasiCtxBuilder, WasiView};
 
@@ -22,6 +23,7 @@ wasmtime::component::bindgen!();
 
 pub struct PshWasiConfigBuilder {
     wasi_ctx: WasiCtx,
+    perf_ctx: Option<PerfCtx>,
 
     component_path: String,
     memory_ops: bool,
@@ -47,6 +49,7 @@ impl PshWasiConfigBuilder {
     pub fn new(wasi_ctx: WasiCtx) -> Self {
         Self {
             wasi_ctx,
+            perf_ctx: None,
             component_path: "".to_string(),
             memory_ops: false,
             system_ops: false,
@@ -81,12 +84,18 @@ impl PshWasiConfigBuilder {
         self
     }
 
+    pub fn enable_perf_ops(&mut self, ctx: PerfCtx) -> &mut Self {
+        self.perf_ctx = Some(ctx);
+        self
+    }
+
     pub fn build(&mut self) -> PshWasiConfig {
         assert!(!self.built);
 
         let Self {
             wasi_ctx,
-            component_path: componenet_path,
+            perf_ctx,
+            component_path,
             memory_ops,
             system_ops,
             cpu_ops,
@@ -95,11 +104,11 @@ impl PshWasiConfigBuilder {
         } = mem::replace(self, Self::new(WasiCtxBuilder::new().build()));
         self.built = true;
 
-        let state = State::new(wasi_ctx);
+        let state = State::new(wasi_ctx, perf_ctx);
 
         PshWasiConfig {
             state,
-            component_path: componenet_path,
+            component_path,
             memory_ops,
             system_ops,
             cpu_ops,
@@ -111,15 +120,17 @@ impl PshWasiConfigBuilder {
 pub struct State {
     wasi_table: ResourceTable,
     wasi_ctx: WasiCtx,
+    perf_ctx: Option<PerfCtx>,
     name: String,
 }
 
 impl State {
-    fn new(wasi_ctx: WasiCtx) -> Self {
+    fn new(wasi_ctx: WasiCtx, perf_ctx: Option<PerfCtx>) -> Self {
         let wasi_table = ResourceTable::new();
         Self {
             wasi_table,
             wasi_ctx,
+            perf_ctx,
             name: "PSH Wasi Runtime".to_string(),
         }
     }
@@ -173,7 +184,13 @@ pub fn run_wasmtime_engine(psh_wasi_config: PshWasiConfig) -> wasmtime::Result<(
     }
 
     if psh_wasi_config.cpu_ops {
-        psh::profiling::cpu::add_to_linker(&mut linker, |state: &mut ServerWasiView| state)?;
+        psh::profiling::cpu::add_to_linker(&mut linker, |state: &mut State| state)?;
+    }
+
+    if psh_wasi_config.state.perf_ctx.is_some() {
+        host_op_perf::add_to_linker(&mut linker, |state: &mut State| {
+            state.perf_ctx.as_mut().unwrap()
+        })?;
     }
 
     // As with the core wasm API of Wasmtime instantiation occurs within a
