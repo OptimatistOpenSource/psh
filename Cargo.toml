@@ -28,6 +28,7 @@ wasmtime = "18.0.2"
 wasmtime-wasi = "18.0.2"
 wit-bindgen = "0.20.0"
 uname = "0.1.1"
+anyhow = "1.0.81"
 host-op-perf = { workspace = true }
 
 [workspace.dependencies]

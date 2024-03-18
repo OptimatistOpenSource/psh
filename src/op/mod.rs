@@ -18,16 +18,20 @@ use std::process::Command;
 
 use crate::infra::util::which;
 use crate::op::common::memory_module::parse_memory_module;
-use crate::runtime::psh::profiling::memory::MemoryModule;
-use crate::runtime::psh::profiling::{cpu, memory, system};
+use crate::runtime::psh::profiling::{
+    cpu,
+    memory::{self, MemoryModule},
+    system::{self, DistroKind, DistroVersion, KernelVersion},
+};
 use crate::runtime::State;
 
-use self::common::cpu_info::parse_cpuinfo;
-use self::common::mem_info::parse_meminfo;
-use self::common::system::{get_kernel_version, parse_os_version};
 use self::common::{
-    Arm64CpuInfo as HostArm64CpuInfo, MemoryModule as HostMemoryModule,
-    X86_64CpuInfo as HostX86_64CpuInfo,
+    cpu_info::parse_cpuinfo,
+    mem_info::parse_meminfo,
+    system::{get_kernel_version, parse_distro_version},
+    Arm64CpuInfo as HostArm64CpuInfo, DistroKind as HostDistroKind,
+    DistroVersion as HostDistroVersion, KernelVersion as HostKernelVersion,
+    MemoryModule as HostMemoryModule, X86_64CpuInfo as HostX86_64CpuInfo,
 };
 
 impl From<&HostMemoryModule> for memory::MemoryModule {
@@ -149,13 +153,59 @@ impl memory::Host for State {
     }
 }
 
+impl From<HostDistroKind> for DistroKind {
+    fn from(value: HostDistroKind) -> Self {
+        match value {
+            HostDistroKind::Arch => DistroKind::Arch,
+            HostDistroKind::CentOS => DistroKind::CentOs,
+            HostDistroKind::Debian => DistroKind::Debian,
+            HostDistroKind::Fedora => DistroKind::Fedora,
+            HostDistroKind::Gentoo => DistroKind::Gentoo,
+            HostDistroKind::Kali => DistroKind::Kali,
+            HostDistroKind::Manjaro => DistroKind::Manjaro,
+            HostDistroKind::Mint => DistroKind::Mint,
+            HostDistroKind::NixOS => DistroKind::NixOs,
+            HostDistroKind::Other(distro) => DistroKind::Other(distro.clone()),
+            HostDistroKind::PopOS => DistroKind::PopOs,
+            HostDistroKind::RedHat => DistroKind::RedHat,
+            HostDistroKind::Slackware => DistroKind::Slackware,
+            HostDistroKind::Ubuntu => DistroKind::Ubuntu,
+        }
+    }
+}
+
+impl From<HostDistroVersion> for DistroVersion {
+    fn from(value: HostDistroVersion) -> Self {
+        Self {
+            distro: value.distro.into(),
+            version: value.version,
+        }
+    }
+}
+
+impl From<HostKernelVersion> for KernelVersion {
+    fn from(value: HostKernelVersion) -> Self {
+        Self {
+            major: value.major,
+            minor: value.minor,
+            patch: value.patch,
+        }
+    }
+}
+
 impl system::Host for State {
-    fn os_version(&mut self) -> wasmtime::Result<Option<String>> {
-        parse_os_version!().map_err(wasmtime::Error::from)
+    fn get_distro_version(&mut self) -> wasmtime::Result<Result<DistroVersion, String>> {
+        match parse_distro_version!() {
+            Ok(distro) => Ok(Ok(DistroVersion::from(distro))),
+            Err(err) => Ok(Err(err.to_string())),
+        }
     }
 
-    fn kernel_version(&mut self) -> wasmtime::Result<String> {
-        get_kernel_version().map_err(wasmtime::Error::from)
+    fn get_kernel_version(&mut self) -> wasmtime::Result<Result<KernelVersion, String>> {
+        match get_kernel_version() {
+            Ok(version) => Ok(Ok(version.into())),
+            Err(err) => Ok(Err(err.to_string())),
+        }
     }
 }
 
