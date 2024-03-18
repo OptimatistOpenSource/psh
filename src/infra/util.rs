@@ -1,7 +1,6 @@
 use std::env;
 use std::path::{Path, PathBuf};
 
-#[allow(dead_code)]
 pub fn which<P>(exe_name: P) -> Option<PathBuf>
 where
     P: AsRef<Path>,

@@ -209,7 +209,7 @@ mod test {
             .arg("-t")
             .arg("17")
             .output()
-            .expect("failed to execute dmidecode -t 16");
+            .expect("failed to execute dmidecode -t 17");
 
         let memory_modules = parse_memory_module(std::str::from_utf8(&output.stdout).unwrap());
         assert_eq!(num_of_dimms, memory_modules.len());

@@ -14,13 +14,64 @@
 
 pub mod common;
 
+use std::process::Command;
+
+use crate::infra::util::which;
+use crate::op::common::memory_module::parse_memory_module;
+use crate::runtime::psh::profiling::memory::MemoryModule;
 use crate::runtime::psh::profiling::{cpu, memory, system};
 use crate::runtime::State;
 
 use self::common::cpu_info::parse_cpuinfo;
 use self::common::mem_info::parse_meminfo;
 use self::common::system::{get_kernel_version, parse_os_version};
-use self::common::{Arm64CpuInfo as HostArm64CpuInfo, X86_64CpuInfo as HostX86_64CpuInfo};
+use self::common::{
+    Arm64CpuInfo as HostArm64CpuInfo, MemoryModule as HostMemoryModule,
+    X86_64CpuInfo as HostX86_64CpuInfo,
+};
+
+impl From<&HostMemoryModule> for memory::MemoryModule {
+    fn from(value: &HostMemoryModule) -> Self {
+        memory::MemoryModule {
+            array_handle: value.array_handle,
+            error_info_handle: value.error_info_handle,
+            total_width: value.total_width,
+            data_width: value.data_width,
+            size: value.size,
+            form_factor: value.form_factor.clone(),
+            set: value.set.clone(),
+            locator: value.locator.clone(),
+            bank_locator: value.bank_locator.clone(),
+            module_type: value.r#type.clone(),
+            type_detail: value.type_detail.clone(),
+            speed: value.speed.clone(),
+            manufacturer: value.manufacturer.clone(),
+            serial_number: value.serial_number.clone(),
+            asset_tag: value.asset_tag.clone(),
+            part_number: value.part_number.clone(),
+            rank: value.rank,
+            configured_memory_speed: value.configured_memory_speed.clone(),
+            min_voltage: value.min_voltage.clone(),
+            max_voltage: value.max_voltage.clone(),
+            configured_voltage: value.configured_voltage.clone(),
+            memory_technology: value.memory_technology.clone(),
+            memory_operating_mode_capability: value.memory_operating_mode_capability.clone(),
+            firmware_version: value.firmware_version.clone(),
+            module_manufacturer_id: value.module_manufacturer_id.clone(),
+            module_product_id: value.module_product_id.clone(),
+            memory_subsystem_controller_manufacturer_id: value
+                .memory_subsystem_controller_manufacturer_id
+                .clone(),
+            memory_subsystem_controller_product_id: value
+                .memory_subsystem_controller_product_id
+                .clone(),
+            non_volatile_size: value.non_volatile_size,
+            volatile_size: value.volatile_size,
+            cache_size: value.cache_size,
+            logical_size: value.logical_size,
+        }
+    }
+}
 
 impl memory::Host for State {
     fn get_memory_info(&mut self) -> wasmtime::Result<Result<memory::MemoryInfo, String>> {
@@ -80,6 +131,21 @@ impl memory::Host for State {
             direct_map2_m: mem_info.direct_map2_m,
             direct_map1_g: mem_info.direct_map1_g,
         }))
+    }
+
+    fn get_memory_module(&mut self) -> wasmtime::Result<Result<Vec<memory::MemoryModule>, String>> {
+        if let Some(dmidecode_exe) = which("dmidecode") {
+            let output = Command::new(dmidecode_exe).arg("-t").arg("17").output()?;
+
+            let res = parse_memory_module(std::str::from_utf8(&output.stdout)?)
+                .iter()
+                .map(MemoryModule::from)
+                .collect::<Vec<MemoryModule>>();
+
+            Ok(Ok(res))
+        } else {
+            Ok(Err("Can not find `dmidecode` executable path.".to_string()))
+        }
     }
 }
 

@@ -2,15 +2,17 @@
 mod bindings;
 
 use crate::bindings::psh::profiling::memory;
-//use crate::bindings::psh::profiling::perf;
 
 fn main() {
     println!("Hello, world!");
     println!("{}", crate::bindings::name());
-    let a = memory::get_memory_info().unwrap();
-    println!("{:?}", a);
+    let memory_info = memory::get_memory_info().unwrap();
+    println!("{:?}", memory_info);
 
-    // test if host not implemented perf imports.
-    // perf::perf_new_counter(0, 0, 0);
-    // panic!("test panic");
+    let memory_module_vec = memory::get_memory_module().unwrap();
+
+    println!("Dump Memory Modules:");
+    for memory_module in memory_module_vec {
+        println!("{:?}", memory_module);
+    }
 }
