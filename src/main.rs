@@ -202,4 +202,12 @@ fn main() {
         .enable_cpu_ops();
     let wasi_config = wasi_builder.build();
     runtime::run_wasmtime_engine(wasi_config).unwrap();
+
+    let wasi_ctx = WasiCtxBuilder::new().inherit_stdio().build();
+    let mut wasi_builder = runtime::PshWasiConfigBuilder::new(wasi_ctx);
+    wasi_builder
+        .set_component_path("target/wasm32-wasi/debug/get_interrupts_info.wasm")
+        .enable_interrupts_ops();
+    let wasi_config = wasi_builder.build();
+    runtime::run_wasmtime_engine(wasi_config).unwrap();
 }

@@ -19,19 +19,21 @@ use std::process::Command;
 use crate::infra::util::which;
 use crate::op::common::memory_module::parse_memory_module;
 use crate::runtime::psh::profiling::{
-    cpu,
-    memory::{self, MemoryModule},
+    cpu, interrupts, memory,
     system::{self, DistroKind, DistroVersion, KernelVersion},
 };
 use crate::runtime::State;
 
+use self::common::cpu_info::parse_cpuinfo;
+use self::common::interrupts::parse_interrupts;
+use self::common::irq::parse_irq;
+use self::common::mem_info::parse_meminfo;
+use self::common::system::{get_kernel_version, parse_distro_version};
 use self::common::{
-    cpu_info::parse_cpuinfo,
-    mem_info::parse_meminfo,
-    system::{get_kernel_version, parse_distro_version},
     Arm64CpuInfo as HostArm64CpuInfo, DistroKind as HostDistroKind,
-    DistroVersion as HostDistroVersion, KernelVersion as HostKernelVersion,
-    MemoryModule as HostMemoryModule, X86_64CpuInfo as HostX86_64CpuInfo,
+    DistroVersion as HostDistroVersion, InterruptDetails, InterruptType, IrqDetails,
+    KernelVersion as HostKernelVersion, MemoryModule as HostMemoryModule,
+    X86_64CpuInfo as HostX86_64CpuInfo,
 };
 
 impl From<&HostMemoryModule> for memory::MemoryModule {
@@ -143,8 +145,8 @@ impl memory::Host for State {
 
             let res = parse_memory_module(std::str::from_utf8(&output.stdout)?)
                 .iter()
-                .map(MemoryModule::from)
-                .collect::<Vec<MemoryModule>>();
+                .map(memory::MemoryModule::from)
+                .collect::<Vec<memory::MemoryModule>>();
 
             Ok(Ok(res))
         } else {
@@ -282,5 +284,51 @@ impl cpu::Host for State {
         };
 
         Ok(res)
+    }
+}
+
+impl From<&IrqDetails> for interrupts::Irq {
+    fn from(value: &IrqDetails) -> Self {
+        interrupts::Irq {
+            number: value.irq_number,
+            smp_affinity: value.smp_affinity.clone(),
+            smp_affinity_list: value.smp_affinity_list.clone(),
+            node: value.node.clone(),
+        }
+    }
+}
+
+impl From<&InterruptDetails> for interrupts::Stat {
+    fn from(value: &InterruptDetails) -> Self {
+        interrupts::Stat {
+            interrupt_type: match &value.interrupt_type {
+                InterruptType::Common(irq) => interrupts::Kind::Common(*irq),
+                InterruptType::ArchSpecific(irq) => interrupts::Kind::ArchSpecific(irq.clone()),
+            },
+            description: value.description.clone(),
+            per_cpu_counts: value.cpu_counts.clone(),
+        }
+    }
+}
+
+impl interrupts::Host for State {
+    fn get_interrupts_info(&mut self) -> wasmtime::Result<Result<Vec<interrupts::Irq>, String>> {
+        match parse_irq!() {
+            Ok(irq) => Ok(Ok(irq
+                .iter()
+                .map(interrupts::Irq::from)
+                .collect::<Vec<interrupts::Irq>>())),
+            Err(e) => Ok(Err(format!("{}: {}", "get interrupt info failed", e))),
+        }
+    }
+
+    fn get_interrupts_stat(&mut self) -> wasmtime::Result<Result<Vec<interrupts::Stat>, String>> {
+        match parse_interrupts!() {
+            Ok(bindings) => Ok(Ok(bindings
+                .iter()
+                .map(interrupts::Stat::from)
+                .collect::<Vec<interrupts::Stat>>())),
+            Err(e) => Ok(Err(format!("{}: {}", "get interrupt statistics failed", e))),
+        }
     }
 }
