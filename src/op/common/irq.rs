@@ -2,10 +2,8 @@ use super::IrqDetails;
 use std::fs;
 use std::path::Path;
 
-#[allow(dead_code)]
-fn do_parse_all_irq(path: &str) -> Vec<IrqDetails> {
-    let folder_names: Vec<String> = fs::read_dir(path)
-        .unwrap()
+pub fn do_parse_all_irq(path: &str) -> std::io::Result<Vec<IrqDetails>> {
+    let folder_names: Vec<String> = fs::read_dir(path)?
         .filter_map(|entry| {
             let entry = entry.unwrap();
             let path = entry.path();
@@ -45,18 +43,19 @@ fn do_parse_all_irq(path: &str) -> Vec<IrqDetails> {
         })
         .collect::<Vec<IrqDetails>>();
 
-    parsed_irq
+    Ok(parsed_irq)
 }
 
-#[allow(unused_macros)]
 macro_rules! parse_irq {
     ($path:expr) => {
-        super::do_parse_all_irq($path)
+        crate::op::common::irq::do_parse_all_irq($path)
     };
     () => {
-        super::do_parse_all_irq("/proc/irq")
+        crate::op::common::irq::do_parse_all_irq("/proc/irq")
     };
 }
+
+pub(crate) use parse_irq;
 
 #[cfg(test)]
 mod tests {
@@ -68,7 +67,7 @@ mod tests {
         let mut irq_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         irq_path.push("test_resources/arch/x86_64/intel/irq");
 
-        let result = do_parse_all_irq(irq_path.to_str().unwrap());
+        let result = do_parse_all_irq(irq_path.to_str().unwrap()).unwrap();
         assert_eq!(result.len(), 3);
 
         assert_eq!(result[0].irq_number, 12);

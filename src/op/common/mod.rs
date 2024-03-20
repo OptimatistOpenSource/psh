@@ -330,16 +330,15 @@ impl MemInfo {
 }
 
 #[derive(Debug, PartialEq)]
-enum InterruptType {
+pub enum InterruptType {
     Common(u32),
     ArchSpecific(String),
 }
 
-#[allow(dead_code)]
-struct InterruptDetails {
-    cpu_counts: Vec<u64>,
-    interrupt_type: InterruptType,
-    description: String,
+pub struct InterruptDetails {
+    pub cpu_counts: Vec<u64>,
+    pub interrupt_type: InterruptType,
+    pub description: String,
 }
 
 impl InterruptDetails {
@@ -356,12 +355,14 @@ impl InterruptDetails {
     }
 }
 
-#[allow(dead_code)]
-struct IrqDetails {
-    irq_number: u32,
-    smp_affinity: Option<String>,
-    smp_affinity_list: Option<String>,
-    node: Option<String>,
+#[derive(Debug)]
+pub struct IrqDetails {
+    pub irq_number: u32,
+    pub smp_affinity: Option<String>,
+    pub smp_affinity_list: Option<String>,
+    // Fixme (Chengdong Li): I think it would be better to
+    // specify a concrete type instead String.
+    pub node: Option<String>,
 }
 
 impl IrqDetails {

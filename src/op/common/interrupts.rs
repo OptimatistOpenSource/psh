@@ -49,8 +49,7 @@ fn parse_interrupts_line(reader: BufReader<File>) -> io::Result<Vec<InterruptDet
     Ok(interrupts)
 }
 
-#[allow(dead_code)]
-fn do_parse_interrupts(path: &str) -> io::Result<Vec<InterruptDetails>> {
+pub fn do_parse_interrupts(path: &str) -> io::Result<Vec<InterruptDetails>> {
     let file = File::open(path)?;
     let reader = io::BufReader::new(file);
 
@@ -59,15 +58,16 @@ fn do_parse_interrupts(path: &str) -> io::Result<Vec<InterruptDetails>> {
     Ok(interrupts)
 }
 
-#[allow(unused_macros)]
 macro_rules! parse_interrupts {
     ($path:expr) => {
-        super::do_parse_interrupts($path)
+        crate::op::common::interrupts::do_parse_interrupts($path)
     };
     () => {
-        super::do_parse_interrupts("/proc/interrupts")
+        crate::op::common::interrupts::do_parse_interrupts("/proc/interrupts")
     };
 }
+
+pub(crate) use parse_interrupts;
 
 #[cfg(test)]
 mod tests {
