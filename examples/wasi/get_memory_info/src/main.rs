@@ -1,7 +1,7 @@
 #[rustfmt::skip]
 mod bindings;
 
-use crate::bindings::psh::profiling::memory;
+use crate::bindings::profiling::system::memory;
 
 fn main() {
     println!("Hello, world!");

@@ -1,7 +1,7 @@
 #[rustfmt::skip]
 mod bindings;
 
-use crate::bindings::psh::profiling::interrupts::{get_interrupts_info, get_interrupts_stat};
+use crate::bindings::profiling::system::interrupts::{get_interrupts_info, get_interrupts_stat};
 
 fn main() {
     println!("Example: get_interrupts_info");

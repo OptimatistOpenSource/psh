@@ -1,7 +1,7 @@
 #[rustfmt::skip]
 mod bindings;
 
-use crate::bindings::psh::profiling::cpu::{self, CpuInfo};
+use crate::bindings::profiling::system::cpu::{self, CpuInfo};
 
 fn main() {
     println!("Hello, world!");
