@@ -17,7 +17,7 @@ use std::{
     io::{self, BufRead, BufReader},
 };
 
-use super::InterruptDetails;
+use super::{InterruptDetails, InterruptType};
 
 fn parse_interrupts_line(reader: BufReader<File>) -> io::Result<Vec<InterruptDetails>> {
     let mut interrupts = Vec::new();
@@ -39,7 +39,11 @@ fn parse_interrupts_line(reader: BufReader<File>) -> io::Result<Vec<InterruptDet
             let description = l[cpu_nums + 1..].join(" ");
             (data, description)
         };
-        interrupts.push(InterruptDetails::new(data, name.to_string(), description));
+        let interrupt_type = match name.parse::<u32>() {
+            Ok(irq) => InterruptType::Common(irq),
+            Err(_) => InterruptType::ArchSpecific(name.to_string()),
+        };
+        interrupts.push(InterruptDetails::new(data, interrupt_type, description));
     }
 
     Ok(interrupts)
@@ -69,6 +73,22 @@ macro_rules! parse_interrupts {
 mod tests {
     use std::path::PathBuf;
 
+    use crate::op::common::InterruptType;
+
+    macro_rules! test_type_common {
+        ($interrupt_type:expr, $irq:expr) => {
+            assert!(matches!($interrupt_type, InterruptType::Common(_)));
+            assert_eq!($interrupt_type, InterruptType::Common($irq));
+        };
+    }
+
+    macro_rules! test_type_arch_specific {
+        ($interrupt_type:expr, $irq:expr) => {
+            assert!(matches!($interrupt_type, InterruptType::ArchSpecific(_)));
+            assert_eq!($interrupt_type, InterruptType::ArchSpecific($irq));
+        };
+    }
+
     #[test]
     fn test_parse_interrupts_x86_64_intel() {
         let mut interrupts_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -78,7 +98,8 @@ mod tests {
         let result = parse_interrupts!(interrupts_path);
         assert!(result.is_ok());
         let result = result.unwrap(); // Unwrap the Result
-        assert_eq!(result[0].interrupt_type, "0");
+
+        test_type_common!(result[0].interrupt_type, 0);
         assert_eq!(
             result[0].cpu_counts,
             vec![
@@ -92,7 +113,7 @@ mod tests {
         );
         assert_eq!(result[0].description, "IR-IO-APIC 2-edge timer");
 
-        assert_eq!(result[1].interrupt_type, "8");
+        test_type_common!(result[1].interrupt_type, 8);
         assert_eq!(
             result[1].cpu_counts,
             vec![
@@ -106,7 +127,7 @@ mod tests {
         );
         assert_eq!(result[1].description, "IR-IO-APIC 8-edge rtc0");
 
-        assert_eq!(result[2].interrupt_type, "9");
+        test_type_common!(result[2].interrupt_type, 9);
         assert_eq!(
             result[2].cpu_counts,
             vec![
@@ -120,7 +141,7 @@ mod tests {
         );
         assert_eq!(result[2].description, "IR-IO-APIC 9-fasteoi acpi");
 
-        assert_eq!(result[3].interrupt_type, "16");
+        test_type_common!(result[3].interrupt_type, 16);
         assert_eq!(
             result[3].cpu_counts,
             vec![
@@ -134,7 +155,7 @@ mod tests {
         );
         assert_eq!(result[3].description, "IR-IO-APIC 16-fasteoi i801_smbus");
 
-        assert_eq!(result[4].interrupt_type, "120");
+        test_type_common!(result[4].interrupt_type, 120);
         assert_eq!(
             result[4].cpu_counts,
             vec![
@@ -148,7 +169,7 @@ mod tests {
         );
         assert_eq!(result[4].description, "DMAR-MSI 8-edge dmar8");
 
-        assert_eq!(result[5].interrupt_type, "121");
+        test_type_common!(result[5].interrupt_type, 121);
         assert_eq!(
             result[5].cpu_counts,
             vec![
@@ -162,7 +183,7 @@ mod tests {
         );
         assert_eq!(result[5].description, "DMAR-MSI 7-edge dmar7");
 
-        assert_eq!(result[6].interrupt_type, "122");
+        test_type_common!(result[6].interrupt_type, 122);
         assert_eq!(
             result[6].cpu_counts,
             vec![
@@ -176,7 +197,7 @@ mod tests {
         );
         assert_eq!(result[6].description, "DMAR-MSI 6-edge dmar6");
 
-        assert_eq!(result[7].interrupt_type, "123");
+        test_type_common!(result[7].interrupt_type, 123);
         assert_eq!(
             result[7].cpu_counts,
             vec![
@@ -190,7 +211,7 @@ mod tests {
         );
         assert_eq!(result[7].description, "DMAR-MSI 5-edge dmar5");
 
-        assert_eq!(result[8].interrupt_type, "124");
+        test_type_common!(result[8].interrupt_type, 124);
         assert_eq!(
             result[8].cpu_counts,
             vec![
@@ -204,7 +225,7 @@ mod tests {
         );
         assert_eq!(result[8].description, "DMAR-MSI 4-edge dmar4");
 
-        assert_eq!(result[9].interrupt_type, "125");
+        test_type_common!(result[9].interrupt_type, 125);
         assert_eq!(
             result[9].cpu_counts,
             vec![
@@ -218,7 +239,7 @@ mod tests {
         );
         assert_eq!(result[9].description, "DMAR-MSI 3-edge dmar3");
 
-        assert_eq!(result[10].interrupt_type, "126");
+        test_type_common!(result[10].interrupt_type, 126);
         assert_eq!(
             result[10].cpu_counts,
             vec![
@@ -232,7 +253,7 @@ mod tests {
         );
         assert_eq!(result[10].description, "DMAR-MSI 2-edge dmar2");
 
-        assert_eq!(result[11].interrupt_type, "127");
+        test_type_common!(result[11].interrupt_type, 127);
         assert_eq!(
             result[11].cpu_counts,
             vec![
@@ -246,7 +267,7 @@ mod tests {
         );
         assert_eq!(result[11].description, "DMAR-MSI 1-edge dmar1");
 
-        assert_eq!(result[12].interrupt_type, "128");
+        test_type_common!(result[12].interrupt_type, 128);
         assert_eq!(
             result[12].cpu_counts,
             vec![
@@ -260,7 +281,7 @@ mod tests {
         );
         assert_eq!(result[12].description, "DMAR-MSI 0-edge dmar0");
 
-        assert_eq!(result[13].interrupt_type, "129");
+        test_type_common!(result[13].interrupt_type, 129);
         assert_eq!(
             result[13].cpu_counts,
             vec![
@@ -274,7 +295,7 @@ mod tests {
         );
         assert_eq!(result[13].description, "DMAR-MSI 9-edge dmar9");
 
-        assert_eq!(result[14].interrupt_type, "130");
+        test_type_common!(result[14].interrupt_type, 130);
         assert_eq!(
             result[14].cpu_counts,
             vec![
@@ -291,7 +312,7 @@ mod tests {
             "IR-PCI-MSI 458752-edge PCIe PME, pciehp"
         );
 
-        assert_eq!(result[15].interrupt_type, "131");
+        test_type_common!(result[15].interrupt_type, 131);
         assert_eq!(
             result[15].cpu_counts,
             vec![
@@ -305,7 +326,7 @@ mod tests {
         );
         assert_eq!(result[15].description, "IR-PCI-MSI 466944-edge PCIe PME");
 
-        assert_eq!(result[16].interrupt_type, "132");
+        test_type_common!(result[16].interrupt_type, 132);
         assert_eq!(
             result[16].cpu_counts,
             vec![
@@ -319,7 +340,7 @@ mod tests {
         );
         assert_eq!(result[16].description, "IR-PCI-MSI 468992-edge PCIe PME");
 
-        assert_eq!(result[17].interrupt_type, "133");
+        test_type_common!(result[17].interrupt_type, 133);
         assert_eq!(
             result[17].cpu_counts,
             vec![
@@ -333,7 +354,7 @@ mod tests {
         );
         assert_eq!(result[17].description, "IR-PCI-MSI 11567104-edge PCIe PME");
 
-        assert_eq!(result[18].interrupt_type, "134");
+        test_type_common!(result[18].interrupt_type, 134);
         assert_eq!(
             result[18].cpu_counts,
             vec![
@@ -347,7 +368,7 @@ mod tests {
         );
         assert_eq!(result[18].description, "IR-PCI-MSI 105463808-edge PCIe PME");
 
-        assert_eq!(result[19].interrupt_type, "135");
+        test_type_common!(result[19].interrupt_type, 135);
         assert_eq!(
             result[19].cpu_counts,
             vec![
@@ -361,7 +382,7 @@ mod tests {
         );
         assert_eq!(result[19].description, "IR-PCI-MSI 327680-edge xhci_hcd");
 
-        assert_eq!(result[20].interrupt_type, "136");
+        test_type_common!(result[20].interrupt_type, 136);
         assert_eq!(
             result[20].cpu_counts,
             vec![
@@ -378,7 +399,7 @@ mod tests {
             "IR-PCI-MSI 288768-edge ahci[0000:00:11.5]"
         );
 
-        assert_eq!(result[21].interrupt_type, "137");
+        test_type_common!(result[21].interrupt_type, 137);
         assert_eq!(
             result[21].cpu_counts,
             vec![
@@ -392,7 +413,7 @@ mod tests {
         );
         assert_eq!(result[21].description, "IR-PCI-MSI 105906176-edge nvme0q0");
 
-        assert_eq!(result[22].interrupt_type, "138");
+        test_type_common!(result[22].interrupt_type, 138);
         assert_eq!(
             result[22].cpu_counts,
             vec![
@@ -406,7 +427,7 @@ mod tests {
         );
         assert_eq!(result[22].description, "IR-PCI-MSI 12058624-edge ens81f0");
 
-        assert_eq!(result[23].interrupt_type, "139");
+        test_type_common!(result[23].interrupt_type, 139);
         assert_eq!(
             result[23].cpu_counts,
             vec![
@@ -423,7 +444,7 @@ mod tests {
             "IR-PCI-MSI 12058625-edge ens81f0-TxRx-0"
         );
 
-        assert_eq!(result[24].interrupt_type, "140");
+        test_type_common!(result[24].interrupt_type, 140);
         assert_eq!(
             result[24].cpu_counts,
             vec![
@@ -440,7 +461,7 @@ mod tests {
             "IR-PCI-MSI 12058626-edge ens81f0-TxRx-1"
         );
 
-        assert_eq!(result[25].interrupt_type, "141");
+        test_type_common!(result[25].interrupt_type, 141);
         assert_eq!(
             result[25].cpu_counts,
             vec![
@@ -457,7 +478,7 @@ mod tests {
             "IR-PCI-MSI 12058627-edge ens81f0-TxRx-2"
         );
 
-        assert_eq!(result[26].interrupt_type, "142");
+        test_type_common!(result[26].interrupt_type, 142);
         assert_eq!(
             result[26].cpu_counts,
             vec![
@@ -474,7 +495,7 @@ mod tests {
             "IR-PCI-MSI 12058628-edge ens81f0-TxRx-3"
         );
 
-        assert_eq!(result[27].interrupt_type, "143");
+        test_type_common!(result[27].interrupt_type, 143);
         assert_eq!(
             result[27].cpu_counts,
             vec![
@@ -491,7 +512,7 @@ mod tests {
             "IR-PCI-MSI 12058629-edge ens81f0-TxRx-4"
         );
 
-        assert_eq!(result[28].interrupt_type, "144");
+        test_type_common!(result[28].interrupt_type, 144);
         assert_eq!(
             result[28].cpu_counts,
             vec![
@@ -508,7 +529,7 @@ mod tests {
             "IR-PCI-MSI 12058630-edge ens81f0-TxRx-5"
         );
 
-        assert_eq!(result[29].interrupt_type, "145");
+        test_type_common!(result[29].interrupt_type, 145);
         assert_eq!(
             result[29].cpu_counts,
             vec![
@@ -525,7 +546,7 @@ mod tests {
             "IR-PCI-MSI 12058631-edge ens81f0-TxRx-6"
         );
 
-        assert_eq!(result[30].interrupt_type, "146");
+        test_type_common!(result[30].interrupt_type, 146);
         assert_eq!(
             result[30].cpu_counts,
             vec![
@@ -542,7 +563,7 @@ mod tests {
             "IR-PCI-MSI 12058632-edge ens81f0-TxRx-7"
         );
 
-        assert_eq!(result[31].interrupt_type, "147");
+        test_type_common!(result[31].interrupt_type, 147);
         assert_eq!(
             result[31].cpu_counts,
             vec![
@@ -556,7 +577,7 @@ mod tests {
         );
         assert_eq!(result[31].description, "IR-PCI-MSI 105906177-edge nvme0q1");
 
-        assert_eq!(result[32].interrupt_type, "148");
+        test_type_common!(result[32].interrupt_type, 148);
         assert_eq!(
             result[32].cpu_counts,
             vec![
@@ -570,7 +591,7 @@ mod tests {
         );
         assert_eq!(result[32].description, "IR-PCI-MSI 105906178-edge nvme0q2");
 
-        assert_eq!(result[33].interrupt_type, "149");
+        test_type_common!(result[33].interrupt_type, 149);
         assert_eq!(
             result[33].cpu_counts,
             vec![
@@ -584,7 +605,7 @@ mod tests {
         );
         assert_eq!(result[33].description, "IR-PCI-MSI 105906179-edge nvme0q3");
 
-        assert_eq!(result[34].interrupt_type, "150");
+        test_type_common!(result[34].interrupt_type, 150);
         assert_eq!(
             result[34].cpu_counts,
             vec![
@@ -598,7 +619,7 @@ mod tests {
         );
         assert_eq!(result[34].description, "IR-PCI-MSI 105906180-edge nvme0q4");
 
-        assert_eq!(result[35].interrupt_type, "151");
+        test_type_common!(result[35].interrupt_type, 151);
         assert_eq!(
             result[35].cpu_counts,
             vec![
@@ -612,7 +633,7 @@ mod tests {
         );
         assert_eq!(result[35].description, "IR-PCI-MSI 105906181-edge nvme0q5");
 
-        assert_eq!(result[36].interrupt_type, "152");
+        test_type_common!(result[36].interrupt_type, 152);
         assert_eq!(
             result[36].cpu_counts,
             vec![
@@ -626,7 +647,7 @@ mod tests {
         );
         assert_eq!(result[36].description, "IR-PCI-MSI 105906182-edge nvme0q6");
 
-        assert_eq!(result[37].interrupt_type, "153");
+        test_type_common!(result[37].interrupt_type, 153);
         assert_eq!(
             result[37].cpu_counts,
             vec![
@@ -640,7 +661,7 @@ mod tests {
         );
         assert_eq!(result[37].description, "IR-PCI-MSI 105906183-edge nvme0q7");
 
-        assert_eq!(result[38].interrupt_type, "154");
+        test_type_common!(result[38].interrupt_type, 154);
         assert_eq!(
             result[38].cpu_counts,
             vec![
@@ -654,7 +675,7 @@ mod tests {
         );
         assert_eq!(result[38].description, "IR-PCI-MSI 105906184-edge nvme0q8");
 
-        assert_eq!(result[39].interrupt_type, "155");
+        test_type_common!(result[39].interrupt_type, 155);
         assert_eq!(
             result[39].cpu_counts,
             vec![
@@ -668,7 +689,7 @@ mod tests {
         );
         assert_eq!(result[39].description, "IR-PCI-MSI 105906185-edge nvme0q9");
 
-        assert_eq!(result[40].interrupt_type, "156");
+        test_type_common!(result[40].interrupt_type, 156);
         assert_eq!(
             result[40].cpu_counts,
             vec![
@@ -682,7 +703,7 @@ mod tests {
         );
         assert_eq!(result[40].description, "IR-PCI-MSI 105906186-edge nvme0q10");
 
-        assert_eq!(result[41].interrupt_type, "157");
+        test_type_common!(result[41].interrupt_type, 157);
         assert_eq!(
             result[41].cpu_counts,
             vec![
@@ -696,7 +717,7 @@ mod tests {
         );
         assert_eq!(result[41].description, "IR-PCI-MSI 105906187-edge nvme0q11");
 
-        assert_eq!(result[42].interrupt_type, "158");
+        test_type_common!(result[42].interrupt_type, 158);
         assert_eq!(
             result[42].cpu_counts,
             vec![
@@ -710,7 +731,7 @@ mod tests {
         );
         assert_eq!(result[42].description, "IR-PCI-MSI 105906188-edge nvme0q12");
 
-        assert_eq!(result[43].interrupt_type, "159");
+        test_type_common!(result[43].interrupt_type, 159);
         assert_eq!(
             result[43].cpu_counts,
             vec![
@@ -724,7 +745,7 @@ mod tests {
         );
         assert_eq!(result[43].description, "IR-PCI-MSI 105906189-edge nvme0q13");
 
-        assert_eq!(result[44].interrupt_type, "160");
+        test_type_common!(result[44].interrupt_type, 160);
         assert_eq!(
             result[44].cpu_counts,
             vec![
@@ -738,7 +759,7 @@ mod tests {
         );
         assert_eq!(result[44].description, "IR-PCI-MSI 105906190-edge nvme0q14");
 
-        assert_eq!(result[45].interrupt_type, "161");
+        test_type_common!(result[45].interrupt_type, 161);
         assert_eq!(
             result[45].cpu_counts,
             vec![
@@ -752,7 +773,7 @@ mod tests {
         );
         assert_eq!(result[45].description, "IR-PCI-MSI 105906191-edge nvme0q15");
 
-        assert_eq!(result[46].interrupt_type, "162");
+        test_type_common!(result[46].interrupt_type, 162);
         assert_eq!(
             result[46].cpu_counts,
             vec![
@@ -766,7 +787,7 @@ mod tests {
         );
         assert_eq!(result[46].description, "IR-PCI-MSI 105906192-edge nvme0q16");
 
-        assert_eq!(result[47].interrupt_type, "163");
+        test_type_common!(result[47].interrupt_type, 163);
         assert_eq!(
             result[47].cpu_counts,
             vec![
@@ -780,7 +801,7 @@ mod tests {
         );
         assert_eq!(result[47].description, "IR-PCI-MSI 105906193-edge nvme0q17");
 
-        assert_eq!(result[48].interrupt_type, "164");
+        test_type_common!(result[48].interrupt_type, 164);
         assert_eq!(
             result[48].cpu_counts,
             vec![
@@ -794,7 +815,7 @@ mod tests {
         );
         assert_eq!(result[48].description, "IR-PCI-MSI 105906194-edge nvme0q18");
 
-        assert_eq!(result[49].interrupt_type, "165");
+        test_type_common!(result[49].interrupt_type, 165);
         assert_eq!(
             result[49].cpu_counts,
             vec![
@@ -808,7 +829,7 @@ mod tests {
         );
         assert_eq!(result[49].description, "IR-PCI-MSI 105906195-edge nvme0q19");
 
-        assert_eq!(result[50].interrupt_type, "166");
+        test_type_common!(result[50].interrupt_type, 166);
         assert_eq!(
             result[50].cpu_counts,
             vec![
@@ -822,7 +843,7 @@ mod tests {
         );
         assert_eq!(result[50].description, "IR-PCI-MSI 105906196-edge nvme0q20");
 
-        assert_eq!(result[51].interrupt_type, "167");
+        test_type_common!(result[51].interrupt_type, 167);
         assert_eq!(
             result[51].cpu_counts,
             vec![
@@ -836,7 +857,7 @@ mod tests {
         );
         assert_eq!(result[51].description, "IR-PCI-MSI 105906197-edge nvme0q21");
 
-        assert_eq!(result[52].interrupt_type, "168");
+        test_type_common!(result[52].interrupt_type, 168);
         assert_eq!(
             result[52].cpu_counts,
             vec![
@@ -850,7 +871,7 @@ mod tests {
         );
         assert_eq!(result[52].description, "IR-PCI-MSI 105906198-edge nvme0q22");
 
-        assert_eq!(result[53].interrupt_type, "169");
+        test_type_common!(result[53].interrupt_type, 169);
         assert_eq!(
             result[53].cpu_counts,
             vec![
@@ -864,7 +885,7 @@ mod tests {
         );
         assert_eq!(result[53].description, "IR-PCI-MSI 105906199-edge nvme0q23");
 
-        assert_eq!(result[54].interrupt_type, "170");
+        test_type_common!(result[54].interrupt_type, 170);
         assert_eq!(
             result[54].cpu_counts,
             vec![
@@ -878,7 +899,7 @@ mod tests {
         );
         assert_eq!(result[54].description, "IR-PCI-MSI 105906200-edge nvme0q24");
 
-        assert_eq!(result[55].interrupt_type, "171");
+        test_type_common!(result[55].interrupt_type, 171);
         assert_eq!(
             result[55].cpu_counts,
             vec![
@@ -892,7 +913,7 @@ mod tests {
         );
         assert_eq!(result[55].description, "IR-PCI-MSI 105906201-edge nvme0q25");
 
-        assert_eq!(result[56].interrupt_type, "172");
+        test_type_common!(result[56].interrupt_type, 172);
         assert_eq!(
             result[56].cpu_counts,
             vec![
@@ -906,7 +927,7 @@ mod tests {
         );
         assert_eq!(result[56].description, "IR-PCI-MSI 105906202-edge nvme0q26");
 
-        assert_eq!(result[57].interrupt_type, "173");
+        test_type_common!(result[57].interrupt_type, 173);
         assert_eq!(
             result[57].cpu_counts,
             vec![
@@ -920,7 +941,7 @@ mod tests {
         );
         assert_eq!(result[57].description, "IR-PCI-MSI 105906203-edge nvme0q27");
 
-        assert_eq!(result[58].interrupt_type, "174");
+        test_type_common!(result[58].interrupt_type, 174);
         assert_eq!(
             result[58].cpu_counts,
             vec![
@@ -934,7 +955,7 @@ mod tests {
         );
         assert_eq!(result[58].description, "IR-PCI-MSI 105906204-edge nvme0q28");
 
-        assert_eq!(result[59].interrupt_type, "175");
+        test_type_common!(result[59].interrupt_type, 175);
         assert_eq!(
             result[59].cpu_counts,
             vec![
@@ -948,7 +969,7 @@ mod tests {
         );
         assert_eq!(result[59].description, "IR-PCI-MSI 105906205-edge nvme0q29");
 
-        assert_eq!(result[60].interrupt_type, "176");
+        test_type_common!(result[60].interrupt_type, 176);
         assert_eq!(
             result[60].cpu_counts,
             vec![
@@ -962,7 +983,7 @@ mod tests {
         );
         assert_eq!(result[60].description, "IR-PCI-MSI 105906206-edge nvme0q30");
 
-        assert_eq!(result[61].interrupt_type, "177");
+        test_type_common!(result[61].interrupt_type, 177);
         assert_eq!(
             result[61].cpu_counts,
             vec![
@@ -976,7 +997,7 @@ mod tests {
         );
         assert_eq!(result[61].description, "IR-PCI-MSI 105906207-edge nvme0q31");
 
-        assert_eq!(result[62].interrupt_type, "178");
+        test_type_common!(result[62].interrupt_type, 178);
         assert_eq!(
             result[62].cpu_counts,
             vec![
@@ -990,7 +1011,7 @@ mod tests {
         );
         assert_eq!(result[62].description, "IR-PCI-MSI 105906208-edge nvme0q32");
 
-        assert_eq!(result[63].interrupt_type, "179");
+        test_type_common!(result[63].interrupt_type, 179);
         assert_eq!(
             result[63].cpu_counts,
             vec![
@@ -1004,7 +1025,7 @@ mod tests {
         );
         assert_eq!(result[63].description, "IR-PCI-MSI 105906209-edge nvme0q33");
 
-        assert_eq!(result[64].interrupt_type, "180");
+        test_type_common!(result[64].interrupt_type, 180);
         assert_eq!(
             result[64].cpu_counts,
             vec![
@@ -1018,7 +1039,7 @@ mod tests {
         );
         assert_eq!(result[64].description, "IR-PCI-MSI 105906210-edge nvme0q34");
 
-        assert_eq!(result[65].interrupt_type, "181");
+        test_type_common!(result[65].interrupt_type, 181);
         assert_eq!(
             result[65].cpu_counts,
             vec![
@@ -1032,7 +1053,7 @@ mod tests {
         );
         assert_eq!(result[65].description, "IR-PCI-MSI 105906211-edge nvme0q35");
 
-        assert_eq!(result[66].interrupt_type, "182");
+        test_type_common!(result[66].interrupt_type, 182);
         assert_eq!(
             result[66].cpu_counts,
             vec![
@@ -1046,7 +1067,7 @@ mod tests {
         );
         assert_eq!(result[66].description, "IR-PCI-MSI 105906212-edge nvme0q36");
 
-        assert_eq!(result[67].interrupt_type, "183");
+        test_type_common!(result[67].interrupt_type, 183);
         assert_eq!(
             result[67].cpu_counts,
             vec![
@@ -1060,7 +1081,7 @@ mod tests {
         );
         assert_eq!(result[67].description, "IR-PCI-MSI 105906213-edge nvme0q37");
 
-        assert_eq!(result[68].interrupt_type, "184");
+        test_type_common!(result[68].interrupt_type, 184);
         assert_eq!(
             result[68].cpu_counts,
             vec![
@@ -1074,7 +1095,7 @@ mod tests {
         );
         assert_eq!(result[68].description, "IR-PCI-MSI 105906214-edge nvme0q38");
 
-        assert_eq!(result[69].interrupt_type, "185");
+        test_type_common!(result[69].interrupt_type, 185);
         assert_eq!(
             result[69].cpu_counts,
             vec![
@@ -1088,7 +1109,7 @@ mod tests {
         );
         assert_eq!(result[69].description, "IR-PCI-MSI 105906215-edge nvme0q39");
 
-        assert_eq!(result[70].interrupt_type, "186");
+        test_type_common!(result[70].interrupt_type, 186);
         assert_eq!(
             result[70].cpu_counts,
             vec![
@@ -1102,7 +1123,7 @@ mod tests {
         );
         assert_eq!(result[70].description, "IR-PCI-MSI 105906216-edge nvme0q40");
 
-        assert_eq!(result[71].interrupt_type, "187");
+        test_type_common!(result[71].interrupt_type, 187);
         assert_eq!(
             result[71].cpu_counts,
             vec![
@@ -1116,7 +1137,7 @@ mod tests {
         );
         assert_eq!(result[71].description, "IR-PCI-MSI 105906217-edge nvme0q41");
 
-        assert_eq!(result[72].interrupt_type, "188");
+        test_type_common!(result[72].interrupt_type, 188);
         assert_eq!(
             result[72].cpu_counts,
             vec![
@@ -1130,7 +1151,7 @@ mod tests {
         );
         assert_eq!(result[72].description, "IR-PCI-MSI 105906218-edge nvme0q42");
 
-        assert_eq!(result[73].interrupt_type, "189");
+        test_type_common!(result[73].interrupt_type, 189);
         assert_eq!(
             result[73].cpu_counts,
             vec![
@@ -1144,7 +1165,7 @@ mod tests {
         );
         assert_eq!(result[73].description, "IR-PCI-MSI 105906219-edge nvme0q43");
 
-        assert_eq!(result[74].interrupt_type, "190");
+        test_type_common!(result[74].interrupt_type, 190);
         assert_eq!(
             result[74].cpu_counts,
             vec![
@@ -1158,7 +1179,7 @@ mod tests {
         );
         assert_eq!(result[74].description, "IR-PCI-MSI 105906220-edge nvme0q44");
 
-        assert_eq!(result[75].interrupt_type, "191");
+        test_type_common!(result[75].interrupt_type, 191);
         assert_eq!(
             result[75].cpu_counts,
             vec![
@@ -1172,7 +1193,7 @@ mod tests {
         );
         assert_eq!(result[75].description, "IR-PCI-MSI 105906221-edge nvme0q45");
 
-        assert_eq!(result[76].interrupt_type, "192");
+        test_type_common!(result[76].interrupt_type, 192);
         assert_eq!(
             result[76].cpu_counts,
             vec![
@@ -1186,7 +1207,7 @@ mod tests {
         );
         assert_eq!(result[76].description, "IR-PCI-MSI 105906222-edge nvme0q46");
 
-        assert_eq!(result[77].interrupt_type, "193");
+        test_type_common!(result[77].interrupt_type, 193);
         assert_eq!(
             result[77].cpu_counts,
             vec![
@@ -1200,7 +1221,7 @@ mod tests {
         );
         assert_eq!(result[77].description, "IR-PCI-MSI 105906223-edge nvme0q47");
 
-        assert_eq!(result[78].interrupt_type, "194");
+        test_type_common!(result[78].interrupt_type, 194);
         assert_eq!(
             result[78].cpu_counts,
             vec![
@@ -1214,7 +1235,7 @@ mod tests {
         );
         assert_eq!(result[78].description, "IR-PCI-MSI 105906224-edge nvme0q48");
 
-        assert_eq!(result[79].interrupt_type, "195");
+        test_type_common!(result[79].interrupt_type, 195);
         assert_eq!(
             result[79].cpu_counts,
             vec![
@@ -1228,7 +1249,7 @@ mod tests {
         );
         assert_eq!(result[79].description, "IR-PCI-MSI 105906225-edge nvme0q49");
 
-        assert_eq!(result[80].interrupt_type, "196");
+        test_type_common!(result[80].interrupt_type, 196);
         assert_eq!(
             result[80].cpu_counts,
             vec![
@@ -1242,7 +1263,7 @@ mod tests {
         );
         assert_eq!(result[80].description, "IR-PCI-MSI 105906226-edge nvme0q50");
 
-        assert_eq!(result[81].interrupt_type, "197");
+        test_type_common!(result[81].interrupt_type, 197);
         assert_eq!(
             result[81].cpu_counts,
             vec![
@@ -1256,7 +1277,7 @@ mod tests {
         );
         assert_eq!(result[81].description, "IR-PCI-MSI 105906227-edge nvme0q51");
 
-        assert_eq!(result[82].interrupt_type, "198");
+        test_type_common!(result[82].interrupt_type, 198);
         assert_eq!(
             result[82].cpu_counts,
             vec![
@@ -1270,7 +1291,7 @@ mod tests {
         );
         assert_eq!(result[82].description, "IR-PCI-MSI 105906228-edge nvme0q52");
 
-        assert_eq!(result[83].interrupt_type, "199");
+        test_type_common!(result[83].interrupt_type, 199);
         assert_eq!(
             result[83].cpu_counts,
             vec![
@@ -1284,7 +1305,7 @@ mod tests {
         );
         assert_eq!(result[83].description, "IR-PCI-MSI 105906229-edge nvme0q53");
 
-        assert_eq!(result[84].interrupt_type, "200");
+        test_type_common!(result[84].interrupt_type, 200);
         assert_eq!(
             result[84].cpu_counts,
             vec![
@@ -1298,7 +1319,7 @@ mod tests {
         );
         assert_eq!(result[84].description, "IR-PCI-MSI 105906230-edge nvme0q54");
 
-        assert_eq!(result[85].interrupt_type, "201");
+        test_type_common!(result[85].interrupt_type, 201);
         assert_eq!(
             result[85].cpu_counts,
             vec![
@@ -1312,7 +1333,7 @@ mod tests {
         );
         assert_eq!(result[85].description, "IR-PCI-MSI 105906231-edge nvme0q55");
 
-        assert_eq!(result[86].interrupt_type, "202");
+        test_type_common!(result[86].interrupt_type, 202);
         assert_eq!(
             result[86].cpu_counts,
             vec![
@@ -1326,7 +1347,7 @@ mod tests {
         );
         assert_eq!(result[86].description, "IR-PCI-MSI 105906232-edge nvme0q56");
 
-        assert_eq!(result[87].interrupt_type, "203");
+        test_type_common!(result[87].interrupt_type, 203);
         assert_eq!(
             result[87].cpu_counts,
             vec![
@@ -1340,7 +1361,7 @@ mod tests {
         );
         assert_eq!(result[87].description, "IR-PCI-MSI 105906233-edge nvme0q57");
 
-        assert_eq!(result[88].interrupt_type, "204");
+        test_type_common!(result[88].interrupt_type, 204);
         assert_eq!(
             result[88].cpu_counts,
             vec![
@@ -1354,7 +1375,7 @@ mod tests {
         );
         assert_eq!(result[88].description, "IR-PCI-MSI 105906234-edge nvme0q58");
 
-        assert_eq!(result[89].interrupt_type, "205");
+        test_type_common!(result[89].interrupt_type, 205);
         assert_eq!(
             result[89].cpu_counts,
             vec![
@@ -1368,7 +1389,7 @@ mod tests {
         );
         assert_eq!(result[89].description, "IR-PCI-MSI 105906235-edge nvme0q59");
 
-        assert_eq!(result[90].interrupt_type, "206");
+        test_type_common!(result[90].interrupt_type, 206);
         assert_eq!(
             result[90].cpu_counts,
             vec![
@@ -1382,7 +1403,7 @@ mod tests {
         );
         assert_eq!(result[90].description, "IR-PCI-MSI 105906236-edge nvme0q60");
 
-        assert_eq!(result[91].interrupt_type, "207");
+        test_type_common!(result[91].interrupt_type, 207);
         assert_eq!(
             result[91].cpu_counts,
             vec![
@@ -1396,7 +1417,7 @@ mod tests {
         );
         assert_eq!(result[91].description, "IR-PCI-MSI 105906237-edge nvme0q61");
 
-        assert_eq!(result[92].interrupt_type, "208");
+        test_type_common!(result[92].interrupt_type, 208);
         assert_eq!(
             result[92].cpu_counts,
             vec![
@@ -1410,7 +1431,7 @@ mod tests {
         );
         assert_eq!(result[92].description, "IR-PCI-MSI 105906238-edge nvme0q62");
 
-        assert_eq!(result[93].interrupt_type, "209");
+        test_type_common!(result[93].interrupt_type, 209);
         assert_eq!(
             result[93].cpu_counts,
             vec![
@@ -1424,7 +1445,7 @@ mod tests {
         );
         assert_eq!(result[93].description, "IR-PCI-MSI 105906239-edge nvme0q63");
 
-        assert_eq!(result[94].interrupt_type, "210");
+        test_type_common!(result[94].interrupt_type, 210);
         assert_eq!(
             result[94].cpu_counts,
             vec![
@@ -1438,7 +1459,7 @@ mod tests {
         );
         assert_eq!(result[94].description, "IR-PCI-MSI 105906240-edge nvme0q64");
 
-        assert_eq!(result[95].interrupt_type, "211");
+        test_type_common!(result[95].interrupt_type, 211);
         assert_eq!(
             result[95].cpu_counts,
             vec![
@@ -1452,7 +1473,7 @@ mod tests {
         );
         assert_eq!(result[95].description, "IR-PCI-MSI 105906241-edge nvme0q65");
 
-        assert_eq!(result[96].interrupt_type, "212");
+        test_type_common!(result[96].interrupt_type, 212);
         assert_eq!(
             result[96].cpu_counts,
             vec![
@@ -1466,7 +1487,7 @@ mod tests {
         );
         assert_eq!(result[96].description, "IR-PCI-MSI 105906242-edge nvme0q66");
 
-        assert_eq!(result[97].interrupt_type, "213");
+        test_type_common!(result[97].interrupt_type, 213);
         assert_eq!(
             result[97].cpu_counts,
             vec![
@@ -1480,7 +1501,7 @@ mod tests {
         );
         assert_eq!(result[97].description, "IR-PCI-MSI 105906243-edge nvme0q67");
 
-        assert_eq!(result[98].interrupt_type, "214");
+        test_type_common!(result[98].interrupt_type, 214);
         assert_eq!(
             result[98].cpu_counts,
             vec![
@@ -1494,7 +1515,7 @@ mod tests {
         );
         assert_eq!(result[98].description, "IR-PCI-MSI 105906244-edge nvme0q68");
 
-        assert_eq!(result[99].interrupt_type, "215");
+        test_type_common!(result[99].interrupt_type, 215);
         assert_eq!(
             result[99].cpu_counts,
             vec![
@@ -1508,7 +1529,7 @@ mod tests {
         );
         assert_eq!(result[99].description, "IR-PCI-MSI 105906245-edge nvme0q69");
 
-        assert_eq!(result[100].interrupt_type, "216");
+        test_type_common!(result[100].interrupt_type, 216);
         assert_eq!(
             result[100].cpu_counts,
             vec![
@@ -1525,7 +1546,7 @@ mod tests {
             "IR-PCI-MSI 105906246-edge nvme0q70"
         );
 
-        assert_eq!(result[101].interrupt_type, "217");
+        test_type_common!(result[101].interrupt_type, 217);
         assert_eq!(
             result[101].cpu_counts,
             vec![
@@ -1542,7 +1563,7 @@ mod tests {
             "IR-PCI-MSI 105906247-edge nvme0q71"
         );
 
-        assert_eq!(result[102].interrupt_type, "218");
+        test_type_common!(result[102].interrupt_type, 218);
         assert_eq!(
             result[102].cpu_counts,
             vec![
@@ -1559,7 +1580,7 @@ mod tests {
             "IR-PCI-MSI 105906248-edge nvme0q72"
         );
 
-        assert_eq!(result[103].interrupt_type, "219");
+        test_type_common!(result[103].interrupt_type, 219);
         assert_eq!(
             result[103].cpu_counts,
             vec![
@@ -1576,7 +1597,7 @@ mod tests {
             "IR-PCI-MSI 105906249-edge nvme0q73"
         );
 
-        assert_eq!(result[104].interrupt_type, "220");
+        test_type_common!(result[104].interrupt_type, 220);
         assert_eq!(
             result[104].cpu_counts,
             vec![
@@ -1593,7 +1614,7 @@ mod tests {
             "IR-PCI-MSI 105906250-edge nvme0q74"
         );
 
-        assert_eq!(result[105].interrupt_type, "221");
+        test_type_common!(result[105].interrupt_type, 221);
         assert_eq!(
             result[105].cpu_counts,
             vec![
@@ -1610,7 +1631,7 @@ mod tests {
             "IR-PCI-MSI 105906251-edge nvme0q75"
         );
 
-        assert_eq!(result[106].interrupt_type, "222");
+        test_type_common!(result[106].interrupt_type, 222);
         assert_eq!(
             result[106].cpu_counts,
             vec![
@@ -1627,7 +1648,7 @@ mod tests {
             "IR-PCI-MSI 105906252-edge nvme0q76"
         );
 
-        assert_eq!(result[107].interrupt_type, "223");
+        test_type_common!(result[107].interrupt_type, 223);
         assert_eq!(
             result[107].cpu_counts,
             vec![
@@ -1644,7 +1665,7 @@ mod tests {
             "IR-PCI-MSI 105906253-edge nvme0q77"
         );
 
-        assert_eq!(result[108].interrupt_type, "224");
+        test_type_common!(result[108].interrupt_type, 224);
         assert_eq!(
             result[108].cpu_counts,
             vec![
@@ -1661,7 +1682,7 @@ mod tests {
             "IR-PCI-MSI 105906254-edge nvme0q78"
         );
 
-        assert_eq!(result[109].interrupt_type, "225");
+        test_type_common!(result[109].interrupt_type, 225);
         assert_eq!(
             result[109].cpu_counts,
             vec![
@@ -1678,7 +1699,7 @@ mod tests {
             "IR-PCI-MSI 105906255-edge nvme0q79"
         );
 
-        assert_eq!(result[110].interrupt_type, "226");
+        test_type_common!(result[110].interrupt_type, 226);
         assert_eq!(
             result[110].cpu_counts,
             vec![
@@ -1695,7 +1716,7 @@ mod tests {
             "IR-PCI-MSI 105906256-edge nvme0q80"
         );
 
-        assert_eq!(result[111].interrupt_type, "227");
+        test_type_common!(result[111].interrupt_type, 227);
         assert_eq!(
             result[111].cpu_counts,
             vec![
@@ -1712,7 +1733,7 @@ mod tests {
             "IR-PCI-MSI 105906257-edge nvme0q81"
         );
 
-        assert_eq!(result[112].interrupt_type, "228");
+        test_type_common!(result[112].interrupt_type, 228);
         assert_eq!(
             result[112].cpu_counts,
             vec![
@@ -1729,7 +1750,7 @@ mod tests {
             "IR-PCI-MSI 105906258-edge nvme0q82"
         );
 
-        assert_eq!(result[113].interrupt_type, "229");
+        test_type_common!(result[113].interrupt_type, 229);
         assert_eq!(
             result[113].cpu_counts,
             vec![
@@ -1746,7 +1767,7 @@ mod tests {
             "IR-PCI-MSI 105906259-edge nvme0q83"
         );
 
-        assert_eq!(result[114].interrupt_type, "230");
+        test_type_common!(result[114].interrupt_type, 230);
         assert_eq!(
             result[114].cpu_counts,
             vec![
@@ -1763,7 +1784,7 @@ mod tests {
             "IR-PCI-MSI 105906260-edge nvme0q84"
         );
 
-        assert_eq!(result[115].interrupt_type, "231");
+        test_type_common!(result[115].interrupt_type, 231);
         assert_eq!(
             result[115].cpu_counts,
             vec![
@@ -1780,7 +1801,7 @@ mod tests {
             "IR-PCI-MSI 105906261-edge nvme0q85"
         );
 
-        assert_eq!(result[116].interrupt_type, "232");
+        test_type_common!(result[116].interrupt_type, 232);
         assert_eq!(
             result[116].cpu_counts,
             vec![
@@ -1797,7 +1818,7 @@ mod tests {
             "IR-PCI-MSI 105906262-edge nvme0q86"
         );
 
-        assert_eq!(result[117].interrupt_type, "233");
+        test_type_common!(result[117].interrupt_type, 233);
         assert_eq!(
             result[117].cpu_counts,
             vec![
@@ -1814,7 +1835,7 @@ mod tests {
             "IR-PCI-MSI 105906263-edge nvme0q87"
         );
 
-        assert_eq!(result[118].interrupt_type, "234");
+        test_type_common!(result[118].interrupt_type, 234);
         assert_eq!(
             result[118].cpu_counts,
             vec![
@@ -1831,7 +1852,7 @@ mod tests {
             "IR-PCI-MSI 105906264-edge nvme0q88"
         );
 
-        assert_eq!(result[119].interrupt_type, "235");
+        test_type_common!(result[119].interrupt_type, 235);
         assert_eq!(
             result[119].cpu_counts,
             vec![
@@ -1848,7 +1869,7 @@ mod tests {
             "IR-PCI-MSI 105906265-edge nvme0q89"
         );
 
-        assert_eq!(result[120].interrupt_type, "236");
+        test_type_common!(result[120].interrupt_type, 236);
         assert_eq!(
             result[120].cpu_counts,
             vec![
@@ -1865,7 +1886,7 @@ mod tests {
             "IR-PCI-MSI 105906266-edge nvme0q90"
         );
 
-        assert_eq!(result[121].interrupt_type, "237");
+        test_type_common!(result[121].interrupt_type, 237);
         assert_eq!(
             result[121].cpu_counts,
             vec![
@@ -1882,7 +1903,7 @@ mod tests {
             "IR-PCI-MSI 105906267-edge nvme0q91"
         );
 
-        assert_eq!(result[122].interrupt_type, "238");
+        test_type_common!(result[122].interrupt_type, 238);
         assert_eq!(
             result[122].cpu_counts,
             vec![
@@ -1899,7 +1920,7 @@ mod tests {
             "IR-PCI-MSI 105906268-edge nvme0q92"
         );
 
-        assert_eq!(result[123].interrupt_type, "239");
+        test_type_common!(result[123].interrupt_type, 239);
         assert_eq!(
             result[123].cpu_counts,
             vec![
@@ -1916,7 +1937,7 @@ mod tests {
             "IR-PCI-MSI 105906269-edge nvme0q93"
         );
 
-        assert_eq!(result[124].interrupt_type, "240");
+        test_type_common!(result[124].interrupt_type, 240);
         assert_eq!(
             result[124].cpu_counts,
             vec![
@@ -1933,7 +1954,7 @@ mod tests {
             "IR-PCI-MSI 105906270-edge nvme0q94"
         );
 
-        assert_eq!(result[125].interrupt_type, "241");
+        test_type_common!(result[125].interrupt_type, 241);
         assert_eq!(
             result[125].cpu_counts,
             vec![
@@ -1950,7 +1971,7 @@ mod tests {
             "IR-PCI-MSI 105906271-edge nvme0q95"
         );
 
-        assert_eq!(result[126].interrupt_type, "242");
+        test_type_common!(result[126].interrupt_type, 242);
         assert_eq!(
             result[126].cpu_counts,
             vec![
@@ -1967,7 +1988,7 @@ mod tests {
             "IR-PCI-MSI 105906272-edge nvme0q96"
         );
 
-        assert_eq!(result[127].interrupt_type, "243");
+        test_type_common!(result[127].interrupt_type, 243);
         assert_eq!(
             result[127].cpu_counts,
             vec![
@@ -1984,7 +2005,7 @@ mod tests {
             "IR-PCI-MSI 105906273-edge nvme0q97"
         );
 
-        assert_eq!(result[128].interrupt_type, "244");
+        test_type_common!(result[128].interrupt_type, 244);
         assert_eq!(
             result[128].cpu_counts,
             vec![
@@ -2001,7 +2022,7 @@ mod tests {
             "IR-PCI-MSI 105906274-edge nvme0q98"
         );
 
-        assert_eq!(result[129].interrupt_type, "245");
+        test_type_common!(result[129].interrupt_type, 245);
         assert_eq!(
             result[129].cpu_counts,
             vec![
@@ -2018,7 +2039,7 @@ mod tests {
             "IR-PCI-MSI 105906275-edge nvme0q99"
         );
 
-        assert_eq!(result[130].interrupt_type, "246");
+        test_type_common!(result[130].interrupt_type, 246);
         assert_eq!(
             result[130].cpu_counts,
             vec![
@@ -2035,7 +2056,7 @@ mod tests {
             "IR-PCI-MSI 105906276-edge nvme0q100"
         );
 
-        assert_eq!(result[131].interrupt_type, "247");
+        test_type_common!(result[131].interrupt_type, 247);
         assert_eq!(
             result[131].cpu_counts,
             vec![
@@ -2052,7 +2073,7 @@ mod tests {
             "IR-PCI-MSI 105906277-edge nvme0q101"
         );
 
-        assert_eq!(result[132].interrupt_type, "248");
+        test_type_common!(result[132].interrupt_type, 248);
         assert_eq!(
             result[132].cpu_counts,
             vec![
@@ -2069,7 +2090,7 @@ mod tests {
             "IR-PCI-MSI 105906278-edge nvme0q102"
         );
 
-        assert_eq!(result[133].interrupt_type, "249");
+        test_type_common!(result[133].interrupt_type, 249);
         assert_eq!(
             result[133].cpu_counts,
             vec![
@@ -2086,7 +2107,7 @@ mod tests {
             "IR-PCI-MSI 105906279-edge nvme0q103"
         );
 
-        assert_eq!(result[134].interrupt_type, "250");
+        test_type_common!(result[134].interrupt_type, 250);
         assert_eq!(
             result[134].cpu_counts,
             vec![
@@ -2103,7 +2124,7 @@ mod tests {
             "IR-PCI-MSI 105906280-edge nvme0q104"
         );
 
-        assert_eq!(result[135].interrupt_type, "251");
+        test_type_common!(result[135].interrupt_type, 251);
         assert_eq!(
             result[135].cpu_counts,
             vec![
@@ -2120,7 +2141,7 @@ mod tests {
             "IR-PCI-MSI 105906281-edge nvme0q105"
         );
 
-        assert_eq!(result[136].interrupt_type, "252");
+        test_type_common!(result[136].interrupt_type, 252);
         assert_eq!(
             result[136].cpu_counts,
             vec![
@@ -2137,7 +2158,7 @@ mod tests {
             "IR-PCI-MSI 105906282-edge nvme0q106"
         );
 
-        assert_eq!(result[137].interrupt_type, "253");
+        test_type_common!(result[137].interrupt_type, 253);
         assert_eq!(
             result[137].cpu_counts,
             vec![
@@ -2154,7 +2175,7 @@ mod tests {
             "IR-PCI-MSI 105906283-edge nvme0q107"
         );
 
-        assert_eq!(result[138].interrupt_type, "254");
+        test_type_common!(result[138].interrupt_type, 254);
         assert_eq!(
             result[138].cpu_counts,
             vec![
@@ -2171,7 +2192,7 @@ mod tests {
             "IR-PCI-MSI 105906284-edge nvme0q108"
         );
 
-        assert_eq!(result[139].interrupt_type, "255");
+        test_type_common!(result[139].interrupt_type, 255);
         assert_eq!(
             result[139].cpu_counts,
             vec![
@@ -2188,7 +2209,7 @@ mod tests {
             "IR-PCI-MSI 105906285-edge nvme0q109"
         );
 
-        assert_eq!(result[140].interrupt_type, "256");
+        test_type_common!(result[140].interrupt_type, 256);
         assert_eq!(
             result[140].cpu_counts,
             vec![
@@ -2205,7 +2226,7 @@ mod tests {
             "IR-PCI-MSI 105906286-edge nvme0q110"
         );
 
-        assert_eq!(result[141].interrupt_type, "257");
+        test_type_common!(result[141].interrupt_type, 257);
         assert_eq!(
             result[141].cpu_counts,
             vec![
@@ -2222,7 +2243,7 @@ mod tests {
             "IR-PCI-MSI 105906287-edge nvme0q111"
         );
 
-        assert_eq!(result[142].interrupt_type, "258");
+        test_type_common!(result[142].interrupt_type, 258);
         assert_eq!(
             result[142].cpu_counts,
             vec![
@@ -2239,7 +2260,7 @@ mod tests {
             "IR-PCI-MSI 105906288-edge nvme0q112"
         );
 
-        assert_eq!(result[143].interrupt_type, "259");
+        test_type_common!(result[143].interrupt_type, 259);
         assert_eq!(
             result[143].cpu_counts,
             vec![
@@ -2256,7 +2277,7 @@ mod tests {
             "IR-PCI-MSI 105906289-edge nvme0q113"
         );
 
-        assert_eq!(result[144].interrupt_type, "260");
+        test_type_common!(result[144].interrupt_type, 260);
         assert_eq!(
             result[144].cpu_counts,
             vec![
@@ -2273,7 +2294,7 @@ mod tests {
             "IR-PCI-MSI 105906290-edge nvme0q114"
         );
 
-        assert_eq!(result[145].interrupt_type, "261");
+        test_type_common!(result[145].interrupt_type, 261);
         assert_eq!(
             result[145].cpu_counts,
             vec![
@@ -2290,7 +2311,7 @@ mod tests {
             "IR-PCI-MSI 105906291-edge nvme0q115"
         );
 
-        assert_eq!(result[146].interrupt_type, "262");
+        test_type_common!(result[146].interrupt_type, 262);
         assert_eq!(
             result[146].cpu_counts,
             vec![
@@ -2307,7 +2328,7 @@ mod tests {
             "IR-PCI-MSI 105906292-edge nvme0q116"
         );
 
-        assert_eq!(result[147].interrupt_type, "263");
+        test_type_common!(result[147].interrupt_type, 263);
         assert_eq!(
             result[147].cpu_counts,
             vec![
@@ -2324,7 +2345,7 @@ mod tests {
             "IR-PCI-MSI 105906293-edge nvme0q117"
         );
 
-        assert_eq!(result[148].interrupt_type, "264");
+        test_type_common!(result[148].interrupt_type, 264);
         assert_eq!(
             result[148].cpu_counts,
             vec![
@@ -2341,7 +2362,7 @@ mod tests {
             "IR-PCI-MSI 105906294-edge nvme0q118"
         );
 
-        assert_eq!(result[149].interrupt_type, "265");
+        test_type_common!(result[149].interrupt_type, 265);
         assert_eq!(
             result[149].cpu_counts,
             vec![
@@ -2358,7 +2379,7 @@ mod tests {
             "IR-PCI-MSI 105906295-edge nvme0q119"
         );
 
-        assert_eq!(result[150].interrupt_type, "266");
+        test_type_common!(result[150].interrupt_type, 266);
         assert_eq!(
             result[150].cpu_counts,
             vec![
@@ -2375,7 +2396,7 @@ mod tests {
             "IR-PCI-MSI 105906296-edge nvme0q120"
         );
 
-        assert_eq!(result[151].interrupt_type, "267");
+        test_type_common!(result[151].interrupt_type, 267);
         assert_eq!(
             result[151].cpu_counts,
             vec![
@@ -2392,7 +2413,7 @@ mod tests {
             "IR-PCI-MSI 105906297-edge nvme0q121"
         );
 
-        assert_eq!(result[152].interrupt_type, "268");
+        test_type_common!(result[152].interrupt_type, 268);
         assert_eq!(
             result[152].cpu_counts,
             vec![
@@ -2409,7 +2430,7 @@ mod tests {
             "IR-PCI-MSI 105906298-edge nvme0q122"
         );
 
-        assert_eq!(result[153].interrupt_type, "269");
+        test_type_common!(result[153].interrupt_type, 269);
         assert_eq!(
             result[153].cpu_counts,
             vec![
@@ -2426,7 +2447,7 @@ mod tests {
             "IR-PCI-MSI 105906299-edge nvme0q123"
         );
 
-        assert_eq!(result[154].interrupt_type, "270");
+        test_type_common!(result[154].interrupt_type, 270);
         assert_eq!(
             result[154].cpu_counts,
             vec![
@@ -2443,7 +2464,7 @@ mod tests {
             "IR-PCI-MSI 105906300-edge nvme0q124"
         );
 
-        assert_eq!(result[155].interrupt_type, "271");
+        test_type_common!(result[155].interrupt_type, 271);
         assert_eq!(
             result[155].cpu_counts,
             vec![
@@ -2460,7 +2481,7 @@ mod tests {
             "IR-PCI-MSI 105906301-edge nvme0q125"
         );
 
-        assert_eq!(result[156].interrupt_type, "272");
+        test_type_common!(result[156].interrupt_type, 272);
         assert_eq!(
             result[156].cpu_counts,
             vec![
@@ -2477,7 +2498,7 @@ mod tests {
             "IR-PCI-MSI 105906302-edge nvme0q126"
         );
 
-        assert_eq!(result[157].interrupt_type, "273");
+        test_type_common!(result[157].interrupt_type, 273);
         assert_eq!(
             result[157].cpu_counts,
             vec![
@@ -2494,7 +2515,7 @@ mod tests {
             "IR-PCI-MSI 105906303-edge nvme0q127"
         );
 
-        assert_eq!(result[158].interrupt_type, "274");
+        test_type_common!(result[158].interrupt_type, 274);
         assert_eq!(
             result[158].cpu_counts,
             vec![
@@ -2511,7 +2532,7 @@ mod tests {
             "IR-PCI-MSI 105906304-edge nvme0q128"
         );
 
-        assert_eq!(result[159].interrupt_type, "275");
+        test_type_common!(result[159].interrupt_type, 275);
         assert_eq!(
             result[159].cpu_counts,
             vec![
@@ -2528,7 +2549,7 @@ mod tests {
             "IR-PCI-MSI 105906305-edge nvme0q129"
         );
 
-        assert_eq!(result[160].interrupt_type, "276");
+        test_type_common!(result[160].interrupt_type, 276);
         assert_eq!(
             result[160].cpu_counts,
             vec![
@@ -2542,7 +2563,7 @@ mod tests {
         );
         assert_eq!(result[160].description, "IR-PCI-MSI 12060672-edge ens81f1");
 
-        assert_eq!(result[161].interrupt_type, "277");
+        test_type_common!(result[161].interrupt_type, 277);
         assert_eq!(
             result[161].cpu_counts,
             vec![
@@ -2559,7 +2580,7 @@ mod tests {
             "IR-PCI-MSI 12060673-edge ens81f1-TxRx-0"
         );
 
-        assert_eq!(result[162].interrupt_type, "278");
+        test_type_common!(result[162].interrupt_type, 278);
         assert_eq!(
             result[162].cpu_counts,
             vec![
@@ -2576,7 +2597,7 @@ mod tests {
             "IR-PCI-MSI 12060674-edge ens81f1-TxRx-1"
         );
 
-        assert_eq!(result[163].interrupt_type, "279");
+        test_type_common!(result[163].interrupt_type, 279);
         assert_eq!(
             result[163].cpu_counts,
             vec![
@@ -2593,7 +2614,7 @@ mod tests {
             "IR-PCI-MSI 12060675-edge ens81f1-TxRx-2"
         );
 
-        assert_eq!(result[164].interrupt_type, "280");
+        test_type_common!(result[164].interrupt_type, 280);
         assert_eq!(
             result[164].cpu_counts,
             vec![
@@ -2610,7 +2631,7 @@ mod tests {
             "IR-PCI-MSI 12060676-edge ens81f1-TxRx-3"
         );
 
-        assert_eq!(result[165].interrupt_type, "281");
+        test_type_common!(result[165].interrupt_type, 281);
         assert_eq!(
             result[165].cpu_counts,
             vec![
@@ -2627,7 +2648,7 @@ mod tests {
             "IR-PCI-MSI 12060677-edge ens81f1-TxRx-4"
         );
 
-        assert_eq!(result[166].interrupt_type, "282");
+        test_type_common!(result[166].interrupt_type, 282);
         assert_eq!(
             result[166].cpu_counts,
             vec![
@@ -2644,7 +2665,7 @@ mod tests {
             "IR-PCI-MSI 12060678-edge ens81f1-TxRx-5"
         );
 
-        assert_eq!(result[167].interrupt_type, "283");
+        test_type_common!(result[167].interrupt_type, 283);
         assert_eq!(
             result[167].cpu_counts,
             vec![
@@ -2661,7 +2682,7 @@ mod tests {
             "IR-PCI-MSI 12060679-edge ens81f1-TxRx-6"
         );
 
-        assert_eq!(result[168].interrupt_type, "284");
+        test_type_common!(result[168].interrupt_type, 284);
         assert_eq!(
             result[168].cpu_counts,
             vec![
@@ -2678,7 +2699,7 @@ mod tests {
             "IR-PCI-MSI 12060680-edge ens81f1-TxRx-7"
         );
 
-        assert_eq!(result[169].interrupt_type, "285");
+        test_type_common!(result[169].interrupt_type, 285);
         assert_eq!(
             result[169].cpu_counts,
             vec![
@@ -2695,7 +2716,7 @@ mod tests {
             "IR-PCI-MSI 376832-edge ahci[0000:00:17.0]"
         );
 
-        assert_eq!(result[170].interrupt_type, "286");
+        test_type_common!(result[170].interrupt_type, 286);
         assert_eq!(
             result[170].cpu_counts,
             vec![
@@ -2709,7 +2730,7 @@ mod tests {
         );
         assert_eq!(result[170].description, "IR-PCI-MSI 12062720-edge ens81f2");
 
-        assert_eq!(result[171].interrupt_type, "287");
+        test_type_common!(result[171].interrupt_type, 287);
         assert_eq!(
             result[171].cpu_counts,
             vec![
@@ -2726,7 +2747,7 @@ mod tests {
             "IR-PCI-MSI 12062721-edge ens81f2-TxRx-0"
         );
 
-        assert_eq!(result[172].interrupt_type, "288");
+        test_type_common!(result[172].interrupt_type, 288);
         assert_eq!(
             result[172].cpu_counts,
             vec![
@@ -2743,7 +2764,7 @@ mod tests {
             "IR-PCI-MSI 12062722-edge ens81f2-TxRx-1"
         );
 
-        assert_eq!(result[173].interrupt_type, "289");
+        test_type_common!(result[173].interrupt_type, 289);
         assert_eq!(
             result[173].cpu_counts,
             vec![
@@ -2760,7 +2781,7 @@ mod tests {
             "IR-PCI-MSI 12062723-edge ens81f2-TxRx-2"
         );
 
-        assert_eq!(result[174].interrupt_type, "290");
+        test_type_common!(result[174].interrupt_type, 290);
         assert_eq!(
             result[174].cpu_counts,
             vec![
@@ -2777,7 +2798,7 @@ mod tests {
             "IR-PCI-MSI 12062724-edge ens81f2-TxRx-3"
         );
 
-        assert_eq!(result[175].interrupt_type, "291");
+        test_type_common!(result[175].interrupt_type, 291);
         assert_eq!(
             result[175].cpu_counts,
             vec![
@@ -2794,7 +2815,7 @@ mod tests {
             "IR-PCI-MSI 12062725-edge ens81f2-TxRx-4"
         );
 
-        assert_eq!(result[176].interrupt_type, "292");
+        test_type_common!(result[176].interrupt_type, 292);
         assert_eq!(
             result[176].cpu_counts,
             vec![
@@ -2811,7 +2832,7 @@ mod tests {
             "IR-PCI-MSI 12062726-edge ens81f2-TxRx-5"
         );
 
-        assert_eq!(result[177].interrupt_type, "293");
+        test_type_common!(result[177].interrupt_type, 293);
         assert_eq!(
             result[177].cpu_counts,
             vec![
@@ -2828,7 +2849,7 @@ mod tests {
             "IR-PCI-MSI 12062727-edge ens81f2-TxRx-6"
         );
 
-        assert_eq!(result[178].interrupt_type, "294");
+        test_type_common!(result[178].interrupt_type, 294);
         assert_eq!(
             result[178].cpu_counts,
             vec![
@@ -2845,7 +2866,7 @@ mod tests {
             "IR-PCI-MSI 12062728-edge ens81f2-TxRx-7"
         );
 
-        assert_eq!(result[179].interrupt_type, "295");
+        test_type_common!(result[179].interrupt_type, 295);
         assert_eq!(
             result[179].cpu_counts,
             vec![
@@ -2859,7 +2880,7 @@ mod tests {
         );
         assert_eq!(result[179].description, "IR-PCI-MSI 12064768-edge ens81f3");
 
-        assert_eq!(result[180].interrupt_type, "296");
+        test_type_common!(result[180].interrupt_type, 296);
         assert_eq!(
             result[180].cpu_counts,
             vec![
@@ -2876,7 +2897,7 @@ mod tests {
             "IR-PCI-MSI 12064769-edge ens81f3-TxRx-0"
         );
 
-        assert_eq!(result[181].interrupt_type, "297");
+        test_type_common!(result[181].interrupt_type, 297);
         assert_eq!(
             result[181].cpu_counts,
             vec![
@@ -2893,7 +2914,7 @@ mod tests {
             "IR-PCI-MSI 12064770-edge ens81f3-TxRx-1"
         );
 
-        assert_eq!(result[182].interrupt_type, "298");
+        test_type_common!(result[182].interrupt_type, 298);
         assert_eq!(
             result[182].cpu_counts,
             vec![
@@ -2910,7 +2931,7 @@ mod tests {
             "IR-PCI-MSI 12064771-edge ens81f3-TxRx-2"
         );
 
-        assert_eq!(result[183].interrupt_type, "299");
+        test_type_common!(result[183].interrupt_type, 299);
         assert_eq!(
             result[183].cpu_counts,
             vec![
@@ -2927,7 +2948,7 @@ mod tests {
             "IR-PCI-MSI 12064772-edge ens81f3-TxRx-3"
         );
 
-        assert_eq!(result[184].interrupt_type, "300");
+        test_type_common!(result[184].interrupt_type, 300);
         assert_eq!(
             result[184].cpu_counts,
             vec![
@@ -2944,7 +2965,7 @@ mod tests {
             "IR-PCI-MSI 12064773-edge ens81f3-TxRx-4"
         );
 
-        assert_eq!(result[185].interrupt_type, "301");
+        test_type_common!(result[185].interrupt_type, 301);
         assert_eq!(
             result[185].cpu_counts,
             vec![
@@ -2961,7 +2982,7 @@ mod tests {
             "IR-PCI-MSI 12064774-edge ens81f3-TxRx-5"
         );
 
-        assert_eq!(result[186].interrupt_type, "302");
+        test_type_common!(result[186].interrupt_type, 302);
         assert_eq!(
             result[186].cpu_counts,
             vec![
@@ -2978,7 +2999,7 @@ mod tests {
             "IR-PCI-MSI 12064775-edge ens81f3-TxRx-6"
         );
 
-        assert_eq!(result[187].interrupt_type, "303");
+        test_type_common!(result[187].interrupt_type, 303);
         assert_eq!(
             result[187].cpu_counts,
             vec![
@@ -2995,7 +3016,7 @@ mod tests {
             "IR-PCI-MSI 12064776-edge ens81f3-TxRx-7"
         );
 
-        assert_eq!(result[188].interrupt_type, "304");
+        test_type_common!(result[188].interrupt_type, 304);
         assert_eq!(
             result[188].cpu_counts,
             vec![
@@ -3009,7 +3030,7 @@ mod tests {
         );
         assert_eq!(result[188].description, "IR-PCI-MSI 16384-edge ioat-msix");
 
-        assert_eq!(result[189].interrupt_type, "305");
+        test_type_common!(result[189].interrupt_type, 305);
         assert_eq!(
             result[189].cpu_counts,
             vec![
@@ -3023,7 +3044,7 @@ mod tests {
         );
         assert_eq!(result[189].description, "IR-PCI-MSI 18432-edge ioat-msix");
 
-        assert_eq!(result[190].interrupt_type, "306");
+        test_type_common!(result[190].interrupt_type, 306);
         assert_eq!(
             result[190].cpu_counts,
             vec![
@@ -3037,7 +3058,7 @@ mod tests {
         );
         assert_eq!(result[190].description, "IR-PCI-MSI 20480-edge ioat-msix");
 
-        assert_eq!(result[191].interrupt_type, "307");
+        test_type_common!(result[191].interrupt_type, 307);
         assert_eq!(
             result[191].cpu_counts,
             vec![
@@ -3051,7 +3072,7 @@ mod tests {
         );
         assert_eq!(result[191].description, "IR-PCI-MSI 22528-edge ioat-msix");
 
-        assert_eq!(result[192].interrupt_type, "308");
+        test_type_common!(result[192].interrupt_type, 308);
         assert_eq!(
             result[192].cpu_counts,
             vec![
@@ -3065,7 +3086,7 @@ mod tests {
         );
         assert_eq!(result[192].description, "IR-PCI-MSI 24576-edge ioat-msix");
 
-        assert_eq!(result[193].interrupt_type, "309");
+        test_type_common!(result[193].interrupt_type, 309);
         assert_eq!(
             result[193].cpu_counts,
             vec![
@@ -3079,7 +3100,7 @@ mod tests {
         );
         assert_eq!(result[193].description, "IR-PCI-MSI 26624-edge ioat-msix");
 
-        assert_eq!(result[194].interrupt_type, "310");
+        test_type_common!(result[194].interrupt_type, 310);
         assert_eq!(
             result[194].cpu_counts,
             vec![
@@ -3093,7 +3114,7 @@ mod tests {
         );
         assert_eq!(result[194].description, "IR-PCI-MSI 28672-edge ioat-msix");
 
-        assert_eq!(result[195].interrupt_type, "311");
+        test_type_common!(result[195].interrupt_type, 311);
         assert_eq!(
             result[195].cpu_counts,
             vec![
@@ -3107,7 +3128,7 @@ mod tests {
         );
         assert_eq!(result[195].description, "IR-PCI-MSI 30720-edge ioat-msix");
 
-        assert_eq!(result[196].interrupt_type, "312");
+        test_type_common!(result[196].interrupt_type, 312);
         assert_eq!(
             result[196].cpu_counts,
             vec![
@@ -3124,7 +3145,7 @@ mod tests {
             "IR-PCI-MSI 67125248-edge ioat-msix"
         );
 
-        assert_eq!(result[197].interrupt_type, "313");
+        test_type_common!(result[197].interrupt_type, 313);
         assert_eq!(
             result[197].cpu_counts,
             vec![
@@ -3141,7 +3162,7 @@ mod tests {
             "IR-PCI-MSI 67127296-edge ioat-msix"
         );
 
-        assert_eq!(result[198].interrupt_type, "314");
+        test_type_common!(result[198].interrupt_type, 314);
         assert_eq!(
             result[198].cpu_counts,
             vec![
@@ -3158,7 +3179,7 @@ mod tests {
             "IR-PCI-MSI 67129344-edge ioat-msix"
         );
 
-        assert_eq!(result[199].interrupt_type, "315");
+        test_type_common!(result[199].interrupt_type, 315);
         assert_eq!(
             result[199].cpu_counts,
             vec![
@@ -3175,7 +3196,7 @@ mod tests {
             "IR-PCI-MSI 67131392-edge ioat-msix"
         );
 
-        assert_eq!(result[200].interrupt_type, "316");
+        test_type_common!(result[200].interrupt_type, 316);
         assert_eq!(
             result[200].cpu_counts,
             vec![
@@ -3192,7 +3213,7 @@ mod tests {
             "IR-PCI-MSI 67133440-edge ioat-msix"
         );
 
-        assert_eq!(result[201].interrupt_type, "317");
+        test_type_common!(result[201].interrupt_type, 317);
         assert_eq!(
             result[201].cpu_counts,
             vec![
@@ -3209,7 +3230,7 @@ mod tests {
             "IR-PCI-MSI 67135488-edge ioat-msix"
         );
 
-        assert_eq!(result[202].interrupt_type, "318");
+        test_type_common!(result[202].interrupt_type, 318);
         assert_eq!(
             result[202].cpu_counts,
             vec![
@@ -3226,7 +3247,7 @@ mod tests {
             "IR-PCI-MSI 67137536-edge ioat-msix"
         );
 
-        assert_eq!(result[203].interrupt_type, "319");
+        test_type_common!(result[203].interrupt_type, 319);
         assert_eq!(
             result[203].cpu_counts,
             vec![
@@ -3243,7 +3264,7 @@ mod tests {
             "IR-PCI-MSI 67139584-edge ioat-msix"
         );
 
-        assert_eq!(result[204].interrupt_type, "NMI");
+        test_type_arch_specific!(result[204].interrupt_type, "NMI".to_string());
         assert_eq!(
             result[204].cpu_counts,
             vec![
@@ -3271,7 +3292,7 @@ mod tests {
         );
         assert_eq!(result[204].description, "Non-maskable interrupts");
 
-        assert_eq!(result[205].interrupt_type, "LOC");
+        test_type_arch_specific!(result[205].interrupt_type, "LOC".to_string());
         assert_eq!(
             result[205].cpu_counts,
             vec![
@@ -3300,7 +3321,7 @@ mod tests {
         );
         assert_eq!(result[205].description, "Local timer interrupts");
 
-        assert_eq!(result[206].interrupt_type, "SPU");
+        test_type_arch_specific!(result[206].interrupt_type, "SPU".to_string());
         assert_eq!(
             result[206].cpu_counts,
             vec![
@@ -3314,7 +3335,7 @@ mod tests {
         );
         assert_eq!(result[206].description, "Spurious interrupts");
 
-        assert_eq!(result[207].interrupt_type, "PMI");
+        test_type_arch_specific!(result[207].interrupt_type, "PMI".to_string());
         assert_eq!(
             result[207].cpu_counts,
             vec![
@@ -3342,7 +3363,7 @@ mod tests {
         );
         assert_eq!(result[207].description, "Performance monitoring interrupts");
 
-        assert_eq!(result[208].interrupt_type, "IWI");
+        test_type_arch_specific!(result[208].interrupt_type, "IWI".to_string());
         assert_eq!(
             result[208].cpu_counts,
             vec![
@@ -3360,7 +3381,7 @@ mod tests {
         );
         assert_eq!(result[208].description, "IRQ work interrupts");
 
-        assert_eq!(result[209].interrupt_type, "RTR");
+        test_type_arch_specific!(result[209].interrupt_type, "RTR".to_string());
         assert_eq!(
             result[209].cpu_counts,
             vec![
@@ -3374,7 +3395,7 @@ mod tests {
         );
         assert_eq!(result[209].description, "APIC ICR read retries");
 
-        assert_eq!(result[210].interrupt_type, "RES");
+        test_type_arch_specific!(result[210].interrupt_type, "RES".to_string());
         assert_eq!(
             result[210].cpu_counts,
             vec![
@@ -3401,7 +3422,7 @@ mod tests {
         );
         assert_eq!(result[210].description, "Rescheduling interrupts");
 
-        assert_eq!(result[211].interrupt_type, "CAL");
+        test_type_arch_specific!(result[211].interrupt_type, "CAL".to_string());
         assert_eq!(
             result[211].cpu_counts,
             vec![
@@ -3431,7 +3452,7 @@ mod tests {
         );
         assert_eq!(result[211].description, "Function call interrupts");
 
-        assert_eq!(result[212].interrupt_type, "TLB");
+        test_type_arch_specific!(result[212].interrupt_type, "TLB".to_string());
         assert_eq!(
             result[212].cpu_counts,
             vec![
@@ -3461,7 +3482,7 @@ mod tests {
         );
         assert_eq!(result[212].description, "TLB shootdowns");
 
-        assert_eq!(result[213].interrupt_type, "TRM");
+        test_type_arch_specific!(result[213].interrupt_type, "TRM".to_string());
         assert_eq!(
             result[213].cpu_counts,
             vec![
@@ -3476,7 +3497,7 @@ mod tests {
         );
         assert_eq!(result[213].description, "Thermal event interrupts");
 
-        assert_eq!(result[214].interrupt_type, "THR");
+        test_type_arch_specific!(result[214].interrupt_type, "THR".to_string());
         assert_eq!(
             result[214].cpu_counts,
             vec![
@@ -3490,7 +3511,7 @@ mod tests {
         );
         assert_eq!(result[214].description, "Threshold APIC interrupts");
 
-        assert_eq!(result[215].interrupt_type, "DFR");
+        test_type_arch_specific!(result[215].interrupt_type, "DFR".to_string());
         assert_eq!(
             result[215].cpu_counts,
             vec![
@@ -3504,7 +3525,7 @@ mod tests {
         );
         assert_eq!(result[215].description, "Deferred Error APIC interrupts");
 
-        assert_eq!(result[216].interrupt_type, "MCE");
+        test_type_arch_specific!(result[216].interrupt_type, "MCE".to_string());
         assert_eq!(
             result[216].cpu_counts,
             vec![
@@ -3518,7 +3539,7 @@ mod tests {
         );
         assert_eq!(result[216].description, "Machine check exceptions");
 
-        assert_eq!(result[217].interrupt_type, "MCP");
+        test_type_arch_specific!(result[217].interrupt_type, "MCP".to_string());
         assert_eq!(
             result[217].cpu_counts,
             vec![
@@ -3540,15 +3561,15 @@ mod tests {
         );
         assert_eq!(result[217].description, "Machine check polls");
 
-        assert_eq!(result[218].interrupt_type, "ERR");
+        test_type_arch_specific!(result[218].interrupt_type, "ERR".to_string());
         assert_eq!(result[218].cpu_counts, vec![0]);
         assert_eq!(result[218].description, "");
 
-        assert_eq!(result[219].interrupt_type, "MIS");
+        test_type_arch_specific!(result[219].interrupt_type, "MIS".to_string());
         assert_eq!(result[219].cpu_counts, vec![0]);
         assert_eq!(result[219].description, "");
 
-        assert_eq!(result[220].interrupt_type, "PIN");
+        test_type_arch_specific!(result[220].interrupt_type, "PIN".to_string());
         assert_eq!(
             result[220].cpu_counts,
             vec![
@@ -3565,7 +3586,7 @@ mod tests {
             "Posted-interrupt notification event"
         );
 
-        assert_eq!(result[221].interrupt_type, "NPI");
+        test_type_arch_specific!(result[221].interrupt_type, "NPI".to_string());
         assert_eq!(
             result[221].cpu_counts,
             vec![
@@ -3579,7 +3600,7 @@ mod tests {
         );
         assert_eq!(result[221].description, "Nested posted-interrupt event");
 
-        assert_eq!(result[222].interrupt_type, "PIW");
+        test_type_arch_specific!(result[222].interrupt_type, "PIW".to_string());
         assert_eq!(
             result[222].cpu_counts,
             vec![
@@ -3603,169 +3624,169 @@ mod tests {
         let result = parse_interrupts!(interrupts_path);
         assert!(result.is_ok());
         let result = result.unwrap(); // Unwrap the Result
-        assert_eq!(result[0].interrupt_type, "4");
+        test_type_common!(result[0].interrupt_type, 4);
         assert_eq!(result[0].cpu_counts, vec![963, 0, 0, 0]);
         assert_eq!(result[0].description, "SiFive PLIC 36 ttyS0");
 
-        assert_eq!(result[1].interrupt_type, "5");
+        test_type_common!(result[1].interrupt_type, 5);
         assert_eq!(
             result[1].cpu_counts,
             vec![22391443, 26968010, 40951618, 41241292]
         );
         assert_eq!(result[1].description, "RISC-V INTC 5 riscv-timer");
 
-        assert_eq!(result[2].interrupt_type, "8");
+        test_type_common!(result[2].interrupt_type, 8);
         assert_eq!(result[2].cpu_counts, vec![3215, 0, 0, 0]);
         assert_eq!(result[2].description, "SiFive PLIC 40 ttyS4");
 
-        assert_eq!(result[3].interrupt_type, "10");
+        test_type_common!(result[3].interrupt_type, 10);
         assert_eq!(result[3].cpu_counts, vec![0, 0, 0, 0]);
         assert_eq!(result[3].description, "SiFive PLIC 61 fffff51000.adc");
 
-        assert_eq!(result[4].interrupt_type, "11");
+        test_type_common!(result[4].interrupt_type, 11);
         assert_eq!(result[4].cpu_counts, vec![4, 0, 0, 0]);
         assert_eq!(result[4].description, "SiFive PLIC 54 ffe700c000.spi");
 
-        assert_eq!(result[5].interrupt_type, "12");
+        test_type_common!(result[5].interrupt_type, 12);
         assert_eq!(result[5].cpu_counts, vec![0, 0, 0, 0]);
         assert_eq!(result[5].description, "SiFive PLIC 53 fff8000000.spi");
 
-        assert_eq!(result[6].interrupt_type, "13");
+        test_type_common!(result[6].interrupt_type, 13);
         assert_eq!(result[6].cpu_counts, vec![0, 0, 0, 0]);
         assert_eq!(result[6].description, "SiFive PLIC 101 galcore:2d");
 
-        assert_eq!(result[7].interrupt_type, "15");
+        test_type_common!(result[7].interrupt_type, 15);
         assert_eq!(result[7].cpu_counts, vec![0, 0, 0, 0]);
         assert_eq!(
             result[7].description,
             "SiFive PLIC 111 ffef540000.dw-hdmi-tx"
         );
 
-        assert_eq!(result[8].interrupt_type, "16");
+        test_type_common!(result[8].interrupt_type, 16);
         assert_eq!(result[8].cpu_counts, vec![4726, 0, 0, 0]);
         assert_eq!(result[8].description, "SiFive PLIC 93 ffef600000.dc8200");
 
-        assert_eq!(result[9].interrupt_type, "17");
+        test_type_common!(result[9].interrupt_type, 17);
         assert_eq!(result[9].cpu_counts, vec![0, 0, 0, 0]);
         assert_eq!(result[9].description, "SiFive PLIC 24 ffefc30000.watchdog");
 
-        assert_eq!(result[10].interrupt_type, "18");
+        test_type_common!(result[10].interrupt_type, 18);
         assert_eq!(result[10].cpu_counts, vec![0, 0, 0, 0]);
         assert_eq!(result[10].description, "SiFive PLIC 25 ffefc31000.watchdog");
 
-        assert_eq!(result[11].interrupt_type, "19");
+        test_type_common!(result[11].interrupt_type, 19);
         assert_eq!(result[11].cpu_counts, vec![0, 0, 0, 0]);
         assert_eq!(result[11].description, "SiFive PLIC 74 fffff40000.rtc");
 
-        assert_eq!(result[12].interrupt_type, "20");
+        test_type_common!(result[12].interrupt_type, 20);
         assert_eq!(result[12].cpu_counts, vec![93, 105, 92, 24]);
         assert_eq!(result[12].description, "RISC-V INTC 17 c9xx-pmu-v1");
 
-        assert_eq!(result[13].interrupt_type, "21");
+        test_type_common!(result[13].interrupt_type, 21);
         assert_eq!(result[13].cpu_counts, vec![1980, 0, 0, 0]);
         assert_eq!(
             result[13].description,
             "SiFive PLIC 27 dw_axi_dmac_platform"
         );
 
-        assert_eq!(result[14].interrupt_type, "22");
+        test_type_common!(result[14].interrupt_type, 22);
         assert_eq!(result[14].cpu_counts, vec![1832, 0, 0, 0]);
         assert_eq!(
             result[14].description,
             "SiFive PLIC 167 dw_axi_dmac_platform"
         );
 
-        assert_eq!(result[15].interrupt_type, "23");
+        test_type_common!(result[15].interrupt_type, 23);
         assert_eq!(result[15].cpu_counts, vec![0, 0, 0, 0]);
         assert_eq!(result[15].description, "SiFive PLIC 66 end0");
 
-        assert_eq!(result[16].interrupt_type, "24");
+        test_type_common!(result[16].interrupt_type, 24);
         assert_eq!(result[16].cpu_counts, vec![0, 0, 0, 0]);
         assert_eq!(result[16].description, "SiFive PLIC 67 end1");
 
-        assert_eq!(result[17].interrupt_type, "25");
+        test_type_common!(result[17].interrupt_type, 25);
         assert_eq!(result[17].cpu_counts, vec![3759387, 0, 0, 0]);
         assert_eq!(result[17].description, "SiFive PLIC 62 mmc0");
 
-        assert_eq!(result[18].interrupt_type, "26");
+        test_type_common!(result[18].interrupt_type, 26);
         assert_eq!(result[18].cpu_counts, vec![0, 0, 0, 0]);
         assert_eq!(result[18].description, "SiFive PLIC 64 mmc1");
 
-        assert_eq!(result[19].interrupt_type, "27");
+        test_type_common!(result[19].interrupt_type, 27);
         assert_eq!(result[19].cpu_counts, vec![322164227, 0, 0, 0]);
         assert_eq!(result[19].description, "SiFive PLIC 71 mmc2");
 
-        assert_eq!(result[20].interrupt_type, "29");
+        test_type_common!(result[20].interrupt_type, 29);
         assert_eq!(result[20].cpu_counts, vec![529574, 0, 0, 0]);
         assert_eq!(result[20].description, "SiFive PLIC 102 pvrsrvkm");
 
-        assert_eq!(result[21].interrupt_type, "39");
+        test_type_common!(result[21].interrupt_type, 39);
         assert_eq!(result[21].cpu_counts, vec![38, 0, 0, 0]);
         assert_eq!(result[21].description, "SiFive PLIC 44 ffe7f20000.i2c");
 
-        assert_eq!(result[22].interrupt_type, "40");
+        test_type_common!(result[22].interrupt_type, 40);
         assert_eq!(result[22].cpu_counts, vec![28, 0, 0, 0]);
         assert_eq!(result[22].description, "SiFive PLIC 45 ffe7f24000.i2c");
 
-        assert_eq!(result[23].interrupt_type, "41");
+        test_type_common!(result[23].interrupt_type, 41);
         assert_eq!(result[23].cpu_counts, vec![0, 0, 0, 0]);
         assert_eq!(result[23].description, "SiFive PLIC 46 ffec00c000.i2c");
 
-        assert_eq!(result[24].interrupt_type, "42");
+        test_type_common!(result[24].interrupt_type, 42);
         assert_eq!(result[24].cpu_counts, vec![70, 0, 0, 0]);
         assert_eq!(result[24].description, "SiFive PLIC 47 ffec014000.i2c");
 
-        assert_eq!(result[25].interrupt_type, "43");
+        test_type_common!(result[25].interrupt_type, 43);
         assert_eq!(result[25].cpu_counts, vec![0, 0, 0, 0]);
         assert_eq!(result[25].description, "SiFive PLIC 48 ffe7f28000.i2c");
 
-        assert_eq!(result[26].interrupt_type, "44");
+        test_type_common!(result[26].interrupt_type, 44);
         assert_eq!(result[26].cpu_counts, vec![2716, 0, 0, 0]);
         assert_eq!(result[26].description, "SiFive PLIC 182 ffcb01a000.i2c");
 
-        assert_eq!(result[27].interrupt_type, "45");
+        test_type_common!(result[27].interrupt_type, 45);
         assert_eq!(result[27].cpu_counts, vec![0, 0, 0, 0]);
         assert_eq!(result[27].description, "SiFive PLIC 183 ffcb01b000.i2c");
 
-        assert_eq!(result[28].interrupt_type, "61");
+        test_type_common!(result[28].interrupt_type, 61);
         assert_eq!(result[28].cpu_counts, vec![70028031, 0, 0, 0]);
         assert_eq!(result[28].description, "SiFive PLIC 28 light_mbox_chan[1]");
 
-        assert_eq!(result[29].interrupt_type, "74");
+        test_type_common!(result[29].interrupt_type, 74);
         assert_eq!(result[29].cpu_counts, vec![0, 0, 0, 0]);
         assert_eq!(result[29].description, "gpio-dwapb 19 Volume Down Key");
 
-        assert_eq!(result[30].interrupt_type, "75");
+        test_type_common!(result[30].interrupt_type, 75);
         assert_eq!(result[30].cpu_counts, vec![0, 0, 0, 0]);
         assert_eq!(result[30].description, "gpio-dwapb 25 Volume Up Key");
 
-        assert_eq!(result[31].interrupt_type, "76");
+        test_type_common!(result[31].interrupt_type, 76);
         assert_eq!(result[31].cpu_counts, vec![82, 0, 0, 0]);
         assert_eq!(result[31].description, "SiFive PLIC 68 xhci-hcd:usb1");
 
-        assert_eq!(result[32].interrupt_type, "IPI0");
+        test_type_arch_specific!(result[32].interrupt_type, "IPI0".to_string());
         assert_eq!(result[32].cpu_counts, vec![38367, 321177, 350879, 156056]);
         assert_eq!(result[32].description, "Rescheduling interrupts");
 
-        assert_eq!(result[33].interrupt_type, "IPI1");
+        test_type_arch_specific!(result[33].interrupt_type, "IPI1".to_string());
         assert_eq!(
             result[33].cpu_counts,
             vec![10197523, 36788206, 67752200, 26568036]
         );
         assert_eq!(result[33].description, "Function call interrupts");
 
-        assert_eq!(result[34].interrupt_type, "IPI2");
+        test_type_arch_specific!(result[34].interrupt_type, "IPI2".to_string());
         assert_eq!(result[34].cpu_counts, vec![0, 0, 0, 0]);
         assert_eq!(result[34].description, "CPU stop interrupts");
 
-        assert_eq!(result[35].interrupt_type, "IPI3");
+        test_type_arch_specific!(result[35].interrupt_type, "IPI3".to_string());
         assert_eq!(result[35].cpu_counts, vec![0, 0, 0, 0]);
         assert_eq!(
             result[35].description,
             "CPU stop (for crash dump) interrupts"
         );
 
-        assert_eq!(result[36].interrupt_type, "IPI4");
+        test_type_arch_specific!(result[36].interrupt_type, "IPI4".to_string());
         assert_eq!(
             result[36].cpu_counts,
             vec![27306156, 13531662, 23777131, 7994791]

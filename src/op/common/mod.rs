@@ -328,15 +328,26 @@ impl MemInfo {
         }
     }
 }
+
+#[derive(Debug, PartialEq)]
+enum InterruptType {
+    Common(u32),
+    ArchSpecific(String),
+}
+
 #[allow(dead_code)]
 struct InterruptDetails {
     cpu_counts: Vec<u64>,
-    interrupt_type: String,
+    interrupt_type: InterruptType,
     description: String,
 }
 
 impl InterruptDetails {
-    fn new(cpu_counts: Vec<u64>, interrupt_type: String, description: String) -> InterruptDetails {
+    fn new(
+        cpu_counts: Vec<u64>,
+        interrupt_type: InterruptType,
+        description: String,
+    ) -> InterruptDetails {
         InterruptDetails {
             cpu_counts,
             interrupt_type,
