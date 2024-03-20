@@ -30,6 +30,10 @@ pub fn counter_group_stat(counter_group: &mut CounterGroup) -> io::Result<Counte
     counter_group.stat()
 }
 
+pub fn counter_group_into_fixed(counter_group: CounterGroup) -> io::Result<FixedCounterGroup> {
+    counter_group.into_fixed()
+}
+
 pub fn fixed_counter_group_enable(fixed_counter_group: &FixedCounterGroup) -> io::Result<()> {
     fixed_counter_group.enable()
 }

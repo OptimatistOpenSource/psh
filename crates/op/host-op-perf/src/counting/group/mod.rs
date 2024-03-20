@@ -60,6 +60,19 @@ impl HostCounterGroup for PerfCtx {
         Ok(f().map_err(|e| e.to_string()))
     }
 
+    fn into_fixed(
+        &mut self,
+        counter_group: Resource<CounterGroup>,
+    ) -> wasmtime::Result<Result<Resource<FixedCounterGroup>, String>> {
+        let f = || -> anyhow::Result<_> {
+            let counter_group: CounterGroup = self.table.delete(counter_group)?;
+            let fixed_counter_group = raw::counter_group_into_fixed(counter_group)?;
+            let handle = self.table.push(fixed_counter_group)?;
+            Ok(handle)
+        };
+        Ok(f().map_err(|e| e.to_string()))
+    }
+
     fn drop(&mut self, rep: Resource<CounterGroup>) -> wasmtime::Result<()> {
         self.table.delete(rep)?;
         Ok(())
