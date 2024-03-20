@@ -5,3 +5,4 @@
 [submodule "src/psh-sdk-wit"]
 	path = src/psh-sdk-wit
 	url = https://github.com/OptimatistOpenSource/psh-sdk-wit.git
+	branch = lcd_wit
