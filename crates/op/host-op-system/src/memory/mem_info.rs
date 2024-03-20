@@ -125,10 +125,10 @@ pub fn do_parse_meminfo(path: &str) -> io::Result<MemInfo> {
 #[allow(unused_macros)]
 macro_rules! parse_meminfo {
     ($path:expr) => {
-        crate::op::common::mem_info::do_parse_meminfo($path)
+        crate::memory::mem_info::do_parse_meminfo($path)
     };
     () => {
-        crate::op::common::mem_info::do_parse_meminfo("/proc/meminfo")
+        crate::memory::mem_info::do_parse_meminfo("/proc/meminfo")
     };
 }
 

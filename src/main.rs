@@ -14,15 +14,16 @@
 
 mod args;
 mod infra;
-mod op;
 mod resources;
 mod runtime;
 mod security;
 mod services;
+mod utils;
 
 use args::Args;
 use clap::Parser;
 
+use host_op_system::SysCtx;
 use wasmtime_wasi::preview2::WasiCtxBuilder;
 
 fn main() {
@@ -32,14 +33,12 @@ fn main() {
     let _netdata_plugin = std::env::var("NETDATA_HOST_PREFIX").is_ok();
 
     let wasi_ctx = WasiCtxBuilder::new().inherit_stdio().build();
+    let sys_ctx = SysCtx {};
 
     let mut wasi_builder = runtime::PshWasiConfigBuilder::new(wasi_ctx);
     wasi_builder
         .set_component_path(&args.psh_wasm_component)
-        .enable_memory_ops()
-        .enable_system_ops()
-        .enable_cpu_ops()
-        .enable_interrupts_ops();
+        .enable_system_ops(sys_ctx);
     let wasi_config = wasi_builder.build();
     runtime::run_wasmtime_engine(wasi_config).unwrap();
 }

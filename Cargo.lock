@@ -1005,6 +1005,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "host-op-system"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "num_cpus",
+ "uname",
+ "wasmtime",
+ "wasmtime-wasi",
+]
+
+[[package]]
 name = "http"
 version = "0.2.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1602,14 +1613,13 @@ dependencies = [
  "anyhow",
  "clap",
  "host-op-perf",
+ "host-op-system",
  "libc",
  "nix",
- "num_cpus",
  "prost",
  "tokio",
  "tonic",
  "tonic-build",
- "uname",
  "wasmtime",
  "wasmtime-wasi",
  "wit-bindgen 0.20.0",

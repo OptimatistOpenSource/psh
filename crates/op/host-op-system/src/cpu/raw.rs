@@ -229,8 +229,6 @@ pub fn do_parse_cpuinfo(path: &str, arch: &str) -> io::Result<CPUInfo> {
     let file = File::open(path)?;
     let reader = io::BufReader::new(file);
 
-    //let x86_64_cpu_info = parse_x86_64_cpu_info(reader).unwrap();
-
     let cpu_info = match arch {
         "x86_64" => {
             let x86_64_cpu_info = parse_x86_64_cpu_info(reader).unwrap();
@@ -249,10 +247,10 @@ pub fn do_parse_cpuinfo(path: &str, arch: &str) -> io::Result<CPUInfo> {
 #[allow(unused_macros)]
 macro_rules! parse_cpuinfo {
     ($path:expr, $arch:expr) => {
-        crate::op::common::cpu_info::do_parse_cpuinfo($path, $arch)
+        crate::cpu::raw::do_parse_cpuinfo($path, $arch)
     };
     () => {
-        crate::op::common::cpu_info::do_parse_cpuinfo("/proc/cpuinfo", &std::env::consts::ARCH)
+        crate::cpu::raw::do_parse_cpuinfo("/proc/cpuinfo", &std::env::consts::ARCH)
     };
 }
 
@@ -262,7 +260,7 @@ pub(crate) use parse_cpuinfo;
 mod test {
     use std::path::PathBuf;
 
-    use crate::op::common::{AddressSizes, Arm64CpuInfo, CPUInfo, TlbSize, X86_64CpuInfo};
+    use crate::cpu::{AddressSizes, Arm64CpuInfo, CPUInfo, TlbSize, X86_64CpuInfo};
 
     #[test]
     #[cfg(target_os = "linux")]

@@ -16,6 +16,7 @@ use std::mem;
 
 use __internal::anyhow::{self, Context};
 use host_op_perf::PerfCtx;
+use host_op_system::SysCtx;
 use wasmtime::{component::*, Config, Engine, Store};
 use wasmtime_wasi::preview2::{command, WasiCtx, WasiCtxBuilder, WasiView};
 
@@ -24,12 +25,9 @@ wasmtime::component::bindgen!();
 pub struct PshWasiConfigBuilder {
     wasi_ctx: WasiCtx,
     perf_ctx: Option<PerfCtx>,
+    sys_ctx: Option<SysCtx>,
 
     component_path: String,
-    memory_ops: bool,
-    system_ops: bool,
-    cpu_ops: bool,
-    interrupts_ops: bool,
     built: bool,
 }
 
@@ -38,10 +36,6 @@ pub struct PshWasiConfig {
     state: State,
 
     component_path: String,
-    memory_ops: bool,
-    system_ops: bool,
-    cpu_ops: bool,
-    interrupts_ops: bool,
 }
 
 #[allow(dead_code)]
@@ -50,11 +44,8 @@ impl PshWasiConfigBuilder {
         Self {
             wasi_ctx,
             perf_ctx: None,
+            sys_ctx: None,
             component_path: "".to_string(),
-            memory_ops: false,
-            system_ops: false,
-            cpu_ops: false,
-            interrupts_ops: false,
             built: false,
         }
     }
@@ -64,23 +55,8 @@ impl PshWasiConfigBuilder {
         self
     }
 
-    pub fn enable_memory_ops(&mut self) -> &mut Self {
-        self.memory_ops = true;
-        self
-    }
-
-    pub fn enable_system_ops(&mut self) -> &mut Self {
-        self.system_ops = true;
-        self
-    }
-
-    pub fn enable_cpu_ops(&mut self) -> &mut Self {
-        self.cpu_ops = true;
-        self
-    }
-
-    pub fn enable_interrupts_ops(&mut self) -> &mut Self {
-        self.interrupts_ops = true;
+    pub fn enable_system_ops(&mut self, ctx: SysCtx) -> &mut Self {
+        self.sys_ctx = Some(ctx);
         self
     }
 
@@ -96,23 +72,16 @@ impl PshWasiConfigBuilder {
             wasi_ctx,
             perf_ctx,
             component_path,
-            memory_ops,
-            system_ops,
-            cpu_ops,
-            interrupts_ops,
+            sys_ctx,
             built: _,
         } = mem::replace(self, Self::new(WasiCtxBuilder::new().build()));
         self.built = true;
 
-        let state = State::new(wasi_ctx, perf_ctx);
+        let state = State::new(wasi_ctx, perf_ctx, sys_ctx);
 
         PshWasiConfig {
             state,
             component_path,
-            memory_ops,
-            system_ops,
-            cpu_ops,
-            interrupts_ops,
         }
     }
 }
@@ -121,16 +90,18 @@ pub struct State {
     wasi_table: ResourceTable,
     wasi_ctx: WasiCtx,
     perf_ctx: Option<PerfCtx>,
+    sys_ctx: Option<SysCtx>,
     name: String,
 }
 
 impl State {
-    fn new(wasi_ctx: WasiCtx, perf_ctx: Option<PerfCtx>) -> Self {
+    fn new(wasi_ctx: WasiCtx, perf_ctx: Option<PerfCtx>, sys_ctx: Option<SysCtx>) -> Self {
         let wasi_table = ResourceTable::new();
         Self {
             wasi_table,
             wasi_ctx,
             perf_ctx,
+            sys_ctx,
             name: "PSH Wasi Runtime".to_string(),
         }
     }
@@ -175,26 +146,16 @@ pub fn run_wasmtime_engine(psh_wasi_config: PshWasiConfig) -> wasmtime::Result<(
 
     Bindings::add_root_to_linker(&mut linker, |state: &mut State| state)?;
 
-    if psh_wasi_config.memory_ops {
-        psh::profiling::memory::add_to_linker(&mut linker, |state: &mut State| state)?;
-    }
-
-    if psh_wasi_config.system_ops {
-        psh::profiling::system::add_to_linker(&mut linker, |state: &mut State| state)?;
-    }
-
-    if psh_wasi_config.cpu_ops {
-        psh::profiling::cpu::add_to_linker(&mut linker, |state: &mut State| state)?;
+    if psh_wasi_config.state.sys_ctx.is_some() {
+        host_op_system::add_to_linker(&mut linker, |state: &mut State| {
+            state.sys_ctx.as_mut().unwrap()
+        })?;
     }
 
     if psh_wasi_config.state.perf_ctx.is_some() {
         host_op_perf::add_to_linker(&mut linker, |state: &mut State| {
             state.perf_ctx.as_mut().unwrap()
         })?;
-    }
-
-    if psh_wasi_config.interrupts_ops {
-        psh::profiling::interrupts::add_to_linker(&mut linker, |state: &mut State| state)?;
     }
 
     // As with the core wasm API of Wasmtime instantiation occurs within a

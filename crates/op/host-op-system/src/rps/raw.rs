@@ -1,5 +1,6 @@
-use super::RpsDetails;
 use std::fs;
+
+use super::RpsDetails;
 
 #[allow(dead_code)]
 fn do_parse_all_rps(path: &str) -> Vec<RpsDetails> {

@@ -1,6 +1,7 @@
-use super::IrqDetails;
 use std::fs;
 use std::path::Path;
+
+use super::IrqDetails;
 
 pub fn do_parse_all_irq(path: &str) -> std::io::Result<Vec<IrqDetails>> {
     let folder_names: Vec<String> = fs::read_dir(path)?
@@ -48,10 +49,10 @@ pub fn do_parse_all_irq(path: &str) -> std::io::Result<Vec<IrqDetails>> {
 
 macro_rules! parse_irq {
     ($path:expr) => {
-        crate::op::common::irq::do_parse_all_irq($path)
+        crate::interrupts::irq::do_parse_all_irq($path)
     };
     () => {
-        crate::op::common::irq::do_parse_all_irq("/proc/irq")
+        crate::interrupts::irq::do_parse_all_irq("/proc/irq")
     };
 }
 

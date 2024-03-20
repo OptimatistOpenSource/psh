@@ -172,7 +172,7 @@ mod test {
     use std::path::PathBuf;
     use std::process::Command;
 
-    use crate::op::common::MemoryModule;
+    use crate::memory::MemoryModule;
 
     use super::parse_memory_module;
 

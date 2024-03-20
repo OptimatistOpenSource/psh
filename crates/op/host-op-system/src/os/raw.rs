@@ -66,7 +66,7 @@ fn parse_kernel_version(version: &str) -> anyhow::Result<KernelVersion> {
     Ok(version)
 }
 
-pub fn get_kernel_version() -> anyhow::Result<KernelVersion> {
+pub(crate) fn get_kernel_version() -> anyhow::Result<KernelVersion> {
     let info = uname::uname()?;
     parse_kernel_version(&info.release)
 }
@@ -74,10 +74,10 @@ pub fn get_kernel_version() -> anyhow::Result<KernelVersion> {
 #[allow(unused_macros)]
 macro_rules! parse_distro_version {
     ($path:expr) => {
-        crate::op::common::system::parse_distro_version_impl($path)
+        crate::os::raw::parse_distro_version_impl($path)
     };
     () => {
-        crate::op::common::system::parse_distro_version_impl("/etc/os-release")
+        crate::os::raw::parse_distro_version_impl("/etc/os-release")
     };
 }
 
@@ -85,7 +85,7 @@ pub(crate) use parse_distro_version;
 
 #[cfg(test)]
 mod test {
-    use crate::op::common::{DistroKind, DistroVersion, KernelVersion};
+    use super::{DistroKind, DistroVersion, KernelVersion};
 
     use super::parse_kernel_version;
 

@@ -60,10 +60,10 @@ pub fn do_parse_interrupts(path: &str) -> io::Result<Vec<InterruptDetails>> {
 
 macro_rules! parse_interrupts {
     ($path:expr) => {
-        crate::op::common::interrupts::do_parse_interrupts($path)
+        crate::interrupts::stat::do_parse_interrupts($path)
     };
     () => {
-        crate::op::common::interrupts::do_parse_interrupts("/proc/interrupts")
+        crate::interrupts::stat::do_parse_interrupts("/proc/interrupts")
     };
 }
 
@@ -73,7 +73,7 @@ pub(crate) use parse_interrupts;
 mod tests {
     use std::path::PathBuf;
 
-    use crate::op::common::InterruptType;
+    use crate::interrupts::InterruptType;
 
     macro_rules! test_type_common {
         ($interrupt_type:expr, $irq:expr) => {

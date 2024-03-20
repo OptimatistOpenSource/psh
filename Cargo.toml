@@ -22,16 +22,16 @@ tonic = "0.10"
 prost = "0.12"
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 nix = "0.20.0"
-num_cpus = "1.16.0"
 wasmtime = "18.0.2"
 wasmtime-wasi = "18.0.2"
 wit-bindgen = "0.20.0"
-uname = "0.1.1"
 anyhow = "1.0.81"
 host-op-perf = { workspace = true }
+host-op-system = { workspace = true }
 
 [workspace.dependencies]
 host-op-perf = { path = "crates/op/host-op-perf" }
+host-op-system = { path = "crates/op/host-op-system" }
 
 [build-dependencies]
 tonic-build = "0.10"
