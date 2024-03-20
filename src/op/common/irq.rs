@@ -20,7 +20,8 @@ fn do_parse_all_irq(path: &str) -> Vec<IrqDetails> {
     let parsed_irq = folder_names
         .iter()
         .map(|irq_number| {
-            let mut irq_current = IrqDetails::new(irq_number.clone());
+            let num = (irq_number).parse::<u32>().unwrap();
+            let mut irq_current = IrqDetails::new(num);
 
             let file_path = format!("{}/{}/smp_affinity", path, irq_number);
             if Path::new(&file_path).exists() {
@@ -70,7 +71,7 @@ mod tests {
         let result = do_parse_all_irq(irq_path.to_str().unwrap());
         assert_eq!(result.len(), 3);
 
-        assert_eq!(result[0].irq_number, "12");
+        assert_eq!(result[0].irq_number, 12);
         assert_eq!(
             result[0].smp_affinity,
             Some("ffffffff,ffffffff,ffffffff,ffffffff,ffffffff".to_string())
@@ -78,7 +79,7 @@ mod tests {
         assert_eq!(result[0].smp_affinity_list, Some("0-159".to_string()));
         assert_eq!(result[0].node, Some("0".to_string()));
 
-        assert_eq!(result[1].irq_number, "9");
+        assert_eq!(result[1].irq_number, 9);
         assert_eq!(
             result[1].smp_affinity,
             Some("00000000,00ffffff,ffff0000,000000ff,ffffffff".to_string())
@@ -86,7 +87,7 @@ mod tests {
         assert_eq!(result[1].smp_affinity_list, Some("0-39,80-119".to_string()));
         assert_eq!(result[1].node, Some("0".to_string()));
 
-        assert_eq!(result[2].irq_number, "1");
+        assert_eq!(result[2].irq_number, 1);
         assert_eq!(
             result[2].smp_affinity,
             Some("ffffffff,ffffffff,ffffffff,ffffffff,ffffffff".to_string())

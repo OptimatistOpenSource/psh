@@ -358,14 +358,14 @@ impl InterruptDetails {
 
 #[allow(dead_code)]
 struct IrqDetails {
-    irq_number: String,
+    irq_number: u32,
     smp_affinity: Option<String>,
     smp_affinity_list: Option<String>,
     node: Option<String>,
 }
 
 impl IrqDetails {
-    fn new(irq_number: String) -> IrqDetails {
+    fn new(irq_number: u32) -> IrqDetails {
         IrqDetails {
             irq_number,
             smp_affinity: None,
