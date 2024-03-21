@@ -13,8 +13,8 @@ use crate::os::{
 
 use super::raw::{get_kernel_version, parse_distro_version};
 
-impl From<HostDistroKind> for GuestDistroKind {
-    fn from(value: HostDistroKind) -> Self {
+impl From<&HostDistroKind> for GuestDistroKind {
+    fn from(value: &HostDistroKind) -> Self {
         match value {
             HostDistroKind::Arch => GuestDistroKind::Arch,
             HostDistroKind::CentOS => GuestDistroKind::CentOs,
@@ -34,17 +34,17 @@ impl From<HostDistroKind> for GuestDistroKind {
     }
 }
 
-impl From<HostDistroVersion> for GuestDistroVersion {
-    fn from(value: HostDistroVersion) -> Self {
+impl From<&HostDistroVersion> for GuestDistroVersion {
+    fn from(value: &HostDistroVersion) -> Self {
         Self {
-            distro: value.distro.into(),
-            version: value.version,
+            distro: (&value.distro).into(),
+            version: value.version.clone(),
         }
     }
 }
 
-impl From<HostKernelVersion> for GuestKernelVersion {
-    fn from(value: HostKernelVersion) -> Self {
+impl From<&HostKernelVersion> for GuestKernelVersion {
+    fn from(value: &HostKernelVersion) -> Self {
         Self {
             major: value.major,
             minor: value.minor,
@@ -52,10 +52,11 @@ impl From<HostKernelVersion> for GuestKernelVersion {
         }
     }
 }
+
 impl os::Host for SysCtx {
     fn get_distro_version(&mut self) -> wasmtime::Result<Result<GuestDistroVersion, String>> {
         let res = match parse_distro_version!() {
-            Ok(distro) => Ok(distro.into()),
+            Ok(distro) => Ok((&distro).into()),
             Err(err) => Err(err.to_string()),
         };
         Ok(res)
@@ -63,7 +64,7 @@ impl os::Host for SysCtx {
 
     fn get_kernel_version(&mut self) -> wasmtime::Result<Result<GuestKernelVersion, String>> {
         let res = match get_kernel_version() {
-            Ok(version) => Ok(version.into()),
+            Ok(version) => Ok((&version).into()),
             Err(err) => Err(err.to_string()),
         };
         Ok(res)
