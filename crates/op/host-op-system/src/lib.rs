@@ -8,7 +8,7 @@ mod utils;
 use wasmtime::component::Linker;
 
 wasmtime::component::bindgen!({
-    path: "wit",
+    path: "../../../src/psh-sdk-wit/wit/deps/system",
     world: "imports",
 });
 
