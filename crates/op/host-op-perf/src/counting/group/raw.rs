@@ -18,8 +18,8 @@ pub fn counter_group_add_member(
     counter_group: &mut CounterGroup,
     cfg: &Config,
 ) -> io::Result<CounterGuard> {
-    let cfg = Wrap::<RawConfig>::from(cfg).into_inner();
-    counter_group.add_member(&cfg)
+    let mut cfg = Wrap::<RawConfig>::from(cfg).into_inner();
+    counter_group.add_member(&mut cfg)
 }
 
 pub fn counter_group_enable(counter_group: CounterGroup) -> io::Result<FixedCounterGroup> {

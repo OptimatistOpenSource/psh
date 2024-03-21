@@ -8,9 +8,9 @@ use std::io;
 pub fn counter_new(process: &Process, cpu: &Cpu, cfg: &Config) -> config::Result<Counter> {
     let process = Wrap::<RawProcess>::from(process).into_inner();
     let cpu = Wrap::<RawCpu>::from(cpu).into_inner();
-    let cfg = Wrap::<RawConfig>::from(cfg).into_inner();
+    let mut cfg = Wrap::<RawConfig>::from(cfg).into_inner();
 
-    Counter::new(&process, &cpu, &cfg)
+    Counter::new(&process, &cpu, &mut cfg)
 }
 
 pub fn counter_enable(counter: &Counter) -> io::Result<()> {
