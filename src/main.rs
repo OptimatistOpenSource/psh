@@ -22,155 +22,23 @@ mod services;
 
 use args::Args;
 use clap::Parser;
-use netdata_plugin::collector::Collector;
-use netdata_plugin::{Chart, Dimension};
 
 use wasmtime_wasi::preview2::WasiCtxBuilder;
 
 fn main() {
+    let args = Args::parse();
+
     // detect if we were ran as netdata plugin
-    let netdata_plugin = std::env::var("NETDATA_HOST_PREFIX").is_ok();
-
-    if netdata_plugin {
-        // format of netdata external plugin command line parameter
-        //     # external_plugin update_freq command_options...
-        //
-        // `update_freq` controls the granularity of the external plugin
-        // `command_options...` allows giving additional command line options to the plugin.
-        //
-        // see https://learn.netdata.cloud/docs/contributing/external-plugins
-        //
-        // for debug purpose, you can save command line parameters to a file, for example:
-        // ```rust
-        //  use std::io::Write;
-        //  let args: Args = Args::parse();
-        //  let mut args_save_file = File::create("/tmp/psh_nd_argv.txt").unwrap();
-        //  args_save_file.write_all(format!("{}", args.netdata_freq).as_bytes()).unwrap();
-        // ```
-        let mut args: Args = Args::parse();
-        args.netdata_plugin = Some(true);
-
-        // FIXME(Chengdong Li) This is demostrate code for CMCC project.
-        let mut writer = std::io::stdout();
-        let mut c = Collector::new(&mut writer);
-
-        c.add_chart(&Chart {
-            type_id: "arm64.PMU",
-            name: "Arm64 PMU ",
-            title: "Arm64 CPU PMU Statistics",
-            units: "counts/s",
-            familiy: "hardware",
-            ..Default::default()
-        })
-        .unwrap();
-
-        c.add_dimension(
-            "arm64.PMU",
-            &Dimension {
-                id: "instructions",
-                ..Default::default()
-            },
-        )
-        .unwrap();
-        c.add_dimension(
-            "arm64.PMU",
-            &Dimension {
-                id: "cycles",
-                ..Default::default()
-            },
-        )
-        .unwrap();
-        c.add_dimension(
-            "arm64.PMU",
-            &Dimension {
-                id: "loads",
-                ..Default::default()
-            },
-        )
-        .unwrap();
-        c.add_dimension(
-            "arm64.PMU",
-            &Dimension {
-                id: "stores",
-                ..Default::default()
-            },
-        )
-        .unwrap();
-        c.add_dimension(
-            "arm64.PMU",
-            &Dimension {
-                id: "SIMD_instrs",
-                ..Default::default()
-            },
-        )
-        .unwrap();
-        c.add_dimension(
-            "arm64.PMU",
-            &Dimension {
-                id: "Integer_instrs",
-                ..Default::default()
-            },
-        )
-        .unwrap();
-        c.add_dimension(
-            "arm64.PMU",
-            &Dimension {
-                id: "Floats_instrs",
-                ..Default::default()
-            },
-        )
-        .unwrap();
-
-        loop {
-            c.prepare_value("arm64.PMU", "instructions", 100000)
-                .unwrap();
-            c.prepare_value("arm64.PMU", "cycles", (100000.0 * 1.1) as i64)
-                .unwrap();
-            c.prepare_value("arm64.PMU", "loads", (100000.0 * 0.29) as i64)
-                .unwrap();
-            c.prepare_value("arm64.PMU", "stores", (100000.0 * 0.15) as i64)
-                .unwrap();
-            c.prepare_value("arm64.PMU", "SIMD_instrs", (100000.0 * 0.15) as i64)
-                .unwrap();
-            c.prepare_value("arm64.PMU", "Integer_instrs", (100000.0 * 0.15) as i64)
-                .unwrap();
-            c.prepare_value("arm64.PMU", "Floats_instrs", (100000.0 * 0.15) as i64)
-                .unwrap();
-            c.commit_chart("arm64.PMU").unwrap();
-
-            std::thread::sleep(std::time::Duration::from_secs(args.netdata_freq));
-        }
-    }
+    let _netdata_plugin = std::env::var("NETDATA_HOST_PREFIX").is_ok();
 
     let wasi_ctx = WasiCtxBuilder::new().inherit_stdio().build();
 
     let mut wasi_builder = runtime::PshWasiConfigBuilder::new(wasi_ctx);
     wasi_builder
-        .set_component_path("target/wasm32-wasi/debug/get_memory_info.wasm")
-        .enable_memory_ops();
-    let wasi_config = wasi_builder.build();
-    runtime::run_wasmtime_engine(wasi_config).unwrap();
-
-    let wasi_ctx = WasiCtxBuilder::new().inherit_stdio().build();
-    let mut wasi_builder = runtime::PshWasiConfigBuilder::new(wasi_ctx);
-    wasi_builder
-        .set_component_path("target/wasm32-wasi/debug/get_system_info.wasm")
-        .enable_system_ops();
-    let wasi_config = wasi_builder.build();
-    runtime::run_wasmtime_engine(wasi_config).unwrap();
-
-    let wasi_ctx = WasiCtxBuilder::new().inherit_stdio().build();
-    let mut wasi_builder = runtime::PshWasiConfigBuilder::new(wasi_ctx);
-    wasi_builder
-        .set_component_path("target/wasm32-wasi/debug/get_cpu_info.wasm")
-        .enable_cpu_ops();
-    let wasi_config = wasi_builder.build();
-    runtime::run_wasmtime_engine(wasi_config).unwrap();
-
-    let wasi_ctx = WasiCtxBuilder::new().inherit_stdio().build();
-    let mut wasi_builder = runtime::PshWasiConfigBuilder::new(wasi_ctx);
-    wasi_builder
-        .set_component_path("target/wasm32-wasi/debug/get_interrupts_info.wasm")
+        .set_component_path(&args.psh_wasm_component)
+        .enable_memory_ops()
+        .enable_system_ops()
+        .enable_cpu_ops()
         .enable_interrupts_ops();
     let wasi_config = wasi_builder.build();
     runtime::run_wasmtime_engine(wasi_config).unwrap();

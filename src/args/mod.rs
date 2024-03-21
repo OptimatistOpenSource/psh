@@ -17,10 +17,8 @@ use clap::Parser;
 #[derive(Parser, Debug)]
 #[non_exhaustive]
 pub struct Args {
-    // if psh runs in netdata_plugin mode?
-    #[clap(skip)]
-    pub netdata_plugin: Option<bool>,
-
-    /// frequency that's passed by netdata if run as netdata plugin.
-    pub netdata_freq: u64,
+    /// Path to PSH wasm component
+    #[arg(short, long)]
+    #[arg(value_name = "PATH")]
+    pub psh_wasm_component: String,
 }
