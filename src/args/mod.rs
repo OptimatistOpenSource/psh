@@ -23,16 +23,4 @@ pub struct Args {
 
     /// frequency that's passed by netdata if run as netdata plugin.
     pub netdata_freq: u64,
-
-    #[arg(verbatim_doc_comment)]
-    /// Path to the install script
-    #[arg(long)]
-    #[arg(value_name = "PATH")]
-    pub install: Option<String>,
-
-    #[arg(verbatim_doc_comment)]
-    /// Path to the get_sysinfo script
-    #[arg(long)]
-    #[arg(value_name = "PATH")]
-    pub get_sysinfo: Option<String>,
 }

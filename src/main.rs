@@ -12,9 +12,6 @@
 // You should have received a copy of the GNU Lesser General Public License along with Perf-event-rs. If not,
 // see <https://www.gnu.org/licenses/>.
 
-mod cmd;
-mod file;
-
 mod args;
 mod infra;
 mod op;
@@ -25,35 +22,12 @@ mod services;
 
 use args::Args;
 use clap::Parser;
-use cmd::run_program;
-use file::write_file;
 use netdata_plugin::collector::Collector;
 use netdata_plugin::{Chart, Dimension};
-use std::path::Path;
 
 use wasmtime_wasi::preview2::WasiCtxBuilder;
 
 fn main() {
-    fn run_script(script_path: &str) {
-        let log_path = format!("{}.log", script_path);
-        let log_path = Path::new(&log_path);
-
-        let result = run_program("bash", ["-f", script_path])
-            .map(|bytes| String::from_utf8(bytes.clone()).unwrap());
-
-        match result {
-            Ok(output) => {
-                println!("{} output: {}", script_path, output);
-                write_file(log_path, output.as_bytes())
-            }
-            Err(error) => {
-                println!("{} error: {}", script_path, error);
-                write_file(log_path, error.to_string().as_bytes())
-            }
-        }
-        .unwrap()
-    }
-
     // detect if we were ran as netdata plugin
     let netdata_plugin = std::env::var("NETDATA_HOST_PREFIX").is_ok();
 
@@ -165,16 +139,6 @@ fn main() {
             c.commit_chart("arm64.PMU").unwrap();
 
             std::thread::sleep(std::time::Duration::from_secs(args.netdata_freq));
-        }
-    } else {
-        let args: Args = Args::parse();
-
-        if let Some(path) = args.install {
-            run_script(&path);
-        }
-
-        if let Some(path) = args.get_sysinfo {
-            run_script(&path);
         }
     }
 
