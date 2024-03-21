@@ -71,28 +71,34 @@ mod tests {
         let result = do_parse_all_irq(irq_path.to_str().unwrap()).unwrap();
         assert_eq!(result.len(), 3);
 
-        assert_eq!(result[0].irq_number, 12);
+        let irq0 = result.iter().find(|&irq| irq.irq_number == 12);
+        assert!(irq0.is_some());
+        let irq0 = irq0.unwrap();
         assert_eq!(
-            result[0].smp_affinity,
+            irq0.smp_affinity,
             Some("ffffffff,ffffffff,ffffffff,ffffffff,ffffffff".to_string())
         );
-        assert_eq!(result[0].smp_affinity_list, Some("0-159".to_string()));
-        assert_eq!(result[0].node, Some("0".to_string()));
+        assert_eq!(irq0.smp_affinity_list, Some("0-159".to_string()));
+        assert_eq!(irq0.node, Some("0".to_string()));
 
-        assert_eq!(result[1].irq_number, 9);
+        let irq1 = result.iter().find(|&irq| irq.irq_number == 9);
+        assert!(irq1.is_some());
+        let irq1 = irq1.unwrap();
         assert_eq!(
-            result[1].smp_affinity,
+            irq1.smp_affinity,
             Some("00000000,00ffffff,ffff0000,000000ff,ffffffff".to_string())
         );
-        assert_eq!(result[1].smp_affinity_list, Some("0-39,80-119".to_string()));
-        assert_eq!(result[1].node, Some("0".to_string()));
+        assert_eq!(irq1.smp_affinity_list, Some("0-39,80-119".to_string()));
+        assert_eq!(irq1.node, Some("0".to_string()));
 
-        assert_eq!(result[2].irq_number, 1);
+        let irq2 = result.iter().find(|&irq| irq.irq_number == 1);
+        assert!(irq2.is_some());
+        let irq2 = irq2.unwrap();
         assert_eq!(
-            result[2].smp_affinity,
+            irq2.smp_affinity,
             Some("ffffffff,ffffffff,ffffffff,ffffffff,ffffffff".to_string())
         );
-        assert_eq!(result[2].smp_affinity_list, Some("0-159".to_string()));
-        assert_eq!(result[2].node, Some("0".to_string()));
+        assert_eq!(irq2.smp_affinity_list, Some("0-159".to_string()));
+        assert_eq!(irq2.node, Some("0".to_string()));
     }
 }

@@ -60,19 +60,29 @@ mod tests {
         let mut rps_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         rps_path.push("test_resources/arch/x86_64/intel/net");
         let result = do_parse_all_rps(rps_path.to_str().unwrap());
-        assert_eq!(result[0].dev, "lo");
-        assert_eq!(result[0].rx[0], "rx-0");
-        assert_eq!(result[0].rps_cpus[0], Some("00000".to_string()));
-        assert_eq!(result[0].rps_flow_cnt[0], Some("0".to_string()));
 
-        assert_eq!(result[1].dev, "enp3s0");
-        assert_eq!(result[1].rx[0], "rx-0");
-        assert_eq!(result[1].rps_cpus[0], Some("00000".to_string()));
-        assert_eq!(result[1].rps_flow_cnt[0], Some("0".to_string()));
+        let rps0 = result.iter().find(|rps| rps.dev == "lo");
+        assert!(rps0.is_some());
+        let rps0 = rps0.unwrap();
+        assert_eq!(rps0.dev, "lo");
+        assert_eq!(rps0.rx[0], "rx-0");
+        assert_eq!(rps0.rps_cpus[0], Some("00000".to_string()));
+        assert_eq!(rps0.rps_flow_cnt[0], Some("0".to_string()));
 
-        assert_eq!(result[2].dev, "wlo1");
-        assert_eq!(result[2].rx[0], "rx-0");
-        assert_eq!(result[2].rps_cpus[0], Some("00000".to_string()));
-        assert_eq!(result[2].rps_flow_cnt[0], Some("0".to_string()));
+        let rps1 = result.iter().find(|rps| rps.dev == "enp3s0");
+        assert!(rps1.is_some());
+        let rps1 = rps1.unwrap();
+        assert_eq!(rps1.dev, "enp3s0");
+        assert_eq!(rps1.rx[0], "rx-0");
+        assert_eq!(rps1.rps_cpus[0], Some("00000".to_string()));
+        assert_eq!(rps1.rps_flow_cnt[0], Some("0".to_string()));
+
+        let rps2 = result.iter().find(|rps| rps.dev == "wlo1");
+        assert!(rps2.is_some());
+        let rps2 = rps2.unwrap();
+        assert_eq!(rps2.dev, "wlo1");
+        assert_eq!(rps2.rx[0], "rx-0");
+        assert_eq!(rps2.rps_cpus[0], Some("00000".to_string()));
+        assert_eq!(rps2.rps_flow_cnt[0], Some("0".to_string()));
     }
 }
