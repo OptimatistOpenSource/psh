@@ -15,6 +15,7 @@ pub use event_scope::*;
 pub use extra_config::*;
 pub use process::*;
 pub use stat::*;
+use thiserror::Error;
 
 #[repr(transparent)]
 pub struct Wrap<T>(T);
@@ -23,4 +24,10 @@ impl<T> Wrap<T> {
     pub fn into_inner(self) -> T {
         self.0
     }
+}
+
+#[derive(Error, Debug)]
+pub enum Error {
+    #[error("Option is unsupported: {0}")]
+    UnsupportedOption(String),
 }

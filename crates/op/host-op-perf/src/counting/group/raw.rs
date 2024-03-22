@@ -1,25 +1,18 @@
-use crate::convert::Wrap;
-use crate::profiling::perf::config::*;
-use perf_event_rs::config::{Cpu as RawCpu, Error, Process as RawProcess};
+use perf_event_rs::config::{Cpu, Error, Process};
 use perf_event_rs::counting::{
-    Config as RawConfig, CounterGroup, CounterGroupStat, CounterGuard, CounterStat,
-    FixedCounterGroup,
+    Config, CounterGroup, CounterGroupStat, CounterGuard, CounterStat, FixedCounterGroup,
 };
 use std::io;
 
 pub fn counter_group_new(process: &Process, cpu: &Cpu) -> Result<CounterGroup, Error> {
-    let process = Wrap::<RawProcess>::from(process).into_inner();
-    let cpu = Wrap::<RawCpu>::from(cpu).into_inner();
-
-    CounterGroup::new(&process, &cpu)
+    CounterGroup::new(process, cpu)
 }
 
 pub fn counter_group_add_member(
     counter_group: &mut CounterGroup,
-    cfg: &Config,
+    cfg: &mut Config,
 ) -> io::Result<CounterGuard> {
-    let mut cfg = Wrap::<RawConfig>::from(cfg).into_inner();
-    counter_group.add_member(&mut cfg)
+    counter_group.add_member(cfg)
 }
 
 pub fn counter_group_enable(counter_group: CounterGroup) -> io::Result<FixedCounterGroup> {

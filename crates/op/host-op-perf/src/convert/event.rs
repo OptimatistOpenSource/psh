@@ -1,4 +1,4 @@
-use crate::convert::Wrap;
+use crate::convert::{Error, Wrap};
 
 use std::ffi::CString;
 use std::rc::Rc;
@@ -20,10 +20,12 @@ use perf_event_rs::{BreakpointLen as RawBpLen, DynamicPmuEvent as RawDpEv};
 type FromT = Ev;
 type IntoT = RawEv;
 
-impl From<&FromT> for Wrap<IntoT> {
-    fn from(value: &FromT) -> Self {
-        let val = into_raw_event(value);
-        Self(val)
+impl TryFrom<&FromT> for Wrap<IntoT> {
+    type Error = Error;
+
+    fn try_from(value: &FromT) -> Result<Self, Self::Error> {
+        let val = into_raw_event(value)?;
+        Ok(Self(val))
     }
 }
 
@@ -44,21 +46,52 @@ fn into_raw_cache_op_result(val: &CacheOpResult) -> RawCacheOpResult {
     }
 }
 
-fn into_raw_bp_len(val: &BpLen) -> RawBpLen {
-    match val {
+fn into_raw_bp_len(val: &BpLen) -> Result<RawBpLen, Error> {
+    #[allow(dead_code)]
+    #[inline]
+    fn err(info: &str) -> Result<RawBpLen, Error> {
+        Err(Error::UnsupportedOption(info.to_string()))
+    }
+
+    let val = match val {
         BpLen::Len1 => RawBpLen::Len1,
         BpLen::Len2 => RawBpLen::Len2,
+
+        #[cfg(feature = "linux-4.10")]
         BpLen::Len3 => RawBpLen::Len3,
+        #[cfg(not(feature = "linux-4.10"))]
+        BpLen::Len3 => return err("BreakpointLen::Len3"),
+
         BpLen::Len4 => RawBpLen::Len4,
+
+        #[cfg(feature = "linux-4.10")]
         BpLen::Len5 => RawBpLen::Len5,
+        #[cfg(not(feature = "linux-4.10"))]
+        BpLen::Len5 => return err("BreakpointLen::Len5"),
+
+        #[cfg(feature = "linux-4.10")]
         BpLen::Len6 => RawBpLen::Len6,
+        #[cfg(not(feature = "linux-4.10"))]
+        BpLen::Len6 => return err("BreakpointLen::Len6"),
+
+        #[cfg(feature = "linux-4.10")]
         BpLen::Len7 => RawBpLen::Len7,
+        #[cfg(not(feature = "linux-4.10"))]
+        BpLen::Len7 => return err("BreakpointLen::Len7"),
+
         BpLen::Len8 => RawBpLen::Len8,
-    }
+    };
+    Ok(val)
 }
 
-fn into_raw_event(ev: &Ev) -> RawEv {
-    match ev {
+fn into_raw_event(ev: &Ev) -> Result<RawEv, Error> {
+    #[allow(dead_code)]
+    #[inline]
+    fn err(info: &str) -> Result<RawEv, Error> {
+        Err(Error::UnsupportedOption(info.to_string()))
+    }
+
+    let val = match ev {
         #[rustfmt::skip]
         Ev::Hardware(ev) => RawEv::Hardware(match ev {
             HwEv::CpuCycles             => RawHwEv::CpuCycles,
@@ -90,24 +123,36 @@ fn into_raw_event(ev: &Ev) -> RawEv {
             SwEv::PageFaultsMaj   => RawSwEv::PageFaultsMaj,
             SwEv::AlignmentFaults => RawSwEv::AlignmentFaults,
             SwEv::EmulationFaults => RawSwEv::EmulationFaults,
-            SwEv::Dummy           => RawSwEv::Dummy,
-            SwEv::BpfOutput       => RawSwEv::BpfOutput,
-            SwEv::CgroupSwitches  => RawSwEv::CgroupSwitches,
+
+            #[cfg(feature = "linux-3.12")]
+            SwEv::Dummy => RawSwEv::Dummy,
+            #[cfg(not(feature = "linux-3.12"))]
+            SwEv::Dummy => return err("SoftwareEvent::Dummy"),
+
+            #[cfg(feature = "linux-4.4")]
+            SwEv::BpfOutput => RawSwEv::BpfOutput,
+            #[cfg(not(feature = "linux-4.4"))]
+            SwEv::BpfOutput => return err("SoftwareEvent::BpfOutput"),
+
+            #[cfg(feature = "linux-5.13")]
+            SwEv::CgroupSwitches => RawSwEv::CgroupSwitches,
+            #[cfg(not(feature = "linux-5.13"))]
+            SwEv::CgroupSwitches => return err("SoftwareEvent::CgroupSwitches"),
         }),
         Ev::Raw(ev) => RawEv::Raw(unsafe { RawRawEv::new(ev.config) }),
         Ev::Tracepoint(ev) => RawEv::Tracepoint(RawTpEv::new(ev.id)),
         Ev::Breakpoint(ev) => RawEv::Breakpoint(RawBpEv::new(match &ev.bp_type {
             BpTy::R((addr, len)) => RawBpTy::R {
                 addr: *addr,
-                len: into_raw_bp_len(len),
+                len: into_raw_bp_len(len)?,
             },
             BpTy::W((addr, len)) => RawBpTy::W {
                 addr: *addr,
-                len: into_raw_bp_len(len),
+                len: into_raw_bp_len(len)?,
             },
             BpTy::Rw((addr, len)) => RawBpTy::Rw {
                 addr: *addr,
-                len: into_raw_bp_len(len),
+                len: into_raw_bp_len(len)?,
             },
             BpTy::X(addr) => RawBpTy::X { addr: *addr },
         })),
@@ -116,6 +161,8 @@ fn into_raw_event(ev: &Ev) -> RawEv {
                 r#type: *ty,
                 config: *config,
             }),
+
+            #[cfg(feature = "linux-4.17")]
             DpEv::Kprobe(KpCfg { ty, retprobe, var }) => {
                 let cfg = match var {
                     KpCfgVar::FuncAndOffset((kprobe_func, probe_offset)) => {
@@ -134,6 +181,10 @@ fn into_raw_event(ev: &Ev) -> RawEv {
                     cfg,
                 })
             }
+            #[cfg(not(feature = "linux-4.17"))]
+            DpEv::Kprobe(_) => return err("DynamicPmuEvent::Kprobe"),
+
+            #[cfg(feature = "linux-4.17")]
             DpEv::Uprobe(UpCfg {
                 ty,
                 retprobe,
@@ -152,6 +203,9 @@ fn into_raw_event(ev: &Ev) -> RawEv {
                     cfg,
                 })
             }
+            #[cfg(not(feature = "linux-4.17"))]
+            DpEv::Uprobe(_) => return err("DynamicPmuEvent::Uprobe"),
         },
-    }
+    };
+    Ok(val)
 }

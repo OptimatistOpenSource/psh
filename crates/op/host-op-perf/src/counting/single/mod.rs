@@ -3,7 +3,8 @@ mod raw;
 use crate::convert::Wrap;
 use crate::profiling::perf::counter::*;
 use crate::PerfCtx;
-use perf_event_rs::counting::Counter;
+use perf_event_rs::config::{Cpu as RawCpu, Process as RawProcess};
+use perf_event_rs::counting::{Config as RawConfig, Counter};
 use wasmtime::component::Resource;
 
 impl HostCounter for PerfCtx {
@@ -14,7 +15,10 @@ impl HostCounter for PerfCtx {
         cfg: Config,
     ) -> wasmtime::Result<Result<Resource<Counter>, String>> {
         let mut f = || -> anyhow::Result<_> {
-            let counter = raw::counter_new(&process, &cpu, &cfg)?;
+            let process = Wrap::<RawProcess>::from(&process).into_inner();
+            let cpu = Wrap::<RawCpu>::from(&cpu).into_inner();
+            let mut cfg = Wrap::<RawConfig>::try_from(&cfg)?.into_inner();
+            let counter = raw::counter_new(&process, &cpu, &mut cfg)?;
             let handle = self.table.push(counter)?;
             Ok(handle)
         };

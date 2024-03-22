@@ -3,7 +3,8 @@ mod raw;
 use crate::convert::Wrap;
 use crate::profiling::perf::counter_group::*;
 use crate::{FixedCounterGroup, PerfCtx};
-use perf_event_rs::counting::{CounterGroup, CounterGuard};
+use perf_event_rs::config::{Cpu as RawCpu, Process as RawProcess};
+use perf_event_rs::counting::{Config as RawConfig, CounterGroup, CounterGuard};
 use wasmtime::component::Resource;
 
 impl HostCounterGroup for PerfCtx {
@@ -13,6 +14,8 @@ impl HostCounterGroup for PerfCtx {
         cpu: Cpu,
     ) -> wasmtime::Result<Result<Resource<CounterGroup>, String>> {
         let mut f = || -> anyhow::Result<_> {
+            let process = Wrap::<RawProcess>::from(&process).into_inner();
+            let cpu = Wrap::<RawCpu>::from(&cpu).into_inner();
             let counter_group = raw::counter_group_new(&process, &cpu)?;
             let handle = self.table.push(counter_group)?;
             Ok(handle)
@@ -27,7 +30,8 @@ impl HostCounterGroup for PerfCtx {
     ) -> wasmtime::Result<Result<Resource<CounterGuard>, String>> {
         let mut f = || -> anyhow::Result<_> {
             let counter_group: &mut CounterGroup = self.table.get_mut(&self_)?;
-            let guard = raw::counter_group_add_member(counter_group, &cfg)?;
+            let mut cfg = Wrap::<RawConfig>::try_from(&cfg)?.into_inner();
+            let guard = raw::counter_group_add_member(counter_group, &mut cfg)?;
             let handle = self.table.push(guard)?;
             Ok(handle)
         };
