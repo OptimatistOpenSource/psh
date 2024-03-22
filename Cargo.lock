@@ -1000,6 +1000,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "perf-event-rs",
+ "thiserror",
  "wasmtime",
  "wasmtime-wasi",
 ]

@@ -2,9 +2,40 @@
 name = "host-op-perf"
 version.workspace = true
 edition = "2021"
+build = "build/main.rs"
+
+[features]
+"linux-6.3" = ["linux-6.0"]
+"linux-6.0" = ["linux-5.16"]
+"linux-5.16" = ["linux-5.13"]
+"linux-5.13" = ["linux-5.12"]
+"linux-5.12" = ["linux-5.11"]
+"linux-5.11" = ["linux-5.9"]
+"linux-5.9" = ["linux-5.8"]
+"linux-5.8" = ["linux-5.7"]
+"linux-5.7" = ["linux-5.5"]
+"linux-5.5" = ["linux-5.4"]
+"linux-5.4" = ["linux-5.1"]
+"linux-5.1" = ["linux-4.17"]
+"linux-4.17" = ["linux-4.16"]
+"linux-4.16" = ["linux-4.14"]
+"linux-4.14" = ["linux-4.12"]
+"linux-4.12" = ["linux-4.10"]
+"linux-4.10" = ["linux-4.8"]
+"linux-4.8" = ["linux-4.7"]
+"linux-4.7" = ["linux-4.4"]
+"linux-4.4" = ["linux-4.3"]
+"linux-4.3" = ["linux-4.2"]
+"linux-4.2" = ["linux-4.1"]
+"linux-4.1" = ["linux-3.19"]
+"linux-3.19" = ["linux-3.16"]
+"linux-3.16" = ["linux-3.13"]
+"linux-3.13" = ["linux-3.12"]
+"linux-3.12" = []
 
 [dependencies]
 wasmtime = "18.0.1"
+thiserror = "1.0.58"
 anyhow = "1.0.80"
 wasmtime-wasi = "18.0.1"
 perf-event-rs = { git = "https://github.com/OptimatistOpenSource/perf-event-rs.git" }
