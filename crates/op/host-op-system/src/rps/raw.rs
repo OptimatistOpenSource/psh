@@ -1,88 +1,116 @@
-use std::fs;
+use std::{fs, ops::Not};
 
-use super::RpsDetails;
+use super::{RpsDetails, RpsQueue};
 
-#[allow(dead_code)]
-fn do_parse_all_rps(path: &str) -> Vec<RpsDetails> {
-    let mut rps: Vec<RpsDetails> = Vec::new();
-    if let Ok(device) = fs::read_dir(path) {
-        for dev in device.flatten() {
-            let dev_path = dev.path();
-            let current_path = dev_path.join("queues");
-            if let Ok(rx_list) = fs::read_dir(current_path) {
-                let mut rps_instance = RpsDetails {
-                    dev: dev_path.file_name().unwrap().to_string_lossy().into_owned(),
-                    rx: Vec::new(),
-                    rps_cpus: Vec::new(),
-                    rps_flow_cnt: Vec::new(),
-                };
-                for rx in rx_list.flatten() {
-                    let rx_path = rx.path();
-                    let rps_cpu_path = rx_path.join("rps_cpus");
-                    let rps_flow_cnt_path = rx_path.join("rps_flow_cnt");
-                    rps_instance
-                        .rx
-                        .push(rx_path.file_name().unwrap().to_string_lossy().into_owned());
-                    rps_instance.rps_cpus.push(
-                        fs::read_to_string(&rps_cpu_path)
-                            .ok()
-                            .map(|s| s.trim().to_string()),
-                    );
-                    rps_instance.rps_flow_cnt.push(
-                        fs::read_to_string(&rps_flow_cnt_path)
-                            .ok()
-                            .map(|s| s.trim().to_string()),
-                    );
-                }
-                rps.push(rps_instance);
-            }
-        }
+fn parse_queue_impl(dir: fs::DirEntry) -> Option<RpsQueue> {
+    let rx_path = dir.path();
+    let Some(rx_name) = rx_path.file_name() else {
+        return None;
+    };
+    let rx_name = rx_name.to_string_lossy().into_owned();
+    if rx_name.starts_with("rx").not() {
+        return None;
     }
-    rps
+    let cpu = fs::read_to_string(rx_path.join("rps_cpus"));
+    let flow = fs::read_to_string(rx_path.join("rps_flow_cnt"));
+    Some(RpsQueue {
+        name: rx_name,
+        cpus: cpu.ok().map(|s| s.trim().to_string()),
+        flow_cnt: flow.ok().map(|s| s.trim().to_string()),
+    })
 }
 
-#[allow(unused_macros)]
+fn parse_device_impl(dir: fs::DirEntry) -> Option<RpsDetails> {
+    let dev_path = dir.path();
+    let cur_path = dev_path.join("queues");
+    match (dev_path.file_name(), fs::read_dir(cur_path)) {
+        (Some(dev_name), Ok(rx_list)) => {
+            let dev = dev_name.to_string_lossy().into_owned();
+            let queues: Vec<_> = rx_list
+                .filter_map(|rx| match rx {
+                    Ok(rx) => parse_queue_impl(rx),
+                    Err(_) => None,
+                })
+                .collect();
+            Some(RpsDetails { dev, queues })
+        }
+        _ => None,
+    }
+}
+
+pub(crate) fn parse_rps_impl(path: &str) -> Vec<RpsDetails> {
+    let Ok(folder) = fs::read_dir(path) else {
+        return vec![];
+    };
+    folder
+        .filter_map(|dev| match dev {
+            Ok(dev) => parse_device_impl(dev),
+            Err(_) => None,
+        })
+        .collect()
+}
+
 macro_rules! parse_rps {
     ($path:expr) => {
-        super::do_parse_all_rps($path)
+        crate::rps::raw::parse_rps_impl($path)
     };
     () => {
-        super::do_parse_all_rps("/sys/class/net/")
+        crate::rps::raw::parse_rps_impl("/sys/class/net/")
     };
 }
+
+pub(crate) use parse_rps;
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{parse_rps_impl, RpsDetails, RpsQueue};
     use std::path::PathBuf;
+
     #[test]
     fn test_parse_rps() {
         let mut rps_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         rps_path.push("test_resources/arch/x86_64/intel/net");
-        let result = do_parse_all_rps(rps_path.to_str().unwrap());
+        let result = parse_rps_impl(rps_path.to_str().unwrap());
 
-        let rps0 = result.iter().find(|rps| rps.dev == "lo");
-        assert!(rps0.is_some());
-        let rps0 = rps0.unwrap();
-        assert_eq!(rps0.dev, "lo");
-        assert_eq!(rps0.rx[0], "rx-0");
-        assert_eq!(rps0.rps_cpus[0], Some("00000".to_string()));
-        assert_eq!(rps0.rps_flow_cnt[0], Some("0".to_string()));
+        assert_eq!(result.len(), 3);
 
-        let rps1 = result.iter().find(|rps| rps.dev == "enp3s0");
-        assert!(rps1.is_some());
-        let rps1 = rps1.unwrap();
-        assert_eq!(rps1.dev, "enp3s0");
-        assert_eq!(rps1.rx[0], "rx-0");
-        assert_eq!(rps1.rps_cpus[0], Some("00000".to_string()));
-        assert_eq!(rps1.rps_flow_cnt[0], Some("0".to_string()));
+        let rps_lo = result.iter().find(|rps| rps.dev == "lo");
+        assert_eq!(
+            rps_lo,
+            Some(&RpsDetails {
+                dev: "lo".to_string(),
+                queues: vec![RpsQueue {
+                    name: "rx-0".to_string(),
+                    cpus: Some("00000".to_string()),
+                    flow_cnt: Some("0".to_string()),
+                }]
+            })
+        );
 
-        let rps2 = result.iter().find(|rps| rps.dev == "wlo1");
-        assert!(rps2.is_some());
-        let rps2 = rps2.unwrap();
-        assert_eq!(rps2.dev, "wlo1");
-        assert_eq!(rps2.rx[0], "rx-0");
-        assert_eq!(rps2.rps_cpus[0], Some("00000".to_string()));
-        assert_eq!(rps2.rps_flow_cnt[0], Some("0".to_string()));
+        let rps_enp3s0 = result.iter().find(|rps| rps.dev == "enp3s0");
+        assert_eq!(
+            rps_enp3s0,
+            Some(&RpsDetails {
+                dev: "enp3s0".to_string(),
+                queues: vec![RpsQueue {
+                    name: "rx-0".to_string(),
+                    cpus: Some("00000".to_string()),
+                    flow_cnt: Some("0".to_string()),
+                }]
+            })
+        );
+
+        let rps_wlo1 = result.iter().find(|rps| rps.dev == "wlo1");
+        assert_eq!(
+            rps_wlo1,
+            Some(&RpsDetails {
+                dev: "wlo1".to_string(),
+                queues: vec![RpsQueue {
+                    name: "rx-0".to_string(),
+                    cpus: Some("00000".to_string()),
+                    flow_cnt: Some("0".to_string()),
+                }]
+            })
+        );
     }
 }
