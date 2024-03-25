@@ -8,8 +8,8 @@ impl From<&HostRpsQueue> for GuestRpsQueue {
     fn from(value: &HostRpsQueue) -> Self {
         Self {
             name: value.name.clone(),
-            cpus: value.cpus.clone(),
-            flow_cnt: value.flow_cnt.clone(),
+            cpus: value.cpus.as_ref().map(|mask| mask.into()),
+            flow_cnt: value.flow_cnt,
         }
     }
 }

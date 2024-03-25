@@ -1,5 +1,7 @@
 use std::{fs, ops::Not};
 
+use crate::cpu::CpuMask;
+
 use super::{RpsDetails, RpsQueue};
 
 fn parse_queue_impl(dir: fs::DirEntry) -> Option<RpsQueue> {
@@ -15,8 +17,10 @@ fn parse_queue_impl(dir: fs::DirEntry) -> Option<RpsQueue> {
     let flow = fs::read_to_string(rx_path.join("rps_flow_cnt"));
     Some(RpsQueue {
         name: rx_name,
-        cpus: cpu.ok().map(|s| s.trim().to_string()),
-        flow_cnt: flow.ok().map(|s| s.trim().to_string()),
+        cpus: cpu
+            .ok()
+            .and_then(|mask| CpuMask::from_str(mask.trim()).ok()),
+        flow_cnt: flow.ok().and_then(|s| s.trim().parse().ok()),
     })
 }
 
@@ -27,10 +31,7 @@ fn parse_device_impl(dir: fs::DirEntry) -> Option<RpsDetails> {
         (Some(dev_name), Ok(rx_list)) => {
             let dev = dev_name.to_string_lossy().into_owned();
             let queues: Vec<_> = rx_list
-                .filter_map(|rx| match rx {
-                    Ok(rx) => parse_queue_impl(rx),
-                    Err(_) => None,
-                })
+                .filter_map(|rx| rx.ok().and_then(parse_queue_impl))
                 .collect();
             Some(RpsDetails { dev, queues })
         }
@@ -39,15 +40,11 @@ fn parse_device_impl(dir: fs::DirEntry) -> Option<RpsDetails> {
 }
 
 pub(crate) fn parse_rps_impl(path: &str) -> Vec<RpsDetails> {
-    let Ok(folder) = fs::read_dir(path) else {
-        return vec![];
-    };
-    folder
-        .filter_map(|dev| match dev {
-            Ok(dev) => parse_device_impl(dev),
-            Err(_) => None,
-        })
-        .collect()
+    fs::read_dir(path).map_or(vec![], |folder| {
+        folder
+            .filter_map(|dev| dev.ok().and_then(parse_device_impl))
+            .collect()
+    })
 }
 
 macro_rules! parse_rps {
@@ -63,8 +60,10 @@ pub(crate) use parse_rps;
 
 #[cfg(test)]
 mod tests {
-    use super::{parse_rps_impl, RpsDetails, RpsQueue};
     use std::path::PathBuf;
+
+    use super::{parse_rps_impl, RpsDetails, RpsQueue};
+    use crate::cpu::CpuMask;
 
     #[test]
     fn test_parse_rps() {
@@ -81,8 +80,8 @@ mod tests {
                 dev: "lo".to_string(),
                 queues: vec![RpsQueue {
                     name: "rx-0".to_string(),
-                    cpus: Some("00000".to_string()),
-                    flow_cnt: Some("0".to_string()),
+                    cpus: Some(CpuMask(vec![false; 20])),
+                    flow_cnt: Some(0),
                 }]
             })
         );
@@ -94,8 +93,8 @@ mod tests {
                 dev: "enp3s0".to_string(),
                 queues: vec![RpsQueue {
                     name: "rx-0".to_string(),
-                    cpus: Some("00000".to_string()),
-                    flow_cnt: Some("0".to_string()),
+                    cpus: Some(CpuMask(vec![false; 20])),
+                    flow_cnt: Some(0),
                 }]
             })
         );
@@ -107,8 +106,8 @@ mod tests {
                 dev: "wlo1".to_string(),
                 queues: vec![RpsQueue {
                     name: "rx-0".to_string(),
-                    cpus: Some("00000".to_string()),
-                    flow_cnt: Some("0".to_string()),
+                    cpus: Some(CpuMask(vec![false; 20])),
+                    flow_cnt: Some(0),
                 }]
             })
         );

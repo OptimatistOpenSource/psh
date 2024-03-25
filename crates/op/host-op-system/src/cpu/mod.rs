@@ -1,6 +1,37 @@
 mod host;
 mod raw;
 
+// use Vec<bool> to represent CpuMask but wrap it in a tuple struct to make it a distinct type
+#[derive(Debug, PartialEq, Eq)]
+pub struct CpuMask(pub(crate) Vec<bool>);
+
+impl CpuMask {
+    pub fn from_str(mask: &str) -> anyhow::Result<CpuMask> {
+        #[allow(clippy::identity_op)]
+        let num_to_mask = |num: u32| {
+            // num is guaranteed in range [0, 16)
+            // one hex char corresponding to 4 bits in mask
+            [
+                ((num >> 0) & 1) != 0,
+                ((num >> 1) & 1) != 0,
+                ((num >> 2) & 1) != 0,
+                ((num >> 3) & 1) != 0,
+            ]
+        };
+
+        mask.chars()
+            .rev() // reverse chars order
+            .map(|c| match c {
+                '0'..='9' => Ok(u32::from(c) - u32::from('0')),
+                'a'..='f' => Ok(u32::from(c) - u32::from('a') + 10),
+                'A'..='F' => Ok(u32::from(c) - u32::from('A') + 10),
+                _ => Err(anyhow::anyhow!("Invalid cpumask: \"{}\"", mask)),
+            })
+            .collect::<anyhow::Result<Vec<u32>>>()
+            .map(|masks| CpuMask(masks.iter().flat_map(|&bits| num_to_mask(bits)).collect()))
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct TlbSize {
     pub count: u32,
@@ -112,4 +143,42 @@ pub enum CPUInfo {
     X86_64(Vec<X86_64CpuInfo>),
     Arm64(Vec<Arm64CpuInfo>),
     Unsupported(String),
+}
+
+#[cfg(test)]
+mod tests {
+    use super::CpuMask;
+
+    #[test]
+    fn test_cpu_mask() {
+        let mask = CpuMask::from_str("0").unwrap();
+        assert_eq!(mask, CpuMask(vec![false; 4]));
+
+        let mask = CpuMask::from_str("0000").unwrap();
+        assert_eq!(mask, CpuMask(vec![false; 16]));
+
+        let mask = CpuMask::from_str("1").unwrap();
+        assert_eq!(mask, CpuMask(vec![true, false, false, false]));
+
+        let mask = CpuMask::from_str("2").unwrap();
+        assert_eq!(mask, CpuMask(vec![false, true, false, false]));
+
+        let mask = CpuMask::from_str("f").unwrap();
+        assert_eq!(mask, CpuMask(vec![true; 4]));
+
+        let mask = CpuMask::from_str("11").unwrap();
+        assert_eq!(
+            mask,
+            CpuMask(vec![true, false, false, false, true, false, false, false])
+        );
+
+        let mask = CpuMask::from_str("a3").unwrap();
+        assert_eq!(
+            mask,
+            CpuMask(vec![true, true, false, false, false, true, false, true])
+        );
+
+        let mask = CpuMask::from_str("a3\n");
+        assert!(mask.is_err());
+    }
 }

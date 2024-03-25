@@ -1,15 +1,25 @@
 use crate::{
     profiling::system::cpu::{
         self, AddressSizes as GuestAddressSizes, Arm64CpuInfo as GuestArm64CpuInfo,
-        CpuInfo as GuestCpuInfo, TlbSize as GuestTlbSize, X64CpuInfo as GuestX64CpuInfo,
+        CpuInfo as GuestCpuInfo, CpuMask as GuestCpuMask, TlbSize as GuestTlbSize,
+        X64CpuInfo as GuestX64CpuInfo,
     },
     SysCtx,
 };
 
 use super::{
     raw::parse_cpuinfo, AddressSizes as HostAddressSizes, Arm64CpuInfo as HostArm64CpuInfo,
-    CPUInfo as HostCpuInfo, TlbSize as HostTlbSize, X86_64CpuInfo as HostX86_64CpuInfo,
+    CPUInfo as HostCpuInfo, CpuMask as HostCpuMask, TlbSize as HostTlbSize,
+    X86_64CpuInfo as HostX86_64CpuInfo,
 };
+
+impl From<&HostCpuMask> for GuestCpuMask {
+    fn from(value: &HostCpuMask) -> Self {
+        Self {
+            mask: value.0.clone(),
+        }
+    }
+}
 
 impl From<&HostAddressSizes> for GuestAddressSizes {
     fn from(value: &HostAddressSizes) -> Self {
