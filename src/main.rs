@@ -20,32 +20,26 @@ mod security;
 mod services;
 mod utils;
 
-use args::Args;
+use anyhow::Context;
 use clap::Parser;
-use wasmtime_wasi::preview2::WasiCtxBuilder;
 
-use host_op_perf::PerfCtx;
-use host_op_system::SysCtx;
+use args::Args;
+use runtime::PshEngineBuilder;
 
-fn main() {
+fn main() -> anyhow::Result<()> {
     let args = Args::parse();
     let component_envs: Vec<(String, String)> = std::env::vars().collect();
     let mut component_args: Vec<String> = vec![args.psh_wasm_component.clone()];
     component_args.extend(args.extra_args);
 
-    let wasi_ctx = WasiCtxBuilder::new()
-        .inherit_stdio()
-        .envs(&component_envs)
-        .args(&component_args)
-        .build();
-    let sys_ctx = SysCtx {};
-    let perf_ctx = PerfCtx::new();
+    let mut engine = PshEngineBuilder::new()
+        .wasi_inherit_stdio()
+        .wasi_envs(&component_envs)
+        .wasi_args(&component_args)
+        .allow_perf_op(true)
+        .allow_system_op(true)
+        .build()
+        .context("Failed to build PshEngine.")?;
 
-    let mut wasi_builder = runtime::PshWasiConfigBuilder::new(wasi_ctx);
-    wasi_builder
-        .set_component_path(&args.psh_wasm_component)
-        .enable_perf_ops(perf_ctx)
-        .enable_system_ops(sys_ctx);
-    let wasi_config = wasi_builder.build();
-    runtime::run_wasmtime_engine(wasi_config).unwrap();
+    engine.run(&args.psh_wasm_component)
 }
