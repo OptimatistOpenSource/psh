@@ -20,10 +20,10 @@ impl PshEngine {
         let component =
             Component::from_file(&self.engine, path).context("Failed to read component file!")?;
         let (cmd, _inst) = Command::instantiate(&mut self.store, &component, &self.linker)
-            .context("Failed to instantiate component!")?;
+            .context("Failed to instantiate Wasi Command!")?;
         cmd.wasi_cli_run()
             .call_run(&mut self.store)
             .context("Failed to run component")?
-            .map_err(|()| anyhow::anyhow!("Wasm Component returned an error!"))
+            .map_err(|()| anyhow::anyhow!("Component returned an error!"))
     }
 }
