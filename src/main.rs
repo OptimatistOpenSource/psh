@@ -23,6 +23,7 @@ mod utils;
 use args::Args;
 use clap::Parser;
 
+use host_op_perf::PerfCtx;
 use host_op_system::SysCtx;
 use wasmtime_wasi::preview2::WasiCtxBuilder;
 
@@ -34,10 +35,12 @@ fn main() {
 
     let wasi_ctx = WasiCtxBuilder::new().inherit_stdio().build();
     let sys_ctx = SysCtx {};
+    let perf_ctx = PerfCtx::new();
 
     let mut wasi_builder = runtime::PshWasiConfigBuilder::new(wasi_ctx);
     wasi_builder
         .set_component_path(&args.psh_wasm_component)
+        .enable_perf_ops(perf_ctx)
         .enable_system_ops(sys_ctx);
     let wasi_config = wasi_builder.build();
     runtime::run_wasmtime_engine(wasi_config).unwrap();
