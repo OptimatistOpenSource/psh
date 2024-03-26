@@ -38,7 +38,7 @@ impl PshEngineBuilder {
         let wasi_ctx = self.wasi_ctx_builder.build();
         let engine = Engine::new(&self.engine_config).context("Failed to create Wasi Engine.")?;
         let state = PshState {
-            name: "Psh Wasm Engine".to_owned(),
+            name: "PSH Wasi Runtime".to_owned(),
             table: ResourceTable::new(),
             wasi_ctx,
             perf_ctx: PerfCtx::new(),
@@ -58,7 +58,6 @@ impl PshEngineBuilder {
             host_op_system::add_to_linker(&mut linker, |state| &mut state.sys_ctx)
                 .context("Failed to link system module")?;
         }
-        // add more modules here
         Ok(PshEngine {
             engine,
             store,
