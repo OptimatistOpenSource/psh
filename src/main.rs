@@ -22,18 +22,22 @@ mod utils;
 
 use args::Args;
 use clap::Parser;
+use wasmtime_wasi::preview2::WasiCtxBuilder;
 
 use host_op_perf::PerfCtx;
 use host_op_system::SysCtx;
-use wasmtime_wasi::preview2::WasiCtxBuilder;
 
 fn main() {
     let args = Args::parse();
+    let component_envs: Vec<(String, String)> = std::env::vars().collect();
+    let mut component_args: Vec<String> = vec![args.psh_wasm_component.clone()];
+    component_args.extend(args.extra_args);
 
-    // detect if we were ran as netdata plugin
-    let _netdata_plugin = std::env::var("NETDATA_HOST_PREFIX").is_ok();
-
-    let wasi_ctx = WasiCtxBuilder::new().inherit_stdio().build();
+    let wasi_ctx = WasiCtxBuilder::new()
+        .inherit_stdio()
+        .envs(&component_envs)
+        .args(&component_args)
+        .build();
     let sys_ctx = SysCtx {};
     let perf_ctx = PerfCtx::new();
 

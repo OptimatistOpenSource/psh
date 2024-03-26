@@ -21,4 +21,7 @@ pub struct Args {
     #[arg(short, long)]
     #[arg(value_name = "PATH")]
     pub psh_wasm_component: String,
+
+    #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+    pub extra_args: Vec<String>,
 }
