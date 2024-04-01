@@ -42,7 +42,7 @@ impl PshEngineBuilder {
             table: ResourceTable::new(),
             wasi_ctx,
             perf_ctx: PerfCtx::new(),
-            sys_ctx: SysCtx {},
+            sys_ctx: SysCtx::default(),
         };
         let store = Store::new(&engine, state);
         let mut linker: Linker<PshState> = Linker::new(&engine);
