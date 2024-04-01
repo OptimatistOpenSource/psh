@@ -11,36 +11,22 @@
 //
 // You should have received a copy of the GNU Lesser General Public License along with Perf-event-rs. If not,
 // see <https://www.gnu.org/licenses/>.
-mod cpu;
-mod interrupts;
-mod memory;
-mod os;
-mod rps;
-mod utils;
+use std::fs;
+use std::ops::Not;
+use std::process::Command;
 
-use wasmtime::component::Linker;
+fn main() {
+    let _ = fs::remove_file("src/bindings.rs");
+    let mut cmd = Command::new("wit-bindgen");
+    cmd.args(["rust", "--stubs", "--out-dir", "src/", "../../../wit/"]);
 
-wasmtime::component::bindgen!({
-    path: "../../../src/psh-sdk-wit/wit/deps/system",
-    world: "imports",
-});
-
-pub struct SysCtx {
-    sys: sysinfo::System,
-}
-
-impl Default for SysCtx {
-    fn default() -> Self {
-        let mut sys = sysinfo::System::new_all();
-        std::thread::sleep(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL);
-        sys.refresh_all();
-        Self { sys }
+    let output = cmd
+        .output()
+        .unwrap_or_else(|it| panic!("Failed to generate bindings: \n{}", it));
+    if output.stderr.is_empty().not() {
+        panic!(
+            "Failed to generate bindings: \n{}",
+            String::from_utf8(output.stderr).unwrap()
+        );
     }
-}
-
-pub fn add_to_linker<T>(
-    l: &mut Linker<T>,
-    f: impl (Fn(&mut T) -> &mut SysCtx) + Copy + Send + Sync + 'static,
-) -> anyhow::Result<()> {
-    crate::Imports::add_to_linker(l, f)
 }
