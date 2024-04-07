@@ -75,8 +75,10 @@ impl From<&HostKernelVersion> for GuestKernelVersion {
 impl From<&HostDiskUsage> for GuestDiskUsage {
     fn from(value: &HostDiskUsage) -> Self {
         Self {
-            written_bytes: value.total_written_bytes,
-            read_bytes: value.total_read_bytes,
+            written_bytes: value.written_bytes,
+            read_bytes: value.read_bytes,
+            total_written_bytes: value.total_written_bytes,
+            total_read_bytes: value.total_read_bytes,
         }
     }
 }
