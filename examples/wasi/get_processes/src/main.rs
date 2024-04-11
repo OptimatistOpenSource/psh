@@ -11,20 +11,71 @@
 //
 // You should have received a copy of the GNU Lesser General Public License along with Perf-event-rs. If not,
 // see <https://www.gnu.org/licenses/>.
+
 #[rustfmt::skip]
 mod bindings;
 
-use bindings::profiling::system::os;
+use std::{collections::HashMap, error::Error};
 
-fn main() {
-    let name = std::env::args().nth(1).unwrap_or("psh".to_string());
-    let mut processes = os::get_processes().unwrap_or(vec![]);
-    processes.sort_unstable_by(|lhs, rhs| rhs.cpu_usage.total_cmp(&lhs.cpu_usage));
-    for process in processes
-        .iter()
-        .filter(|proc| proc.name.contains(&name))
-        .take(10)
-    {
-        println!("{:?}", process);
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+pub struct ProcessUsage {
+    cpu: f64,
+    mem: u64,
+    wri: f64,
+    rea: f64,
+}
+
+use bindings::profiling::system::process::{self, ProcessStat};
+
+fn differential(pre: &ProcessStat, post: &ProcessStat, ms: u64) -> ProcessUsage {
+    ProcessUsage {
+        cpu: ((post.stime + post.utime) - (pre.stime + pre.utime)) as f64 / ms as f64,
+        mem: post.memory_usage,
+        wri: (post.written_bytes - pre.written_bytes) as f64 * 1000.0 / ms as f64,
+        rea: (post.read_bytes - pre.read_bytes) as f64 * 1000.0 / ms as f64,
+    }
+}
+
+fn intersection<'p>(
+    pre: &'p [ProcessStat],
+    post: &'p [ProcessStat],
+) -> HashMap<i32, (&'p ProcessStat, &'p ProcessStat)> {
+    let pre: HashMap<i32, &ProcessStat> = pre.iter().map(|p| (p.pid, p)).collect();
+    let post: HashMap<i32, &ProcessStat> = post.iter().map(|p| (p.pid, p)).collect();
+    pre.iter()
+        .filter_map(|(&pid, &pre_stat)| {
+            post.get(&pid)
+                .map(|&post_stat| (pid, (pre_stat, post_stat)))
+        })
+        .collect()
+}
+
+fn main() -> Result<(), Box<dyn Error>> {
+    let mut pre = process::all()?;
+    loop {
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        let post = process::all()?;
+
+        let common = intersection(&pre, &post);
+        let mut procs: Vec<_> = common
+            .values()
+            .map(|&(pre, post)| (pre, differential(pre, post, 1000)))
+            .collect();
+
+        procs.sort_unstable_by(|(_, lhs), (_, rhs)| rhs.cpu.total_cmp(&lhs.cpu));
+        for (proc, usage) in procs.iter().take(5) {
+            let name: String = proc.name.chars().take(15).collect();
+            println!(
+                "{:6} [{:15}] -> Cpu: {:6.2}%  |  Mem: {:6.2}MiB  |  Read: {:7.2}KiB/s  |  Write: {:7.2}KiB/s",
+                proc.pid,
+                name,
+                usage.cpu * 100.0 / 12.0,
+                usage.mem as f64 / 1024.0 / 1024.0,
+                usage.rea / 1024.0,
+                usage.wri / 1024.0
+            );
+        }
+        println!();
+        pre = post;
     }
 }

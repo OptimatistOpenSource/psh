@@ -12,15 +12,10 @@
 // You should have received a copy of the GNU Lesser General Public License along with Perf-event-rs. If not,
 // see <https://www.gnu.org/licenses/>.
 
-use sysinfo::{
-    DiskUsage as HostDiskUsage, Process as HostProcess, ProcessStatus as HostProcessStatus,
-};
-
 use crate::{
     profiling::system::os::{
-        self, DiskUsage as GuestDiskUsage, DistroKind as GuestDistroKind,
-        DistroVersion as GuestDistroVersion, KernelVersion as GuestKernelVersion,
-        Process as GuestProcess, ProcessStatus as GuestProcessStatus,
+        self, DistroKind as GuestDistroKind, DistroVersion as GuestDistroVersion,
+        KernelVersion as GuestKernelVersion, OsInfo as GuestOsInfo,
     },
     SysCtx,
 };
@@ -72,87 +67,17 @@ impl From<&HostKernelVersion> for GuestKernelVersion {
     }
 }
 
-impl From<&HostDiskUsage> for GuestDiskUsage {
-    fn from(value: &HostDiskUsage) -> Self {
-        Self {
-            written_bytes: value.total_written_bytes,
-            read_bytes: value.total_read_bytes,
-        }
-    }
-}
-
-impl From<&HostProcessStatus> for GuestProcessStatus {
-    fn from(value: &HostProcessStatus) -> Self {
-        match value {
-            HostProcessStatus::Idle => GuestProcessStatus::Idle,
-            HostProcessStatus::Run => GuestProcessStatus::Run,
-            HostProcessStatus::Sleep => GuestProcessStatus::Sleep,
-            HostProcessStatus::Stop => GuestProcessStatus::Stop,
-            HostProcessStatus::Zombie => GuestProcessStatus::Zombie,
-            HostProcessStatus::Tracing => GuestProcessStatus::Tracing,
-            HostProcessStatus::Dead => GuestProcessStatus::Dead,
-            HostProcessStatus::Wakekill => GuestProcessStatus::Wakekill,
-            HostProcessStatus::Waking => GuestProcessStatus::Waking,
-            HostProcessStatus::Parked => GuestProcessStatus::Parked,
-            HostProcessStatus::LockBlocked => GuestProcessStatus::LockBlocked,
-            HostProcessStatus::UninterruptibleDiskSleep => {
-                GuestProcessStatus::UninterruptibleDiskSleep
-            }
-            HostProcessStatus::Unknown(status) => GuestProcessStatus::Unknown(*status),
-        }
-    }
-}
-
-impl From<&HostProcess> for GuestProcess {
-    fn from(value: &HostProcess) -> Self {
-        Self {
-            pid: value.pid().as_u32().into(),
-            name: value.name().to_owned(),
-            cmd: value.cmd().iter().map(|s| s.to_owned()).collect(),
-            exe: value.exe().and_then(|p| p.to_str().map(|s| s.to_owned())),
-            environ: value.environ().iter().map(|e| e.to_owned()).collect(),
-            cwd: value.cwd().and_then(|p| p.to_str().map(|s| s.to_owned())),
-            root: value.root().and_then(|p| p.to_str().map(|s| s.to_owned())),
-            start_time: value.start_time(),
-            parent_id: value.parent().map(|p| p.as_u32().into()),
-            user_id: value.user_id().map(|u| (*u.clone()).into()),
-            effective_user_id: value.effective_user_id().map(|u| (*u.clone()).into()),
-            group_id: value.group_id().map(|u| u64::from(*u)),
-            effective_group_id: value.effective_group_id().map(|u| u64::from(*u)),
-            run_time: value.run_time(),
-            status: (&value.status()).into(),
-            cpu_usage: value.cpu_usage(),
-            disk_usage: (&value.disk_usage()).into(),
-            memory_usage: value.memory(),
-            virtual_memory_usage: value.virtual_memory(),
-        }
-    }
-}
-
 impl os::Host for SysCtx {
-    fn get_distro_version(&mut self) -> wasmtime::Result<Result<GuestDistroVersion, String>> {
-        let res = match parse_distro_version!() {
-            Ok(distro) => Ok((&distro).into()),
-            Err(err) => Err(err.to_string()),
+    fn info(&mut self) -> wasmtime::Result<Result<GuestOsInfo, String>> {
+        let distro = parse_distro_version!();
+        let kernel = get_kernel_version();
+        let info = match (distro, kernel) {
+            (Ok(ref distro_version), Ok(ref kernel_version)) => Ok(GuestOsInfo {
+                distro_version: distro_version.into(),
+                kernel_version: kernel_version.into(),
+            }),
+            _ => Err("Failed to retrieve os info".to_string()),
         };
-        Ok(res)
-    }
-
-    fn get_kernel_version(&mut self) -> wasmtime::Result<Result<GuestKernelVersion, String>> {
-        let res = match get_kernel_version() {
-            Ok(version) => Ok((&version).into()),
-            Err(err) => Err(err.to_string()),
-        };
-        Ok(res)
-    }
-
-    fn get_processes(&mut self) -> wasmtime::Result<Result<Vec<GuestProcess>, String>> {
-        self.sys.refresh_processes();
-        Ok(Ok(self
-            .sys
-            .processes()
-            .values()
-            .map(|p| p.into())
-            .collect()))
+        Ok(info)
     }
 }

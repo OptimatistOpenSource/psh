@@ -11,6 +11,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public License along with Perf-event-rs. If not,
 // see <https://www.gnu.org/licenses/>.
+
 use crate::{
     profiling::system::cpu::{
         self, AddressSizes as GuestAddressSizes, Arm64CpuInfo as GuestArm64CpuInfo,
@@ -115,8 +116,11 @@ impl From<&HostCpuInfo> for GuestCpuInfo {
 }
 
 impl cpu::Host for SysCtx {
-    fn get_cpu_info(&mut self) -> wasmtime::Result<Result<GuestCpuInfo, String>> {
-        let cpu_info = parse_cpuinfo!().unwrap();
-        Ok(Ok((&cpu_info).into()))
+    fn info(&mut self) -> wasmtime::Result<Result<GuestCpuInfo, String>> {
+        let cpu_info = match parse_cpuinfo!() {
+            Ok(ref info) => Ok(info.into()),
+            Err(err) => Err(err.to_string()),
+        };
+        Ok(cpu_info)
     }
 }

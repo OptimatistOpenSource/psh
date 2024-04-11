@@ -62,10 +62,10 @@ pub fn do_parse_all_irq(path: &str) -> std::io::Result<Vec<IrqDetails>> {
 
 macro_rules! parse_irq {
     ($path:expr) => {
-        crate::interrupts::irq::do_parse_all_irq($path)
+        crate::interrupt::irq::do_parse_all_irq($path)
     };
     () => {
-        crate::interrupts::irq::do_parse_all_irq("/proc/irq")
+        crate::interrupt::irq::do_parse_all_irq("/proc/irq")
     };
 }
 

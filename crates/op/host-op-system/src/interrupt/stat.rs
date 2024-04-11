@@ -60,10 +60,10 @@ pub fn do_parse_interrupts(path: &str) -> io::Result<Vec<InterruptDetails>> {
 
 macro_rules! parse_interrupts {
     ($path:expr) => {
-        crate::interrupts::stat::do_parse_interrupts($path)
+        crate::interrupt::stat::do_parse_interrupts($path)
     };
     () => {
-        crate::interrupts::stat::do_parse_interrupts("/proc/interrupts")
+        crate::interrupt::stat::do_parse_interrupts("/proc/interrupts")
     };
 }
 
