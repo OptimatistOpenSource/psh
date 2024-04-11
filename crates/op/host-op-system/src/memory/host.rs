@@ -11,20 +11,21 @@
 //
 // You should have received a copy of the GNU Lesser General Public License along with Perf-event-rs. If not,
 // see <https://www.gnu.org/licenses/>.
+
 use std::process::Command;
 
 use crate::profiling::system::memory::{
-    self, MemoryInfo as GuestMemoryInfo, MemoryModule as GuestMemoryModule,
+    self, MemoryInfo as GuestMemoryInfo, MemoryStat as GuestMemoryStat,
 };
 
 use super::raw::{parse_meminfo, parse_memory_module};
-use super::{MemInfo as HostMemoryInfo, MemoryModule as HostMemoryModule};
+use super::{MemInfo as HostMemoryStat, MemoryModule as HostMemoryInfo};
 
 use crate::utils::which;
 use crate::SysCtx;
 
-impl From<&HostMemoryInfo> for GuestMemoryInfo {
-    fn from(value: &HostMemoryInfo) -> Self {
+impl From<&HostMemoryStat> for GuestMemoryStat {
+    fn from(value: &HostMemoryStat) -> Self {
         Self {
             mem_total: value.mem_total,
             mem_free: value.mem_free,
@@ -83,9 +84,9 @@ impl From<&HostMemoryInfo> for GuestMemoryInfo {
     }
 }
 
-impl From<&HostMemoryModule> for GuestMemoryModule {
-    fn from(value: &HostMemoryModule) -> Self {
-        memory::MemoryModule {
+impl From<&HostMemoryInfo> for GuestMemoryInfo {
+    fn from(value: &HostMemoryInfo) -> Self {
+        Self {
             array_handle: value.array_handle,
             error_info_handle: value.error_info_handle,
             total_width: value.total_width,
@@ -127,23 +128,35 @@ impl From<&HostMemoryModule> for GuestMemoryModule {
 }
 
 impl memory::Host for SysCtx {
-    fn get_memory_info(&mut self) -> wasmtime::Result<Result<GuestMemoryInfo, String>> {
-        let mem_info = parse_meminfo!().unwrap();
-        Ok(Ok((&mem_info).into()))
+    fn stat(&mut self) -> wasmtime::Result<Result<GuestMemoryStat, String>> {
+        let mem_stat = match parse_meminfo!() {
+            Ok(ref info) => Ok(info.into()),
+            Err(err) => Err(err.to_string()),
+        };
+        Ok(mem_stat)
     }
 
-    fn get_memory_module(&mut self) -> wasmtime::Result<Result<Vec<GuestMemoryModule>, String>> {
-        if let Some(dmidecode_exe) = which("dmidecode") {
-            let output = Command::new(dmidecode_exe).arg("-t").arg("17").output()?;
+    fn info(&mut self) -> wasmtime::Result<Result<Vec<GuestMemoryInfo>, String>> {
+        // don't return top level Error because it will panic wasm
+        let get_mem_info = || -> Result<Vec<GuestMemoryInfo>, String> {
+            let Some(dmidecode_exe) = which("dmidecode") else {
+                return Err("Can not find `dmidecode` executable path.".to_string());
+            };
 
-            let res = parse_memory_module(std::str::from_utf8(&output.stdout)?)
+            let output = Command::new(dmidecode_exe)
+                .arg("-t")
+                .arg("17")
+                .output()
+                .map_err(|err| err.to_string())?;
+
+            let content = std::str::from_utf8(&output.stdout).map_err(|err| err.to_string())?;
+
+            Ok(parse_memory_module(content)
                 .iter()
-                .map(GuestMemoryModule::from)
-                .collect::<Vec<GuestMemoryModule>>();
+                .map(GuestMemoryInfo::from)
+                .collect::<Vec<GuestMemoryInfo>>())
+        };
 
-            Ok(Ok(res))
-        } else {
-            Ok(Err("Can not find `dmidecode` executable path.".to_string()))
-        }
+        Ok(get_mem_info())
     }
 }

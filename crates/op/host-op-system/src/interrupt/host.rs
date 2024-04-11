@@ -11,14 +11,15 @@
 //
 // You should have received a copy of the GNU Lesser General Public License along with Perf-event-rs. If not,
 // see <https://www.gnu.org/licenses/>.
+
 use super::{InterruptDetails, InterruptType, IrqDetails};
-use crate::interrupts::raw::{parse_interrupts, parse_irq};
-use crate::profiling::system::interrupts;
+use crate::interrupt::raw::{parse_interrupts, parse_irq};
+use crate::profiling::system::interrupt;
 use crate::SysCtx;
 
-impl From<&IrqDetails> for interrupts::Irq {
+impl From<&IrqDetails> for interrupt::InterruptInfo {
     fn from(value: &IrqDetails) -> Self {
-        interrupts::Irq {
+        Self {
             number: value.irq_number,
             smp_affinity: value.smp_affinity.clone(),
             smp_affinity_list: value.smp_affinity_list.clone(),
@@ -27,12 +28,14 @@ impl From<&IrqDetails> for interrupts::Irq {
     }
 }
 
-impl From<&InterruptDetails> for interrupts::Stat {
+impl From<&InterruptDetails> for interrupt::InterruptStat {
     fn from(value: &InterruptDetails) -> Self {
-        interrupts::Stat {
+        Self {
             interrupt_type: match &value.interrupt_type {
-                InterruptType::Common(irq) => interrupts::Kind::Common(*irq),
-                InterruptType::ArchSpecific(irq) => interrupts::Kind::ArchSpecific(irq.clone()),
+                InterruptType::Common(irq) => interrupt::InterruptType::Common(*irq),
+                InterruptType::ArchSpecific(irq) => {
+                    interrupt::InterruptType::ArchSpecific(irq.clone())
+                }
             },
             description: value.description.clone(),
             per_cpu_counts: value.cpu_counts.clone(),
@@ -40,24 +43,26 @@ impl From<&InterruptDetails> for interrupts::Stat {
     }
 }
 
-impl interrupts::Host for SysCtx {
-    fn get_interrupts_info(&mut self) -> wasmtime::Result<Result<Vec<interrupts::Irq>, String>> {
-        match parse_irq!() {
-            Ok(irq) => Ok(Ok(irq
+impl interrupt::Host for SysCtx {
+    fn info(&mut self) -> wasmtime::Result<Result<Vec<interrupt::InterruptInfo>, String>> {
+        let info = match parse_irq!() {
+            Ok(irq) => Ok(irq
                 .iter()
-                .map(interrupts::Irq::from)
-                .collect::<Vec<interrupts::Irq>>())),
-            Err(e) => Ok(Err(format!("{}: {}", "get interrupt info failed", e))),
-        }
+                .map(interrupt::InterruptInfo::from)
+                .collect::<Vec<interrupt::InterruptInfo>>()),
+            Err(e) => Err(format!("{}: {}", "get interrupt info failed", e)),
+        };
+        Ok(info)
     }
 
-    fn get_interrupts_stat(&mut self) -> wasmtime::Result<Result<Vec<interrupts::Stat>, String>> {
-        match parse_interrupts!() {
-            Ok(bindings) => Ok(Ok(bindings
+    fn stat(&mut self) -> wasmtime::Result<Result<Vec<interrupt::InterruptStat>, String>> {
+        let stat = match parse_interrupts!() {
+            Ok(bindings) => Ok(bindings
                 .iter()
-                .map(interrupts::Stat::from)
-                .collect::<Vec<interrupts::Stat>>())),
-            Err(e) => Ok(Err(format!("{}: {}", "get interrupt statistics failed", e))),
-        }
+                .map(interrupt::InterruptStat::from)
+                .collect::<Vec<interrupt::InterruptStat>>()),
+            Err(e) => Err(format!("{}: {}", "get interrupt statistics failed", e)),
+        };
+        Ok(stat)
     }
 }

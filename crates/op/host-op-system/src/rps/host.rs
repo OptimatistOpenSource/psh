@@ -11,6 +11,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public License along with Perf-event-rs. If not,
 // see <https://www.gnu.org/licenses/>.
+
 use crate::profiling::system::rps::{self, RpsInfo as GuestRpsInfo, RpsQueue as GuestRpsQueue};
 
 use crate::rps::{raw::parse_rps, RpsDetails as HostRpsInfo, RpsQueue as HostRpsQueue};
@@ -37,7 +38,7 @@ impl From<&HostRpsInfo> for GuestRpsInfo {
 }
 
 impl rps::Host for SysCtx {
-    fn get_rps_info(&mut self) -> wasmtime::Result<Vec<GuestRpsInfo>> {
+    fn info(&mut self) -> wasmtime::Result<Vec<GuestRpsInfo>> {
         Ok(parse_rps!().iter().map(|rps| rps.into()).collect())
     }
 }
