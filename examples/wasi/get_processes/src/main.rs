@@ -62,15 +62,16 @@ fn main() -> Result<(), Box<dyn Error>> {
             .map(|&(pre, post)| (pre, differential(pre, post, 1000)))
             .collect();
 
-        procs.sort_unstable_by(|(_, lhs), (_, rhs)| rhs.cpu.total_cmp(&lhs.cpu));
+        procs.sort_unstable_by(|(_, lhs), (_, rhs)| rhs.mem.cmp(&lhs.mem));
+        // procs.sort_unstable_by(|(_, lhs), (_, rhs)| rhs.mem.total_cmp(&lhs.mem));
         for (proc, usage) in procs.iter().take(5) {
             let name: String = proc.name.chars().take(15).collect();
             println!(
-                "{:6} [{:15}] -> Cpu: {:6.2}%  |  Mem: {:6.2}MiB  |  Read: {:7.2}KiB/s  |  Write: {:7.2}KiB/s",
+                "{:6} [{:15}] -> Cpu: {:6.2}%  |  Mem: {:6.2}%  |  Read: {:7.2}KiB/s  |  Write: {:7.2}KiB/s",
                 proc.pid,
                 name,
                 usage.cpu * 100.0 / 12.0,
-                usage.mem as f64 / 1024.0 / 1024.0,
+                usage.mem as f64 / 1024.0 / 1024.0 / 1024.0 / 16.0 * 100.0,
                 usage.rea / 1024.0,
                 usage.wri / 1024.0
             );
