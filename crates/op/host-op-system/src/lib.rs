@@ -15,6 +15,7 @@
 mod cpu;
 mod interrupt;
 mod memory;
+mod network;
 mod os;
 mod process;
 mod rps;
