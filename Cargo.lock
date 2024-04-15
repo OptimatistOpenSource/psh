@@ -901,6 +901,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "get_disks"
+version = "0.1.0"
+dependencies = [
+ "wit-bindgen 0.20.0",
+]
+
+[[package]]
 name = "get_interrupts_info"
 version = "0.1.0"
 dependencies = [

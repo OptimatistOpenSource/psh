@@ -13,6 +13,7 @@
 // see <https://www.gnu.org/licenses/>.
 
 mod cpu;
+mod disk;
 mod interrupt;
 mod memory;
 mod network;
