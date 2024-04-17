@@ -22,7 +22,17 @@ impl From<&HostRpsQueue> for GuestRpsQueue {
     fn from(value: &HostRpsQueue) -> Self {
         Self {
             name: value.name.clone(),
-            cpus: value.cpus.as_ref().map(|mask| mask.into()),
+            cpus: value.cpus.as_ref().map(Into::into),
+            flow_cnt: value.flow_cnt,
+        }
+    }
+}
+
+impl From<HostRpsQueue> for GuestRpsQueue {
+    fn from(value: HostRpsQueue) -> Self {
+        Self {
+            name: value.name,
+            cpus: value.cpus.map(Into::into),
             flow_cnt: value.flow_cnt,
         }
     }
@@ -32,13 +42,22 @@ impl From<&HostRpsInfo> for GuestRpsInfo {
     fn from(value: &HostRpsInfo) -> Self {
         Self {
             device: value.dev.clone(),
-            queues: value.queues.iter().map(|q| q.into()).collect(),
+            queues: value.queues.iter().map(Into::into).collect(),
+        }
+    }
+}
+
+impl From<HostRpsInfo> for GuestRpsInfo {
+    fn from(value: HostRpsInfo) -> Self {
+        Self {
+            device: value.dev,
+            queues: value.queues.into_iter().map(Into::into).collect(),
         }
     }
 }
 
 impl rps::Host for SysCtx {
     fn info(&mut self) -> wasmtime::Result<Vec<GuestRpsInfo>> {
-        Ok(parse_rps!().iter().map(|rps| rps.into()).collect())
+        Ok(parse_rps!().into_iter().map(Into::into).collect())
     }
 }

@@ -35,6 +35,12 @@ impl From<&HostCpuMask> for GuestCpuMask {
     }
 }
 
+impl From<HostCpuMask> for GuestCpuMask {
+    fn from(value: HostCpuMask) -> Self {
+        Self { mask: value.0 }
+    }
+}
+
 impl From<&HostAddressSizes> for GuestAddressSizes {
     fn from(value: &HostAddressSizes) -> Self {
         Self {
@@ -44,8 +50,26 @@ impl From<&HostAddressSizes> for GuestAddressSizes {
     }
 }
 
+impl From<HostAddressSizes> for GuestAddressSizes {
+    fn from(value: HostAddressSizes) -> Self {
+        Self {
+            phy: value.phy,
+            virt: value.virt,
+        }
+    }
+}
+
 impl From<&HostTlbSize> for GuestTlbSize {
     fn from(value: &HostTlbSize) -> Self {
+        Self {
+            count: value.count,
+            unit: value.unit,
+        }
+    }
+}
+
+impl From<HostTlbSize> for GuestTlbSize {
+    fn from(value: HostTlbSize) -> Self {
         Self {
             count: value.count,
             unit: value.unit,
@@ -65,6 +89,22 @@ impl From<&HostArm64CpuInfo> for GuestArm64CpuInfo {
             cpu_part: value.cpu_part,
             cpu_revision: value.cpu_revision,
             address_sizes: (&value.address_sizes).into(),
+        }
+    }
+}
+
+impl From<HostArm64CpuInfo> for GuestArm64CpuInfo {
+    fn from(value: HostArm64CpuInfo) -> Self {
+        Self {
+            processor: value.processor as u32,
+            bogomips: value.bogomips,
+            features: value.features,
+            cpu_implementer: value.cpu_implementer,
+            cpu_architecture: value.cpu_architecture,
+            cpu_variant: value.cpu_variant,
+            cpu_part: value.cpu_part,
+            cpu_revision: value.cpu_revision,
+            address_sizes: value.address_sizes.into(),
         }
     }
 }
@@ -103,14 +143,62 @@ impl From<&HostX86_64CpuInfo> for GuestX64CpuInfo {
     }
 }
 
+impl From<HostX86_64CpuInfo> for GuestX64CpuInfo {
+    fn from(value: HostX86_64CpuInfo) -> Self {
+        Self {
+            processor: value.processor as u32,
+            vendor_id: value.vendor_id,
+            model_name: value.model_name,
+            cpu_family: value.cpu_family as u32,
+            model: value.model as u32,
+            stepping: value.stepping as u32,
+            microcode: value.microcode,
+            cpu_mhz: value.cpu_mhz,
+            cache_size: value.cache_size,
+            physical_id: value.physical_id as u32,
+            siblings: value.siblings as u32,
+            core_id: value.core_id as u32,
+            cpu_cores: value.cpu_cores as u32,
+            apicid: value.apicid as u32,
+            initial_apicid: value.initial_apicid as u32,
+            fpu: value.fpu,
+            fpu_exception: value.fpu_exception,
+            cpuid_level: value.cpuid_level as u32,
+            wp: value.wp,
+            flag: value.flags,
+            bugs: value.bugs,
+            bogomips: value.bogomips,
+            tlb_size: value.tlb_size.into(),
+            clflush_size: value.clflush_size,
+            cache_alignment: value.cache_alignment,
+            address_sizes: value.address_sizes.into(),
+            power_management: value.power_management,
+        }
+    }
+}
+
 impl From<&HostCpuInfo> for GuestCpuInfo {
     fn from(value: &HostCpuInfo) -> Self {
         match value {
-            HostCpuInfo::X86_64(x64) => GuestCpuInfo::X64(x64.iter().map(|x| x.into()).collect()),
+            HostCpuInfo::X86_64(x64) => GuestCpuInfo::X64(x64.iter().map(Into::into).collect()),
             HostCpuInfo::Arm64(arm64) => {
-                GuestCpuInfo::Arm64(arm64.iter().map(|x| x.into()).collect())
+                GuestCpuInfo::Arm64(arm64.iter().map(Into::into).collect())
             }
             HostCpuInfo::Unsupported(unsupported) => GuestCpuInfo::Unsupported(unsupported.clone()),
+        }
+    }
+}
+
+impl From<HostCpuInfo> for GuestCpuInfo {
+    fn from(value: HostCpuInfo) -> Self {
+        match value {
+            HostCpuInfo::X86_64(x64) => {
+                GuestCpuInfo::X64(x64.into_iter().map(Into::into).collect())
+            }
+            HostCpuInfo::Arm64(arm64) => {
+                GuestCpuInfo::Arm64(arm64.into_iter().map(Into::into).collect())
+            }
+            HostCpuInfo::Unsupported(unsupported) => GuestCpuInfo::Unsupported(unsupported),
         }
     }
 }
@@ -118,7 +206,7 @@ impl From<&HostCpuInfo> for GuestCpuInfo {
 impl cpu::Host for SysCtx {
     fn info(&mut self) -> wasmtime::Result<Result<GuestCpuInfo, String>> {
         let cpu_info = match parse_cpuinfo!() {
-            Ok(ref info) => Ok(info.into()),
+            Ok(info) => Ok(info.into()),
             Err(err) => Err(err.to_string()),
         };
         Ok(cpu_info)

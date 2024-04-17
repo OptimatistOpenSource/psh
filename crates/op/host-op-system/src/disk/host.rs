@@ -62,10 +62,53 @@ impl From<&procfs::DiskStat> for GuestDiskStat {
     }
 }
 
+impl From<procfs::DiskStat> for GuestDiskStat {
+    fn from(value: procfs::DiskStat) -> Self {
+        let read = GuestDiskOperationStat {
+            operations: value.reads,
+            sectors: value.sectors_read,
+            merged: value.merged,
+            time: value.time_reading,
+        };
+        let write = GuestDiskOperationStat {
+            operations: value.writes,
+            sectors: value.sectors_written,
+            merged: value.writes_merged,
+            time: value.time_writing,
+        };
+        let discard = value
+            .discards
+            .zip(value.sectors_discarded)
+            .zip(value.discards_merged)
+            .zip(value.time_discarding)
+            .map(
+                |(((operations, sectors), merged), time)| GuestDiskOperationStat {
+                    operations,
+                    sectors,
+                    merged,
+                    time,
+                },
+            );
+        Self {
+            name: value.name,
+            major: value.major,
+            minor: value.minor,
+            read,
+            write,
+            discard,
+            in_progress: value.in_progress,
+            time_in_progress: value.time_in_progress,
+            weighted_time_in_progress: value.weighted_time_in_progress,
+            flushes: value.flushes,
+            time_flushing: value.time_flushing,
+        }
+    }
+}
+
 impl disk::Host for SysCtx {
     fn stat(&mut self) -> wasmtime::Result<Result<Vec<GuestDiskStat>, String>> {
         let disks = match procfs::diskstats() {
-            Ok(disks) => Ok(disks.iter().map(Into::into).collect()),
+            Ok(disks) => Ok(disks.into_iter().map(Into::into).collect()),
             Err(err) => Err(err.to_string()),
         };
         Ok(disks)

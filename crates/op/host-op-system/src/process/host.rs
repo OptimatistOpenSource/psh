@@ -42,6 +42,24 @@ impl From<&ProcState> for GuestProcessState {
     }
 }
 
+impl From<ProcState> for GuestProcessState {
+    fn from(value: ProcState) -> Self {
+        match value {
+            ProcState::Running => Self::Running,
+            ProcState::Sleeping => Self::Sleeping,
+            ProcState::Waiting => Self::Waiting,
+            ProcState::Zombie => Self::Zombie,
+            ProcState::Stopped => Self::Stopped,
+            ProcState::Tracing => Self::Tracing,
+            ProcState::Dead => Self::Dead,
+            ProcState::Wakekill => Self::Wakekill,
+            ProcState::Waking => Self::Waking,
+            ProcState::Parked => Self::Parked,
+            ProcState::Idle => Self::Idle,
+        }
+    }
+}
+
 fn path_to_str(path: PathBuf) -> String {
     path.to_string_lossy().to_string()
 }

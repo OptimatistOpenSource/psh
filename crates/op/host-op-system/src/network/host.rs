@@ -43,10 +43,34 @@ impl From<&DeviceStatus> for GuestNetworkStat {
     }
 }
 
+impl From<DeviceStatus> for GuestNetworkStat {
+    fn from(value: DeviceStatus) -> Self {
+        Self {
+            name: value.name,
+            recv_bytes: value.recv_bytes,
+            recv_packets: value.recv_packets,
+            recv_errors: value.recv_errs,
+            recv_drop: value.recv_drop,
+            recv_fifo: value.recv_fifo,
+            recv_frame: value.recv_frame,
+            recv_compressed: value.recv_compressed,
+            recv_multicast: value.recv_multicast,
+            sent_bytes: value.sent_bytes,
+            sent_packets: value.sent_packets,
+            sent_errors: value.sent_errs,
+            sent_drop: value.sent_drop,
+            sent_fifo: value.sent_fifo,
+            sent_collisions: value.sent_colls,
+            sent_carrier: value.sent_carrier,
+            sent_compressed: value.sent_compressed,
+        }
+    }
+}
+
 impl network::Host for SysCtx {
     fn stat(&mut self) -> wasmtime::Result<Result<Vec<GuestNetworkStat>, String>> {
         let result = match net::dev_status() {
-            Ok(devices) => Ok(devices.values().map(Into::into).collect()),
+            Ok(devices) => Ok(devices.into_values().map(Into::into).collect()),
             Err(err) => Err(err.to_string()),
         };
         Ok(result)

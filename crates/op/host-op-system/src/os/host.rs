@@ -48,11 +48,41 @@ impl From<&HostDistroKind> for GuestDistroKind {
     }
 }
 
+impl From<HostDistroKind> for GuestDistroKind {
+    fn from(value: HostDistroKind) -> Self {
+        match value {
+            HostDistroKind::Arch => GuestDistroKind::Arch,
+            HostDistroKind::CentOS => GuestDistroKind::CentOs,
+            HostDistroKind::Debian => GuestDistroKind::Debian,
+            HostDistroKind::Fedora => GuestDistroKind::Fedora,
+            HostDistroKind::Gentoo => GuestDistroKind::Gentoo,
+            HostDistroKind::Kali => GuestDistroKind::Kali,
+            HostDistroKind::Manjaro => GuestDistroKind::Manjaro,
+            HostDistroKind::Mint => GuestDistroKind::Mint,
+            HostDistroKind::NixOS => GuestDistroKind::NixOs,
+            HostDistroKind::Other(distro) => GuestDistroKind::Other(distro),
+            HostDistroKind::PopOS => GuestDistroKind::PopOs,
+            HostDistroKind::RedHat => GuestDistroKind::RedHat,
+            HostDistroKind::Slackware => GuestDistroKind::Slackware,
+            HostDistroKind::Ubuntu => GuestDistroKind::Ubuntu,
+        }
+    }
+}
+
 impl From<&HostDistroVersion> for GuestDistroVersion {
     fn from(value: &HostDistroVersion) -> Self {
         Self {
             distro: (&value.distro).into(),
             version: value.version.clone(),
+        }
+    }
+}
+
+impl From<HostDistroVersion> for GuestDistroVersion {
+    fn from(value: HostDistroVersion) -> Self {
+        Self {
+            distro: value.distro.into(),
+            version: value.version,
         }
     }
 }
@@ -67,12 +97,22 @@ impl From<&HostKernelVersion> for GuestKernelVersion {
     }
 }
 
+impl From<HostKernelVersion> for GuestKernelVersion {
+    fn from(value: HostKernelVersion) -> Self {
+        Self {
+            major: value.major,
+            minor: value.minor,
+            patch: value.patch,
+        }
+    }
+}
+
 impl os::Host for SysCtx {
     fn info(&mut self) -> wasmtime::Result<Result<GuestOsInfo, String>> {
         let distro = parse_distro_version!();
         let kernel = get_kernel_version();
         let info = match (distro, kernel) {
-            (Ok(ref distro_version), Ok(ref kernel_version)) => Ok(GuestOsInfo {
+            (Ok(distro_version), Ok(kernel_version)) => Ok(GuestOsInfo {
                 distro_version: distro_version.into(),
                 kernel_version: kernel_version.into(),
             }),
