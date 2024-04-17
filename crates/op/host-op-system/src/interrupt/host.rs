@@ -17,6 +17,24 @@ use crate::interrupt::raw::{parse_interrupts, parse_irq};
 use crate::profiling::system::interrupt;
 use crate::SysCtx;
 
+impl From<&InterruptType> for interrupt::InterruptType {
+    fn from(value: &InterruptType) -> Self {
+        match value {
+            InterruptType::Common(irq) => interrupt::InterruptType::Common(*irq),
+            InterruptType::ArchSpecific(irq) => interrupt::InterruptType::ArchSpecific(irq.clone()),
+        }
+    }
+}
+
+impl From<InterruptType> for interrupt::InterruptType {
+    fn from(value: InterruptType) -> Self {
+        match value {
+            InterruptType::Common(irq) => interrupt::InterruptType::Common(irq),
+            InterruptType::ArchSpecific(irq) => interrupt::InterruptType::ArchSpecific(irq),
+        }
+    }
+}
+
 impl From<&IrqDetails> for interrupt::InterruptInfo {
     fn from(value: &IrqDetails) -> Self {
         Self {
@@ -28,17 +46,33 @@ impl From<&IrqDetails> for interrupt::InterruptInfo {
     }
 }
 
+impl From<IrqDetails> for interrupt::InterruptInfo {
+    fn from(value: IrqDetails) -> Self {
+        Self {
+            number: value.irq_number,
+            smp_affinity: value.smp_affinity,
+            smp_affinity_list: value.smp_affinity_list,
+            node: value.node,
+        }
+    }
+}
+
 impl From<&InterruptDetails> for interrupt::InterruptStat {
     fn from(value: &InterruptDetails) -> Self {
         Self {
-            interrupt_type: match &value.interrupt_type {
-                InterruptType::Common(irq) => interrupt::InterruptType::Common(*irq),
-                InterruptType::ArchSpecific(irq) => {
-                    interrupt::InterruptType::ArchSpecific(irq.clone())
-                }
-            },
+            interrupt_type: (&value.interrupt_type).into(),
             description: value.description.clone(),
             per_cpu_counts: value.cpu_counts.clone(),
+        }
+    }
+}
+
+impl From<InterruptDetails> for interrupt::InterruptStat {
+    fn from(value: InterruptDetails) -> Self {
+        Self {
+            interrupt_type: value.interrupt_type.into(),
+            description: value.description,
+            per_cpu_counts: value.cpu_counts,
         }
     }
 }
@@ -46,10 +80,7 @@ impl From<&InterruptDetails> for interrupt::InterruptStat {
 impl interrupt::Host for SysCtx {
     fn info(&mut self) -> wasmtime::Result<Result<Vec<interrupt::InterruptInfo>, String>> {
         let info = match parse_irq!() {
-            Ok(irq) => Ok(irq
-                .iter()
-                .map(interrupt::InterruptInfo::from)
-                .collect::<Vec<interrupt::InterruptInfo>>()),
+            Ok(irq) => Ok(irq.into_iter().map(Into::into).collect::<Vec<_>>()),
             Err(e) => Err(format!("{}: {}", "get interrupt info failed", e)),
         };
         Ok(info)
@@ -57,10 +88,7 @@ impl interrupt::Host for SysCtx {
 
     fn stat(&mut self) -> wasmtime::Result<Result<Vec<interrupt::InterruptStat>, String>> {
         let stat = match parse_interrupts!() {
-            Ok(bindings) => Ok(bindings
-                .iter()
-                .map(interrupt::InterruptStat::from)
-                .collect::<Vec<interrupt::InterruptStat>>()),
+            Ok(stats) => Ok(stats.into_iter().map(Into::into).collect::<Vec<_>>()),
             Err(e) => Err(format!("{}: {}", "get interrupt statistics failed", e)),
         };
         Ok(stat)
