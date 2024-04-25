@@ -25,7 +25,7 @@ pub type FixedCounterGroup = perf_event_rs::counting::FixedCounterGroup;
 pub type CounterGuard = perf_event_rs::counting::CounterGuard;
 
 wasmtime::component::bindgen!({
-    path: "wit",
+    path: "../../../psh-sdk-wit/wit/deps/perf",
     world: "imports",
     with: {
         "profiling:perf/counter/counter"                  : Counter,
