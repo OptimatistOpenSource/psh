@@ -73,7 +73,7 @@ pub(crate) use parse_interrupts;
 mod tests {
     use std::path::PathBuf;
 
-    use crate::interrupts::InterruptType;
+    use crate::interrupt::InterruptType;
 
     macro_rules! test_type_common {
         ($interrupt_type:expr, $irq:expr) => {
