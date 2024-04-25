@@ -141,7 +141,7 @@ mod tests {
     #[test]
     fn test_parse_meminfo_hed_off_cma_on() {
         let mut meminfo_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        meminfo_path.push("test_resources/meminfo-hed-off-cma-on");
+        meminfo_path.push("../../../test_resources/memory/meminfo-hed-off-cma-on");
         let binding = meminfo_path.into_os_string();
         let meminfo_path = binding.to_str().unwrap();
         let result = parse_meminfo!(meminfo_path);
@@ -213,7 +213,7 @@ mod tests {
     #[test]
     fn test_parse_meminfo_hed_on_cma_off() {
         let mut meminfo_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        meminfo_path.push("test_resources/meminfo-hed-on-cma-off");
+        meminfo_path.push("../../../test_resources/memory/meminfo-hed-on-cma-off");
         let binding = meminfo_path.into_os_string();
         let meminfo_path = binding.to_str().unwrap();
         let result = parse_meminfo!(meminfo_path);

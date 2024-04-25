@@ -219,7 +219,7 @@ mod test {
     #[test]
     fn test_dmidecode_memory_amd() {
         let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        d.push("test_resources/arch/x86_64/amd/dmidecode_memory");
+        d.push("../../../test_resources/arch/x86_64/amd/dmidecode_memory");
         let binding = d.into_os_string();
         let dmidecode_memory_path = binding.to_str().unwrap();
 
@@ -267,7 +267,7 @@ mod test {
     #[test]
     fn test_dmidecode_memory_intel() {
         let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        d.push("test_resources/arch/x86_64/intel/dmidecode_memory");
+        d.push("../../../test_resources/arch/x86_64/intel/dmidecode_memory");
         let binding = d.into_os_string();
         let dmidecode_memory_path = binding.to_str().unwrap();
 
@@ -315,7 +315,7 @@ mod test {
     #[test]
     fn test_dmidecode_memory_yitian() {
         let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        d.push("test_resources/arch/aarch64/t-head/dmidecode_memory");
+        d.push("../../../test_resources/arch/aarch64/t-head/dmidecode_memory");
         let binding = d.into_os_string();
         let dmidecode_memory_path = binding.to_str().unwrap();
 
