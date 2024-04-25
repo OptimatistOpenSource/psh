@@ -13,6 +13,7 @@
 // see <https://www.gnu.org/licenses/>.
 
 #[rustfmt::skip]
+#[allow(dead_code)]
 mod bindings;
 
 use std::collections::HashMap;

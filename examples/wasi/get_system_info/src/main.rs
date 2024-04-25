@@ -12,6 +12,7 @@
 // You should have received a copy of the GNU Lesser General Public License along with Perf-event-rs. If not,
 // see <https://www.gnu.org/licenses/>.
 #[rustfmt::skip]
+#[allow(dead_code)]
 mod bindings;
 
 use bindings::profiling::system::os;
