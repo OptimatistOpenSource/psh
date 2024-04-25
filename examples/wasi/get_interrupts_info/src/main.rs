@@ -14,19 +14,19 @@
 #[rustfmt::skip]
 mod bindings;
 
-use crate::bindings::profiling::system::interrupts::{get_interrupts_info, get_interrupts_stat};
+use crate::bindings::profiling::system::interrupt::{info, stat};
 
 fn main() {
     println!("Example: get_interrupts_info");
 
-    let interrupts = get_interrupts_info().unwrap();
+    let interrupts = info().unwrap();
     for interrupt in interrupts {
         println!("{:?}", interrupt);
     }
 
     let mut c = 0;
     loop {
-        let interrupts_stat = get_interrupts_stat().unwrap();
+        let interrupts_stat = stat().unwrap();
         for stat in interrupts_stat {
             println!("{:?}", stat);
         }
