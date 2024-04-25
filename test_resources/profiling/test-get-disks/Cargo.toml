@@ -1,10 +1,10 @@
 [package]
-name = "get_memory_info"
+name = "test-get-disks"
 version = "0.1.0"
 edition = "2021"
 
 [package.metadata.component]
-package = "component:get-memory-info"
+package = "component:test-get-disks"
 
 [package.metadata.component.dependencies]
 

@@ -894,62 +894,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "get_cpu_info"
-version = "0.1.0"
-dependencies = [
- "wit-bindgen 0.20.0",
-]
-
-[[package]]
-name = "get_disks"
-version = "0.1.0"
-dependencies = [
- "wit-bindgen 0.20.0",
-]
-
-[[package]]
-name = "get_interrupts_info"
-version = "0.1.0"
-dependencies = [
- "wit-bindgen 0.22.0",
-]
-
-[[package]]
-name = "get_memory_info"
-version = "0.1.0"
-dependencies = [
- "wit-bindgen 0.20.0",
-]
-
-[[package]]
-name = "get_networks"
-version = "0.1.0"
-dependencies = [
- "wit-bindgen 0.20.0",
-]
-
-[[package]]
-name = "get_processes"
-version = "0.1.0"
-dependencies = [
- "wit-bindgen 0.20.0",
-]
-
-[[package]]
-name = "get_rps_info"
-version = "0.1.0"
-dependencies = [
- "wit-bindgen 0.20.0",
-]
-
-[[package]]
-name = "get_system_info"
-version = "0.1.0"
-dependencies = [
- "wit-bindgen 0.20.0",
-]
-
-[[package]]
 name = "getrandom"
 version = "0.2.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1719,7 +1663,7 @@ dependencies = [
  "tonic-build",
  "wasmtime",
  "wasmtime-wasi",
- "wit-bindgen 0.20.0",
+ "wit-bindgen",
 ]
 
 [[package]]
@@ -3139,16 +3083,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "wit-bindgen"
-version = "0.22.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "288f992ea30e6b5c531b52cdd5f3be81c148554b09ea416f058d16556ba92c27"
-dependencies = [
- "bitflags 2.5.0",
- "wit-bindgen-rt",
-]
-
-[[package]]
 name = "wit-bindgen-core"
 version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3157,12 +3091,6 @@ dependencies = [
  "anyhow",
  "wit-parser 0.201.0",
 ]
-
-[[package]]
-name = "wit-bindgen-rt"
-version = "0.22.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fcb8738270f32a2d6739973cbbb7c1b6dd8959ce515578a6e19165853272ee64"
 
 [[package]]
 name = "wit-bindgen-rust"

@@ -18,7 +18,7 @@ use std::process::Command;
 fn main() {
     let _ = fs::remove_file("src/bindings.rs");
     let mut cmd = Command::new("wit-bindgen");
-    cmd.args(["rust", "--stubs", "--out-dir", "src/", "../../../wit/"]);
+    cmd.args(["rust", "--stubs", "--out-dir", "src/", "../../../psh-sdk-wit/wit/"]);
 
     let output = cmd
         .output()

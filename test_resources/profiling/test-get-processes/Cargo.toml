@@ -1,10 +1,10 @@
 [package]
-name = "get_rps_info"
+name = "test-get-processes"
 version = "0.1.0"
 edition = "2021"
 
 [package.metadata.component]
-package = "component:get-rps-info"
+package = "component:test-get-processes"
 
 [package.metadata.component.dependencies]
 

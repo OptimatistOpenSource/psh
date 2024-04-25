@@ -1,10 +1,10 @@
 [package]
-name = "get_networks"
+name = "test-get-cpu-info"
 version = "0.1.0"
 edition = "2021"
 
 [package.metadata.component]
-package = "component:get-networks"
+package = "component:test-get-cpu-info"
 
 [package.metadata.component.dependencies]
 

@@ -1,10 +1,10 @@
 [package]
-name = "get_disks"
+name = "test-get-system-info"
 version = "0.1.0"
 edition = "2021"
 
 [package.metadata.component]
-package = "component:get-disks"
+package = "component:test-get-system-info"
 
 [package.metadata.component.dependencies]
 
