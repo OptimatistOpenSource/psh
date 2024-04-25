@@ -19,7 +19,7 @@ use crate::bindings::profiling::system::cpu::{self, CpuInfo};
 fn main() {
     println!("Hello, world!");
     println!("{}", crate::bindings::name());
-    let a = cpu::get_cpu_info().unwrap();
+    let a = cpu::info().unwrap();
 
     match a {
         CpuInfo::X64(cpus) => {
