@@ -19,13 +19,13 @@ use crate::bindings::profiling::system::memory;
 fn main() {
     println!("Hello, world!");
     println!("{}", crate::bindings::name());
-    let memory_info = memory::get_memory_info().unwrap();
-    println!("{:?}", memory_info);
-
-    let memory_module_vec = memory::get_memory_module().unwrap();
-
-    println!("Dump Memory Modules:");
-    for memory_module in memory_module_vec {
-        println!("{:?}", memory_module);
+    let memory_info_vec = memory::info().unwrap();
+    for memory_info in memory_info_vec {
+        println!("{:?}", memory_info)
     }
+
+    let memory_stat_vec = memory::stat().unwrap();
+
+    println!("Dump Memory Statistics:");
+    println!("{:?}", memory_stat_vec);
 }
