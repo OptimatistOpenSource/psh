@@ -18,7 +18,7 @@ use bindings::profiling::system::rps;
 
 fn main() {
     println!("Example: get_rps_info");
-    let rps_info = rps::get_rps_info();
+    let rps_info = rps::info();
     for info in &rps_info {
         println!("{:?}", info);
     }
