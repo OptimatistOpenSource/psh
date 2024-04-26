@@ -12,48 +12,39 @@
 // You should have received a copy of the GNU Lesser General Public License along with Perf-event-rs. If not,
 // see <https://www.gnu.org/licenses/>.
 use std::fs;
-use std::path::Path;
 
 use super::IrqDetails;
 
 pub fn do_parse_all_irq(path: &str) -> std::io::Result<Vec<IrqDetails>> {
     let folder_names: Vec<String> = fs::read_dir(path)?
         .filter_map(|entry| {
-            let entry = entry.unwrap();
-            let path = entry.path();
-            if path.is_dir() {
-                Some(entry.file_name().to_string_lossy().into_owned())
-            } else {
-                None
-            }
+            entry.ok().and_then(|entry| {
+                let path = entry.path();
+                path.is_dir()
+                    .then(|| entry.file_name().to_string_lossy().into_owned())
+            })
         })
         .collect();
 
     let parsed_irq = folder_names
         .iter()
-        .map(|irq_number| {
-            let num = (irq_number).parse::<u32>().unwrap();
-            let mut irq_current = IrqDetails::new(num);
+        .filter_map(|irq_number| {
+            let irq_number = irq_number.parse::<u32>().ok()?;
+            let path_to_content = |path: String| {
+                fs::read_to_string(path)
+                    .ok()
+                    .map(|content| content.trim().to_owned())
+            };
 
-            let file_path = format!("{}/{}/smp_affinity", path, irq_number);
-            if Path::new(&file_path).exists() {
-                let smp_affinity = fs::read_to_string(&file_path).unwrap().trim().to_string();
-                irq_current.smp_affinity = Some(smp_affinity);
-            }
-
-            let file_path = format!("{}/{}/smp_affinity_list", path, irq_number);
-            if Path::new(&file_path).exists() {
-                let smp_affinity_list = fs::read_to_string(&file_path).unwrap().trim().to_string();
-                irq_current.smp_affinity_list = Some(smp_affinity_list);
-            }
-
-            let file_path = format!("{}/{}/node", path, irq_number);
-            if Path::new(&file_path).exists() {
-                let node = fs::read_to_string(&file_path).unwrap().trim().to_string();
-                irq_current.node = Some(node);
-            }
-
-            irq_current
+            let smp_path = format!("{}/{}/smp_affinity", path, irq_number);
+            let smp_list_path = format!("{}/{}/smp_affinity_list", path, irq_number);
+            let node_path = format!("{}/{}/node", path, irq_number);
+            Some(IrqDetails {
+                irq_number,
+                smp_affinity: path_to_content(smp_path),
+                smp_affinity_list: path_to_content(smp_list_path),
+                node: path_to_content(node_path),
+            })
         })
         .collect::<Vec<IrqDetails>>();
 

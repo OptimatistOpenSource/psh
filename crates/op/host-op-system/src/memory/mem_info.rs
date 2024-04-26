@@ -23,89 +23,68 @@ fn parse_meminfo_line(reader: BufReader<File>) -> io::Result<MemInfo> {
     let mut current_mem_info = MemInfo::new();
     for line in reader.lines() {
         let line = line?;
-        let mut split = line.split_whitespace();
-        let key = split.next().unwrap();
-        let value = split.next().unwrap();
+        let Some((key, value)) = line.trim().split_once(':') else {
+            return Err(io::Error::other("No key/value pair in memory info."));
+        };
+        let value = value
+            .trim()
+            .split_once(' ')
+            .and_then(|(num, _)| num.trim().parse().ok())
+            .unwrap_or(0);
         match key {
-            "MemTotal:" => current_mem_info.mem_total = value.parse::<u64>().unwrap_or(0),
-            "MemFree:" => current_mem_info.mem_free = value.parse::<u64>().unwrap_or(0),
-            "MemAvailable:" => current_mem_info.mem_available = value.parse::<u64>().unwrap_or(0),
-            "Buffers:" => current_mem_info.buffers = value.parse::<u64>().unwrap_or(0),
-            "Cached:" => current_mem_info.cached = value.parse::<u64>().unwrap_or(0),
-            "SwapCached:" => current_mem_info.swap_cached = value.parse::<u64>().unwrap_or(0),
-            "Active:" => current_mem_info.active = value.parse::<u64>().unwrap_or(0),
-            "Inactive:" => current_mem_info.inactive = value.parse::<u64>().unwrap_or(0),
-            "Active(anon):" => current_mem_info.active_anon = value.parse::<u64>().unwrap_or(0),
-            "Inactive(anon):" => current_mem_info.inactive_anon = value.parse::<u64>().unwrap_or(0),
-            "Active(file):" => current_mem_info.active_file = value.parse::<u64>().unwrap_or(0),
-            "Inactive(file):" => current_mem_info.inactive_file = value.parse::<u64>().unwrap_or(0),
-            "Unevictable:" => current_mem_info.unevictable = value.parse::<u64>().unwrap_or(0),
-            "Mlocked:" => current_mem_info.mlocked = value.parse::<u64>().unwrap_or(0),
-            "SwapTotal:" => current_mem_info.swap_total = value.parse::<u64>().unwrap_or(0),
-            "SwapFree:" => current_mem_info.swap_free = value.parse::<u64>().unwrap_or(0),
-            "Dirty:" => current_mem_info.dirty = value.parse::<u64>().unwrap_or(0),
-            "Writeback:" => current_mem_info.writeback = value.parse::<u64>().unwrap_or(0),
-            "AnonPages:" => current_mem_info.anon_pages = value.parse::<u64>().unwrap_or(0),
-            "Mapped:" => current_mem_info.mapped = value.parse::<u64>().unwrap_or(0),
-            "Shmem:" => current_mem_info.shmem = value.parse::<u64>().unwrap_or(0),
-            "KReclaimable:" => current_mem_info.kreclaimable = value.parse::<u64>().unwrap_or(0),
-            "Slab:" => current_mem_info.slab = value.parse::<u64>().unwrap_or(0),
-            "SReclaimable:" => current_mem_info.sreclaimable = value.parse::<u64>().unwrap_or(0),
-            "SUnreclaim:" => current_mem_info.sunreclaim = value.parse::<u64>().unwrap_or(0),
-            "KernelStack:" => current_mem_info.kernel_stack = value.parse::<u64>().unwrap_or(0),
-            "PageTables:" => current_mem_info.page_tables = value.parse::<u64>().unwrap_or(0),
-            "NFS_Unstable:" => current_mem_info.nfs_unstable = value.parse::<u64>().unwrap_or(0),
-            "Bounce:" => current_mem_info.bounce = value.parse::<u64>().unwrap_or(0),
-            "WritebackTmp:" => current_mem_info.writeback_tmp = value.parse::<u64>().unwrap_or(0),
-            "CommitLimit:" => current_mem_info.commit_limit = value.parse::<u64>().unwrap_or(0),
-            "Committed_AS:" => current_mem_info.committed_as = value.parse::<u64>().unwrap_or(0),
-            "VmallocTotal:" => current_mem_info.vmalloc_total = value.parse::<u64>().unwrap_or(0),
-            "VmallocUsed:" => current_mem_info.vmalloc_used = value.parse::<u64>().unwrap_or(0),
-            "VmallocChunk:" => current_mem_info.vmalloc_chunk = value.parse::<u64>().unwrap_or(0),
-            "Percpu:" => current_mem_info.percpu = value.parse::<u64>().unwrap_or(0),
-            "CmaTotal:" => current_mem_info.cma_total = Some(value.parse::<u64>().unwrap_or(0)),
-            "CmaFree:" => current_mem_info.cma_free = Some(value.parse::<u64>().unwrap_or(0)),
-            "HardwareCorrupted:" => {
-                current_mem_info.hardware_corrupted = Some(value.parse::<u64>().unwrap_or(0))
-            }
-            "AnonHugePages:" => {
-                current_mem_info.anon_huge_pages = Some(value.parse::<u64>().unwrap_or(0))
-            }
-            "ShmemHugePages:" => {
-                current_mem_info.shmem_huge_pages = Some(value.parse::<u64>().unwrap_or(0))
-            }
-            "ShmemPmdMapped:" => {
-                current_mem_info.shmem_pmd_mapped = Some(value.parse::<u64>().unwrap_or(0))
-            }
-            "FileHugePages:" => {
-                current_mem_info.file_huge_pages = Some(value.parse::<u64>().unwrap_or(0))
-            }
-            "FilePmdMapped:" => {
-                current_mem_info.file_pmd_mapped = Some(value.parse::<u64>().unwrap_or(0))
-            }
-            "HugePages_Total:" => {
-                current_mem_info.huge_pages_total = value.parse::<u64>().unwrap_or(0)
-            }
-            "HugePages_Free:" => {
-                current_mem_info.huge_pages_free = value.parse::<u64>().unwrap_or(0)
-            }
-            "HugePages_Rsvd:" => {
-                current_mem_info.huge_pages_rsvd = value.parse::<u64>().unwrap_or(0)
-            }
-            "HugePages_Surp:" => {
-                current_mem_info.huge_pages_surp = value.parse::<u64>().unwrap_or(0)
-            }
-            "Hugepagesize:" => current_mem_info.huge_page_size = value.parse::<u64>().unwrap_or(0),
-            "Hugetlb:" => current_mem_info.huge_tlb = value.parse::<u64>().unwrap_or(0),
-            "DirectMap4k:" => {
-                current_mem_info.direct_map4k = Some(value.parse::<u64>().unwrap_or(0))
-            }
-            "DirectMap2M:" => {
-                current_mem_info.direct_map2_m = Some(value.parse::<u64>().unwrap_or(0))
-            }
-            "DirectMap1G:" => {
-                current_mem_info.direct_map1_g = Some(value.parse::<u64>().unwrap_or(0))
-            }
+            "MemTotal" => current_mem_info.mem_total = value,
+            "MemFree" => current_mem_info.mem_free = value,
+            "MemAvailable" => current_mem_info.mem_available = value,
+            "Buffers" => current_mem_info.buffers = value,
+            "Cached" => current_mem_info.cached = value,
+            "SwapCached" => current_mem_info.swap_cached = value,
+            "Active" => current_mem_info.active = value,
+            "Inactive" => current_mem_info.inactive = value,
+            "Active(anon)" => current_mem_info.active_anon = value,
+            "Inactive(anon)" => current_mem_info.inactive_anon = value,
+            "Active(file)" => current_mem_info.active_file = value,
+            "Inactive(file)" => current_mem_info.inactive_file = value,
+            "Unevictable" => current_mem_info.unevictable = value,
+            "Mlocked" => current_mem_info.mlocked = value,
+            "SwapTotal" => current_mem_info.swap_total = value,
+            "SwapFree" => current_mem_info.swap_free = value,
+            "Dirty" => current_mem_info.dirty = value,
+            "Writeback" => current_mem_info.writeback = value,
+            "AnonPages" => current_mem_info.anon_pages = value,
+            "Mapped" => current_mem_info.mapped = value,
+            "Shmem" => current_mem_info.shmem = value,
+            "KReclaimable" => current_mem_info.kreclaimable = value,
+            "Slab" => current_mem_info.slab = value,
+            "SReclaimable" => current_mem_info.sreclaimable = value,
+            "SUnreclaim" => current_mem_info.sunreclaim = value,
+            "KernelStack" => current_mem_info.kernel_stack = value,
+            "PageTables" => current_mem_info.page_tables = value,
+            "NFS_Unstable" => current_mem_info.nfs_unstable = value,
+            "Bounce" => current_mem_info.bounce = value,
+            "WritebackTmp" => current_mem_info.writeback_tmp = value,
+            "CommitLimit" => current_mem_info.commit_limit = value,
+            "Committed_AS" => current_mem_info.committed_as = value,
+            "VmallocTotal" => current_mem_info.vmalloc_total = value,
+            "VmallocUsed" => current_mem_info.vmalloc_used = value,
+            "VmallocChunk" => current_mem_info.vmalloc_chunk = value,
+            "Percpu" => current_mem_info.percpu = value,
+            "CmaTotal" => current_mem_info.cma_total = Some(value),
+            "CmaFree" => current_mem_info.cma_free = Some(value),
+            "HardwareCorrupted" => current_mem_info.hardware_corrupted = Some(value),
+            "AnonHugePages" => current_mem_info.anon_huge_pages = Some(value),
+            "ShmemHugePages" => current_mem_info.shmem_huge_pages = Some(value),
+            "ShmemPmdMapped" => current_mem_info.shmem_pmd_mapped = Some(value),
+            "FileHugePages" => current_mem_info.file_huge_pages = Some(value),
+            "FilePmdMapped" => current_mem_info.file_pmd_mapped = Some(value),
+            "HugePages_Total" => current_mem_info.huge_pages_total = value,
+            "HugePages_Free" => current_mem_info.huge_pages_free = value,
+            "HugePages_Rsvd" => current_mem_info.huge_pages_rsvd = value,
+            "HugePages_Surp" => current_mem_info.huge_pages_surp = value,
+            "Hugepagesize" => current_mem_info.huge_page_size = value,
+            "Hugetlb" => current_mem_info.huge_tlb = value,
+            "DirectMap4k" => current_mem_info.direct_map4k = Some(value),
+            "DirectMap2M" => current_mem_info.direct_map2_m = Some(value),
+            "DirectMap1G" => current_mem_info.direct_map1_g = Some(value),
             _ => (),
         }
     }
@@ -117,9 +96,7 @@ pub fn do_parse_meminfo(path: &str) -> io::Result<MemInfo> {
     let file = File::open(path)?;
     let reader = io::BufReader::new(file);
 
-    let mem_info = parse_meminfo_line(reader)?;
-
-    Ok(mem_info)
+    parse_meminfo_line(reader)
 }
 
 #[allow(unused_macros)]
