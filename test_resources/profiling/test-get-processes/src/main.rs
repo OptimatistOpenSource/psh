@@ -14,7 +14,7 @@
 
 #[rustfmt::skip]
 #[allow(dead_code)]
-mod bindings;
+mod imports;
 
 use std::{collections::HashMap, error::Error};
 
@@ -26,7 +26,7 @@ pub struct ProcessUsage {
     rea: f64,
 }
 
-use bindings::profiling::system::process::{self, ProcessStat};
+use imports::profiling::system::process::{self, ProcessStat};
 
 fn differential(pre: &ProcessStat, post: &ProcessStat, ms: u64) -> ProcessUsage {
     ProcessUsage {
@@ -53,7 +53,7 @@ fn intersection<'p>(
 
 fn main() -> Result<(), Box<dyn Error>> {
     let mut pre = process::all()?;
-    loop {
+    for _ in 0..3 {
         std::thread::sleep(std::time::Duration::from_secs(1));
         let post = process::all()?;
 
@@ -80,4 +80,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         println!();
         pre = post;
     }
+
+    Ok(())
 }

@@ -13,9 +13,9 @@
 // see <https://www.gnu.org/licenses/>.
 #[rustfmt::skip]
 #[allow(dead_code)]
-mod bindings;
+mod imports;
 
-use bindings::profiling::system::rps;
+use imports::profiling::system::rps;
 
 fn main() {
     println!("Example: get_rps_info");

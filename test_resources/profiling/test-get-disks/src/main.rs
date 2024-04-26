@@ -14,11 +14,11 @@
 
 #[rustfmt::skip]
 #[allow(dead_code)]
-mod bindings;
+mod imports;
 
 use std::{collections::HashMap, error::Error};
 
-use bindings::profiling::system::disk::{self, DiskStat};
+use imports::profiling::system::disk::{self, DiskStat};
 
 pub struct Usage {
     bps: f64,
@@ -80,7 +80,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut pre_now = std::time::Instant::now();
     let mut pre = disk::stat()?;
     let dur = std::time::Duration::from_secs(1);
-    loop {
+
+    // only iterate 3 times for testing purpose.
+    for _ in 0..3 {
         std::thread::sleep(dur);
         let post_now = std::time::Instant::now();
         let post = disk::stat()?;
@@ -88,4 +90,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         pre = post;
         pre_now = post_now;
     }
+
+    Ok(())
 }

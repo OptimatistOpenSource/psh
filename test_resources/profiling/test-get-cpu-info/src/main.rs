@@ -13,13 +13,11 @@
 // see <https://www.gnu.org/licenses/>.
 #[rustfmt::skip]
 #[allow(dead_code)]
-mod bindings;
+mod imports;
 
-use crate::bindings::profiling::system::cpu::{self, CpuInfo};
+use crate::imports::profiling::system::cpu::{self, CpuInfo};
 
 fn main() {
-    println!("Hello, world!");
-    println!("{}", crate::bindings::name());
     let a = cpu::info().unwrap();
 
     match a {

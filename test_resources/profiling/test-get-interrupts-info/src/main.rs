@@ -13,9 +13,9 @@
 // see <https://www.gnu.org/licenses/>.
 #[rustfmt::skip]
 #[allow(dead_code)]
-mod bindings;
+mod imports;
 
-use crate::bindings::profiling::system::interrupt::{info, stat};
+use crate::imports::profiling::system::interrupt::{info, stat};
 
 fn main() {
     println!("Example: get_interrupts_info");
