@@ -16,6 +16,10 @@ use std::process::Command;
 mod counter;
 mod counter_group;
 
+// FIXME(Chengdong Li): This function is no longer used in `cargo test` as
+// host-op-perf requires root permission to run test. But there is often no `cargo`
+// command in root user's $PATH.
+#[allow(dead_code)]
 pub fn compile_component(project_path: &str) {
     let toml_path = format!("{}/Cargo.toml", project_path);
 

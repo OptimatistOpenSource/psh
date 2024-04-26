@@ -11,8 +11,9 @@
 //
 // You should have received a copy of the GNU Lesser General Public License along with Perf-event-rs. If not,
 // see <https://www.gnu.org/licenses/>.
-use crate::tests::compile_component;
+
 use crate::PerfCtx;
+use std::path::Path;
 use wasmtime::component::{Component, Instance, Linker, ResourceTable};
 use wasmtime::{Config, Engine, Store};
 use wasmtime_wasi::preview2::{command, WasiCtx, WasiCtxBuilder, WasiView};
@@ -51,8 +52,12 @@ fn test_counter() {
     command::sync::add_to_linker(&mut linker).unwrap();
 
     let path = "../../../test_resources/profiling/test-perf-counter";
-    compile_component(path);
     let wasm_path = format!("{}/target/wasm32-wasi/debug/test-perf-counter.wasm", path);
+    assert!(
+        Path::new(&wasm_path).exists(),
+        "wasm file doesn't exist: {}",
+        wasm_path
+    );
     let component = Component::from_file(&engine, wasm_path).unwrap();
 
     let (cmd, _): (_, Instance) =
