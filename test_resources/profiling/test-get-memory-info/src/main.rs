@@ -11,16 +11,22 @@
 //
 // You should have received a copy of the GNU Lesser General Public License along with Perf-event-rs. If not,
 // see <https://www.gnu.org/licenses/>.
+#[rustfmt::skip]
+#[allow(dead_code)]
+mod bindings;
 
-mod builder;
-mod engine;
-mod state;
+use crate::bindings::profiling::system::memory;
 
-wasmtime::component::bindgen!({
-    path: "psh-sdk-wit/wit",
-    world: "bindings"
-});
+fn main() {
+    println!("Hello, world!");
+    println!("{}", crate::bindings::name());
+    let memory_info_vec = memory::info().unwrap();
+    for memory_info in memory_info_vec {
+        println!("{:?}", memory_info)
+    }
 
-pub use builder::PshEngineBuilder;
-pub use engine::PshEngine;
-pub use state::PshState;
+    let memory_stat_vec = memory::stat().unwrap();
+
+    println!("Dump Memory Statistics:");
+    println!("{:?}", memory_stat_vec);
+}

@@ -92,7 +92,7 @@ mod tests {
     #[test]
     fn test_parse_interrupts_x86_64_intel() {
         let mut interrupts_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        interrupts_path.push("test_resources/arch/x86_64/intel/interrupts");
+        interrupts_path.push("../../../test_resources/arch/x86_64/intel/interrupts");
         let binding = interrupts_path.into_os_string();
         let interrupts_path = binding.to_str().unwrap();
         let result = parse_interrupts!(interrupts_path);
@@ -3618,7 +3618,7 @@ mod tests {
     #[test]
     fn test_parse_interrupts_riscv64_thead() {
         let mut interrupts_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        interrupts_path.push("test_resources/arch/riscv64/t-head/interrupts");
+        interrupts_path.push("../../../test_resources/arch/riscv64/t-head/interrupts");
         let binding = interrupts_path.into_os_string();
         let interrupts_path = binding.to_str().unwrap();
         let result = parse_interrupts!(interrupts_path);

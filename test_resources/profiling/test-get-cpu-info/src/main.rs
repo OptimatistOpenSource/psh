@@ -11,16 +11,30 @@
 //
 // You should have received a copy of the GNU Lesser General Public License along with Perf-event-rs. If not,
 // see <https://www.gnu.org/licenses/>.
+#[rustfmt::skip]
+#[allow(dead_code)]
+mod bindings;
 
-mod builder;
-mod engine;
-mod state;
+use crate::bindings::profiling::system::cpu::{self, CpuInfo};
 
-wasmtime::component::bindgen!({
-    path: "psh-sdk-wit/wit",
-    world: "bindings"
-});
+fn main() {
+    println!("Hello, world!");
+    println!("{}", crate::bindings::name());
+    let a = cpu::info().unwrap();
 
-pub use builder::PshEngineBuilder;
-pub use engine::PshEngine;
-pub use state::PshState;
+    match a {
+        CpuInfo::X64(cpus) => {
+            println!("CPU architecture: x86_64");
+            println!("  nr: {}", cpus.len());
+            for cpu in cpus {
+                println!("{:?}\n", cpu);
+            }
+        }
+        CpuInfo::Arm64(_) => todo!(),
+        CpuInfo::Unsupported(_) => todo!(),
+    }
+
+    // test if host not implemented perf imports.
+    // perf::perf_new_counter(0, 0, 0);
+    // panic!("test panic");
+}

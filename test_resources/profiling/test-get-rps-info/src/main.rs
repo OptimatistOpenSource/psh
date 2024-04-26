@@ -11,16 +11,16 @@
 //
 // You should have received a copy of the GNU Lesser General Public License along with Perf-event-rs. If not,
 // see <https://www.gnu.org/licenses/>.
+#[rustfmt::skip]
+#[allow(dead_code)]
+mod bindings;
 
-mod builder;
-mod engine;
-mod state;
+use bindings::profiling::system::rps;
 
-wasmtime::component::bindgen!({
-    path: "psh-sdk-wit/wit",
-    world: "bindings"
-});
-
-pub use builder::PshEngineBuilder;
-pub use engine::PshEngine;
-pub use state::PshState;
+fn main() {
+    println!("Example: get_rps_info");
+    let rps_info = rps::info();
+    for info in &rps_info {
+        println!("{:?}", info);
+    }
+}

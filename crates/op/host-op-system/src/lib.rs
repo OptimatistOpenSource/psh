@@ -27,7 +27,7 @@ use wasmtime::component::{Linker, ResourceTable};
 pub use procfs::process::Process;
 
 wasmtime::component::bindgen!({
-    path: "../../../src/psh-sdk-wit/wit/deps/system",
+    path: "../../../psh-sdk-wit/wit/deps/system",
     world: "imports",
     with: {
         "profiling:system/process/process": Process,

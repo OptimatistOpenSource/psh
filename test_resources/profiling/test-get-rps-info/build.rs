@@ -11,16 +11,22 @@
 //
 // You should have received a copy of the GNU Lesser General Public License along with Perf-event-rs. If not,
 // see <https://www.gnu.org/licenses/>.
+use std::fs;
+use std::ops::Not;
+use std::process::Command;
 
-mod builder;
-mod engine;
-mod state;
+fn main() {
+    let _ = fs::remove_file("src/bindings.rs");
+    let mut cmd = Command::new("wit-bindgen");
+    cmd.args(["rust", "--stubs", "--out-dir", "src/", "../../../psh-sdk-wit/wit/"]);
 
-wasmtime::component::bindgen!({
-    path: "psh-sdk-wit/wit",
-    world: "bindings"
-});
-
-pub use builder::PshEngineBuilder;
-pub use engine::PshEngine;
-pub use state::PshState;
+    let output = cmd
+        .output()
+        .unwrap_or_else(|it| panic!("Failed to generate bindings: \n{}", it));
+    if output.stderr.is_empty().not() {
+        panic!(
+            "Failed to generate bindings: \n{}",
+            String::from_utf8(output.stderr).unwrap()
+        );
+    }
+}

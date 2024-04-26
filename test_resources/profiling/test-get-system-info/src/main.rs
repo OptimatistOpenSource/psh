@@ -11,16 +11,14 @@
 //
 // You should have received a copy of the GNU Lesser General Public License along with Perf-event-rs. If not,
 // see <https://www.gnu.org/licenses/>.
+#[rustfmt::skip]
+#[allow(dead_code)]
+mod bindings;
 
-mod builder;
-mod engine;
-mod state;
+use bindings::profiling::system::os;
 
-wasmtime::component::bindgen!({
-    path: "psh-sdk-wit/wit",
-    world: "bindings"
-});
-
-pub use builder::PshEngineBuilder;
-pub use engine::PshEngine;
-pub use state::PshState;
+fn main() {
+    let os_info = os::info().unwrap();
+    println!("distro version: {:?}", os_info.distro_version);
+    println!("kernel version: {:?}", os_info.kernel_version);
+}

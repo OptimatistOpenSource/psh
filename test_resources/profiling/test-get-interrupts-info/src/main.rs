@@ -11,16 +11,32 @@
 //
 // You should have received a copy of the GNU Lesser General Public License along with Perf-event-rs. If not,
 // see <https://www.gnu.org/licenses/>.
+#[rustfmt::skip]
+#[allow(dead_code)]
+mod bindings;
 
-mod builder;
-mod engine;
-mod state;
+use crate::bindings::profiling::system::interrupt::{info, stat};
 
-wasmtime::component::bindgen!({
-    path: "psh-sdk-wit/wit",
-    world: "bindings"
-});
+fn main() {
+    println!("Example: get_interrupts_info");
 
-pub use builder::PshEngineBuilder;
-pub use engine::PshEngine;
-pub use state::PshState;
+    let interrupts = info().unwrap();
+    for interrupt in interrupts {
+        println!("{:?}", interrupt);
+    }
+
+    let mut c = 0;
+    loop {
+        let interrupts_stat = stat().unwrap();
+        for stat in interrupts_stat {
+            println!("{:?}", stat);
+        }
+        println!();
+
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        c += 1;
+        if c > 3 {
+            break;
+        }
+    }
+}
