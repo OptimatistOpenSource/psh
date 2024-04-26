@@ -19,16 +19,70 @@ use std::{
 
 use super::{AddressSizes, Arm64CpuInfo, CPUInfo, TlbSize, X86_64CpuInfo};
 
+fn parse_unit(unit: &str) -> u32 {
+    match unit.trim() {
+        "B" => 1,
+        "KB" => 1024,
+        "MB" => 1024 * 1024,
+        _ => 0,
+    }
+}
+
+fn parse_cache_size(value: &str) -> u32 {
+    value
+        .split_once(' ')
+        .map(|(num, unit)| {
+            let num: u32 = num.trim().parse().unwrap_or(0);
+            let unit = parse_unit(unit);
+            num * unit
+        })
+        .unwrap_or(0)
+}
+
+fn parse_address_sizes(value: &str) -> AddressSizes {
+    let (phy, virt) = value
+        .split_once(',')
+        .map(|(phy, virt)| {
+            let get_bits = |s: &str| {
+                s.trim()
+                    .split_ascii_whitespace()
+                    .next()
+                    .and_then(|a| a.parse().ok())
+                    .unwrap_or(0u8)
+            };
+            (get_bits(phy), get_bits(virt))
+        })
+        .unwrap_or((0, 0));
+    AddressSizes { phy, virt }
+}
+
+fn parse_tlb_size(value: &str) -> TlbSize {
+    let (count, unit) = value
+        .split_once(' ')
+        .map(|(count, unit)| {
+            let count = count.trim().parse().unwrap_or(0u32);
+            let unit = if unit == "4K pages" { 4096 } else { 0 };
+            (count, unit)
+        })
+        .unwrap_or((0, 0));
+    TlbSize { count, unit }
+}
+
 fn parse_x86_64_cpu_info(reader: BufReader<File>) -> io::Result<Vec<X86_64CpuInfo>> {
     let mut cpu_info_list = Vec::new();
     let mut current_cpu_info = X86_64CpuInfo::new();
 
     for line in reader.lines().map_while(Result::ok) {
-        let parts: Vec<&str> = line.split(':').map(|s| s.trim()).collect();
+        if line.is_empty() {
+            // Empty line indicates the end of one CPU's information
+            cpu_info_list.push(current_cpu_info);
+            current_cpu_info = X86_64CpuInfo::new();
+            continue;
+        }
 
-        if parts.len() == 2 {
-            let key = parts[0];
-            let value = parts[1];
+        if let Some((key, value)) = line.split_once(':') {
+            let key = key.trim();
+            let value = value.trim();
 
             match key {
                 "processor" => {
@@ -56,17 +110,7 @@ fn parse_x86_64_cpu_info(reader: BufReader<File>) -> io::Result<Vec<X86_64CpuInf
                     current_cpu_info.cpu_mhz = value.parse().unwrap_or(0.0);
                 }
                 "cache size" => {
-                    current_cpu_info.cache_size = {
-                        let vals: Vec<&str> = value.split_ascii_whitespace().collect();
-                        vals[0].parse().unwrap_or(0) * {
-                            match vals[1] {
-                                "B" => 1,
-                                "KB" => 1024,
-                                "MB" => 1024 * 1024,
-                                _ => 0,
-                            }
-                        }
-                    }
+                    current_cpu_info.cache_size = parse_cache_size(value);
                 }
                 "physical id" => {
                     current_cpu_info.physical_id = value.parse().unwrap_or(0);
@@ -114,15 +158,7 @@ fn parse_x86_64_cpu_info(reader: BufReader<File>) -> io::Result<Vec<X86_64CpuInf
                     current_cpu_info.bogomips = value.parse().unwrap_or(0.0);
                 }
                 "TLB size" => {
-                    let items: Vec<&str> = value.split_ascii_whitespace().collect();
-                    let tlb_size = TlbSize {
-                        count: items[0].parse().unwrap_or(0),
-                        unit: match items[1] {
-                            "4K" => 4096,
-                            _ => 0,
-                        },
-                    };
-                    current_cpu_info.tlb_size = tlb_size;
+                    current_cpu_info.tlb_size = parse_tlb_size(value);
                 }
                 "clflush size" => {
                     current_cpu_info.clflush_size = value.parse().unwrap_or(0);
@@ -131,15 +167,7 @@ fn parse_x86_64_cpu_info(reader: BufReader<File>) -> io::Result<Vec<X86_64CpuInf
                     current_cpu_info.cache_alignment = value.parse().unwrap_or(0);
                 }
                 "address sizes" => {
-                    let sizes: Vec<&str> = value
-                        .split(',')
-                        .map(|s| s.split_ascii_whitespace().next().unwrap())
-                        .collect();
-                    let addr_sizes = AddressSizes {
-                        phy: sizes[0].parse().unwrap_or(0),
-                        virt: sizes[1].parse().unwrap_or(0),
-                    };
-                    current_cpu_info.address_sizes = addr_sizes;
+                    current_cpu_info.address_sizes = parse_address_sizes(value);
                 }
                 "power management" => {
                     current_cpu_info.power_management = value
@@ -150,10 +178,6 @@ fn parse_x86_64_cpu_info(reader: BufReader<File>) -> io::Result<Vec<X86_64CpuInf
                 // Add other cases for fields you want to extract
                 _ => {}
             }
-        } else if line.is_empty() {
-            // Empty line indicates the end of one CPU's information
-            cpu_info_list.push(current_cpu_info);
-            current_cpu_info = X86_64CpuInfo::new();
         }
     }
 
@@ -165,11 +189,16 @@ fn parse_aarch64_cpu_info(reader: BufReader<File>) -> io::Result<Vec<Arm64CpuInf
     let mut current_cpu_info = Arm64CpuInfo::new();
 
     for line in reader.lines().map_while(Result::ok) {
-        let parts: Vec<&str> = line.split(':').map(|s| s.trim()).collect();
+        if line.is_empty() {
+            // Empty line indicates the end of one CPU's information
+            cpu_info_list.push(current_cpu_info);
+            current_cpu_info = Arm64CpuInfo::new();
+            continue;
+        }
 
-        if parts.len() == 2 {
-            let key = parts[0];
-            let value = parts[1];
+        if let Some((key, value)) = line.split_once(':') {
+            let key = key.trim();
+            let value = value.trim();
 
             match key {
                 "processor" => {
@@ -201,23 +230,11 @@ fn parse_aarch64_cpu_info(reader: BufReader<File>) -> io::Result<Vec<Arm64CpuInf
                     current_cpu_info.cpu_revision = value.parse().unwrap_or(0);
                 }
                 "address sizes" => {
-                    let sizes: Vec<&str> = value
-                        .split(',')
-                        .map(|s| s.split_ascii_whitespace().next().unwrap())
-                        .collect();
-                    let addr_sizes = AddressSizes {
-                        phy: sizes[0].parse().unwrap_or(0),
-                        virt: sizes[1].parse().unwrap_or(0),
-                    };
-                    current_cpu_info.address_sizes = addr_sizes;
+                    current_cpu_info.address_sizes = parse_address_sizes(value);
                 }
                 // Add other cases for fields you want to extract
                 _ => {}
             }
-        } else if line.is_empty() {
-            // Empty line indicates the end of one CPU's information
-            cpu_info_list.push(current_cpu_info);
-            current_cpu_info = Arm64CpuInfo::new();
         }
     }
 
@@ -231,11 +248,11 @@ pub fn do_parse_cpuinfo(path: &str, arch: &str) -> io::Result<CPUInfo> {
 
     let cpu_info = match arch {
         "x86_64" => {
-            let x86_64_cpu_info = parse_x86_64_cpu_info(reader).unwrap();
+            let x86_64_cpu_info = parse_x86_64_cpu_info(reader)?;
             CPUInfo::X86_64(x86_64_cpu_info)
         }
         "aarch64" => {
-            let aarch64_cpu_info = parse_aarch64_cpu_info(reader).unwrap();
+            let aarch64_cpu_info = parse_aarch64_cpu_info(reader)?;
             CPUInfo::Arm64(aarch64_cpu_info)
         }
         _ => CPUInfo::Unsupported(format!("unsupported architecture {}", arch).to_string()),

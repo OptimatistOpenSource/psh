@@ -20,42 +20,47 @@ use std::{
 use super::{InterruptDetails, InterruptType};
 
 fn parse_interrupts_line(reader: BufReader<File>) -> io::Result<Vec<InterruptDetails>> {
-    let mut interrupts = Vec::new();
+    let lines: Vec<_> = reader
+        .lines()
+        .map(|line| line.map(|s| s.trim().to_owned()))
+        .collect::<Result<_, _>>()?;
 
-    let lines: Vec<String> = reader.lines().collect::<Result<_, _>>()?;
-    let lines: Vec<String> = lines.iter().map(|x| x.trim().to_string()).collect();
-    let cpu_nums = lines[0].split_whitespace().count();
+    let Some((cpus, rest)) = lines.split_first() else {
+        return Err(std::io::Error::other("Interrupt stat file is empty"));
+    };
 
-    for l in lines[1..].iter() {
-        let l: Vec<&str> = l.split_whitespace().collect();
-        let name = l[0].trim_end_matches(':');
-        let (data, description) = if l.len() == 2 {
-            (vec![l[1].parse::<u64>().unwrap()], String::new())
-        } else {
-            let data = l[1..=cpu_nums]
-                .iter()
-                .map(|x| x.parse::<u64>().unwrap())
-                .collect();
-            let description = l[cpu_nums + 1..].join(" ");
-            (data, description)
-        };
-        let interrupt_type = match name.parse::<u32>() {
-            Ok(irq) => InterruptType::Common(irq),
-            Err(_) => InterruptType::ArchSpecific(name.to_string()),
-        };
-        interrupts.push(InterruptDetails::new(data, interrupt_type, description));
-    }
+    let cpu_nums = cpus.split_ascii_whitespace().count();
+    rest.iter()
+        .map(|line| {
+            let parts: Vec<&str> = line.split_whitespace().collect();
+            let Some((name, rest)) = parts.split_first() else {
+                return Err(std::io::Error::other("Interrupt stat line is empty!"));
+            };
+            let name = name.trim_end_matches(':');
+            let parse_nums = |nums: &[&str]| {
+                nums.iter()
+                    .map(|num| num.parse::<u64>().map_err(std::io::Error::other))
+                    .collect::<Result<Vec<_>, _>>()
+            };
+            let (counts, description) = match rest.get(..cpu_nums).zip(rest.get(cpu_nums..)) {
+                Some((data, desc)) => (parse_nums(data)?, desc.join(" ")),
+                None => (parse_nums(rest)?, String::new()),
+            };
+            let interrupt_type = name
+                .parse::<u32>()
+                .map(InterruptType::Common)
+                .unwrap_or(InterruptType::ArchSpecific(name.to_owned()));
 
-    Ok(interrupts)
+            Ok(InterruptDetails::new(counts, interrupt_type, description))
+        })
+        .collect()
 }
 
 pub fn do_parse_interrupts(path: &str) -> io::Result<Vec<InterruptDetails>> {
     let file = File::open(path)?;
     let reader = io::BufReader::new(file);
 
-    let interrupts = parse_interrupts_line(reader)?;
-
-    Ok(interrupts)
+    parse_interrupts_line(reader)
 }
 
 macro_rules! parse_interrupts {

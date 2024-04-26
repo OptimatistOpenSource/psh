@@ -48,6 +48,7 @@ pub struct IrqDetails {
     pub node: Option<String>,
 }
 
+#[allow(dead_code)]
 impl IrqDetails {
     fn new(irq_number: u32) -> Self {
         Self {
