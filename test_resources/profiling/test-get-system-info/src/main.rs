@@ -13,9 +13,9 @@
 // see <https://www.gnu.org/licenses/>.
 #[rustfmt::skip]
 #[allow(dead_code)]
-mod bindings;
+mod imports;
 
-use bindings::profiling::system::os;
+use imports::profiling::system::os;
 
 fn main() {
     let os_info = os::info().unwrap();

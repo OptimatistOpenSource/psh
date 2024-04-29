@@ -14,11 +14,11 @@
 
 #[rustfmt::skip]
 #[allow(dead_code)]
-mod bindings;
+mod imports;
 
 use std::collections::HashMap;
 
-use bindings::profiling::system::network::{self, NetworkStat};
+use imports::profiling::system::network::{self, NetworkStat};
 
 fn differential(pre: &Vec<NetworkStat>, post: &Vec<NetworkStat>, dur: std::time::Duration) {
     let pre: HashMap<_, _> = pre.iter().map(|net| (net.name.clone(), net)).collect();
@@ -63,7 +63,7 @@ fn main() {
     let duration = std::time::Duration::from_secs(1);
     let mut pre_now = std::time::Instant::now();
     let mut pre_networks = network::stat().unwrap();
-    loop {
+    for _ in 0..3 {
         std::thread::sleep(duration);
         let now = std::time::Instant::now();
         let networks = network::stat().unwrap();

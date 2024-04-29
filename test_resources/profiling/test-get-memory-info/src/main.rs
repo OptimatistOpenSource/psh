@@ -13,13 +13,11 @@
 // see <https://www.gnu.org/licenses/>.
 #[rustfmt::skip]
 #[allow(dead_code)]
-mod bindings;
+mod imports;
 
-use crate::bindings::profiling::system::memory;
+use crate::imports::profiling::system::memory;
 
 fn main() {
-    println!("Hello, world!");
-    println!("{}", crate::bindings::name());
     let memory_info_vec = memory::info().unwrap();
     for memory_info in memory_info_vec {
         println!("{:?}", memory_info)

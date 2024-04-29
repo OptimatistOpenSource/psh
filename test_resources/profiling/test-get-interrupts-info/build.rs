@@ -16,16 +16,22 @@ use std::ops::Not;
 use std::process::Command;
 
 fn main() {
-    let _ = fs::remove_file("src/bindings.rs");
+    let _ = fs::remove_file("src/imports.rs");
     let mut cmd = Command::new("wit-bindgen");
-    cmd.args(["rust", "--stubs", "--out-dir", "src/", "../../../psh-sdk-wit/wit/"]);
+    cmd.args([
+        "rust",
+        "--stubs",
+        "--out-dir",
+        "src/",
+        "../../../psh-sdk-wit/wit/deps/system",
+    ]);
 
     let output = cmd
         .output()
-        .unwrap_or_else(|it| panic!("Failed to generate bindings: \n{}", it));
+        .unwrap_or_else(|it| panic!("Failed to generate imports: \n{}", it));
     if output.stderr.is_empty().not() {
         panic!(
-            "Failed to generate bindings: \n{}",
+            "Failed to generate imports: \n{}",
             String::from_utf8(output.stderr).unwrap()
         );
     }
