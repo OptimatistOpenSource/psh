@@ -7,7 +7,7 @@ edition = "2021"
 
 [workspace]
 members = [
-  "crates/op/*",
+  "crates/op/*", "psh-system",
 ]
 exclude = ["test_resources/profiling"]
 
@@ -27,6 +27,7 @@ wit-bindgen = "0.20.0"
 anyhow = "1.0.81"
 host-op-perf = { workspace = true }
 host-op-system = { workspace = true }
+psh-system = { version = "0.1.0", path = "psh-system" }
 
 [workspace.dependencies]
 host-op-perf = { path = "crates/op/host-op-perf" }

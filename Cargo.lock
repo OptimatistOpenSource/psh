@@ -1018,6 +1018,7 @@ dependencies = [
  "anyhow",
  "num_cpus",
  "procfs",
+ "psh-system",
  "uname",
  "wasmtime",
  "wasmtime-wasi",
@@ -1658,6 +1659,7 @@ dependencies = [
  "libc",
  "nix",
  "prost",
+ "psh-system",
  "tokio",
  "tonic",
  "tonic-build",
@@ -1665,6 +1667,10 @@ dependencies = [
  "wasmtime-wasi",
  "wit-bindgen",
 ]
+
+[[package]]
+name = "psh-system"
+version = "0.1.0"
 
 [[package]]
 name = "psm"
