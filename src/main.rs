@@ -14,6 +14,7 @@
 
 mod args;
 mod infra;
+mod otlp;
 mod resources;
 mod runtime;
 mod security;
@@ -24,13 +25,51 @@ use anyhow::Context;
 use clap::Parser;
 
 use args::Args;
+use opentelemetry::{metrics::MeterProvider, KeyValue};
 use runtime::PshEngineBuilder;
+
+async fn otlp() -> anyhow::Result<()> {
+    let system = psh_system::System::default();
+
+    let provider = otlp::meter_provider()?;
+    let meter = provider.meter("SystemProfile");
+    meter
+        .u64_observable_gauge("SystemProfile")
+        .with_description("System profile statistics.")
+        .with_callback(move |gauge| {
+            if let Ok(mem) = system.memory_stat_handle.get() {
+                gauge.observe(mem.mem_free, &[KeyValue::new("system.mem.stat", "free")]);
+                gauge.observe(
+                    mem.mem_available,
+                    &[KeyValue::new("system.mem.stat", "available")],
+                );
+                gauge.observe(mem.cached, &[KeyValue::new("system.mem.stat", "cached")]);
+                gauge.observe(
+                    mem.swap_free,
+                    &[KeyValue::new("system.mem.stat", "swap_free")],
+                );
+                gauge.observe(mem.dirty, &[KeyValue::new("system.mem.stat", "dirty")]);
+                gauge.observe(mem.mapped, &[KeyValue::new("system.mem.stat", "mapped")]);
+                gauge.observe(
+                    mem.huge_pages_free,
+                    &[KeyValue::new("system.mem.stat", "huge_pages_free")],
+                );
+                gauge.observe(mem.bounce, &[KeyValue::new("system.mem.stat", "bounce")]);
+            }
+        })
+        .try_init()?;
+    loop {
+        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+    }
+}
 
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
     let component_envs: Vec<(String, String)> = std::env::vars().collect();
     let mut component_args: Vec<String> = vec![args.psh_wasm_component.clone()];
     component_args.extend(args.extra_args);
+
+    let th = std::thread::spawn(|| tokio::runtime::Runtime::new()?.block_on(otlp()));
 
     let mut engine = PshEngineBuilder::new()
         .wasi_inherit_stdio()
@@ -41,5 +80,9 @@ fn main() -> anyhow::Result<()> {
         .build()
         .context("Failed to build PshEngine.")?;
 
-    engine.run(&args.psh_wasm_component)
+    engine.run(&args.psh_wasm_component)?;
+
+    let _ = th.join();
+
+    Ok(())
 }
