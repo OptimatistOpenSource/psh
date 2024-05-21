@@ -49,7 +49,7 @@ Failing to adhere to these self-check steps might result in your PR not being re
 
 ## Acknowledgments
 
-The development of the Performance Savior Home (PSH) project can be attributed to the collaborative efforts and shared vision of Optimatist and Zhejiang University's [SPAIL – System Performance Analytics Intelligence Lab](https://github.com/ZJU-SPAIL).
+The development of the Performance Savior Home (PSH) project can be attributed to the collaborative efforts and shared vision of Optimatsit Technology Co., Ltd and Zhejiang University's [SPAIL – System Performance Analytics Intelligence Lab](https://github.com/ZJU-SPAIL).
 
 <p float="left">
   <img src="https://alidocs.oss-cn-zhangjiakou.aliyuncs.com/res/AJdl643eJ4d9qke1/img/15b0f764-17be-42ff-bd26-3b647e89679a.png" width="100" />
