@@ -11,187 +11,204 @@
 //
 // You should have received a copy of the GNU Lesser General Public License along with Perf-event-rs. If not,
 // see <https://www.gnu.org/licenses/>.
-mod host;
-mod raw;
 
-// use Vec<bool> to represent CpuMask but wrap it in a tuple struct to make it a distinct type
-#[derive(Debug, PartialEq, Eq)]
-pub struct CpuMask(pub(crate) Vec<bool>);
+use crate::{
+    profiling::system::cpu::{
+        self, AddressSizes as GuestAddressSizes, Arm64CpuInfo as GuestArm64CpuInfo,
+        CpuInfo as GuestCpuInfo, CpuMask as GuestCpuMask, TlbSize as GuestTlbSize,
+        X64CpuInfo as GuestX64CpuInfo,
+    },
+    SysCtx,
+};
 
-impl CpuMask {
-    pub fn from_str(mask: &str) -> anyhow::Result<CpuMask> {
-        #[allow(clippy::identity_op)]
-        let num_to_mask = |num: u32| {
-            // num is guaranteed in range [0, 16)
-            // one hex char corresponding to 4 bits in mask
-            [
-                ((num >> 0) & 1) != 0,
-                ((num >> 1) & 1) != 0,
-                ((num >> 2) & 1) != 0,
-                ((num >> 3) & 1) != 0,
-            ]
-        };
+use psh_system::cpu::{
+    AddressSizes as HostAddressSizes, Arm64CpuInfo as HostArm64CpuInfo, CPUInfo as HostCpuInfo,
+    CpuMask as HostCpuMask, TlbSize as HostTlbSize, X86_64CpuInfo as HostX86_64CpuInfo,
+};
 
-        mask.chars()
-            .rev() // reverse chars order
-            .map(|c| match c {
-                '0'..='9' => Ok(u32::from(c) - u32::from('0')),
-                'a'..='f' => Ok(u32::from(c) - u32::from('a') + 10),
-                'A'..='F' => Ok(u32::from(c) - u32::from('A') + 10),
-                _ => Err(anyhow::anyhow!("Invalid cpumask: \"{}\"", mask)),
-            })
-            .collect::<anyhow::Result<Vec<u32>>>()
-            .map(|masks| CpuMask(masks.iter().flat_map(|&bits| num_to_mask(bits)).collect()))
-    }
-}
-
-#[derive(Debug, PartialEq)]
-pub struct TlbSize {
-    pub count: u32,
-    pub unit: u32,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct AddressSizes {
-    pub phy: u8,  // physical bits.
-    pub virt: u8, // virtual bits.
-}
-
-#[derive(Debug, PartialEq)]
-pub struct Arm64CpuInfo {
-    pub processor: usize,
-    pub bogomips: f32,
-    pub features: Vec<String>,
-    pub cpu_implementer: u16,
-    pub cpu_architecture: u16,
-    pub cpu_variant: u16,
-    pub cpu_part: u16,
-    pub cpu_revision: u16,
-    pub address_sizes: AddressSizes,
-}
-
-impl Arm64CpuInfo {
-    fn new() -> Arm64CpuInfo {
-        Arm64CpuInfo {
-            processor: 0,
-            bogomips: 0.0,
-            features: Vec::<String>::new(),
-            cpu_implementer: 0,
-            cpu_architecture: 0,
-            cpu_variant: 0,
-            cpu_part: 0,
-            cpu_revision: 0,
-            address_sizes: AddressSizes { phy: 0, virt: 0 },
+impl From<&HostCpuMask> for GuestCpuMask {
+    fn from(value: &HostCpuMask) -> Self {
+        Self {
+            mask: value.0.clone(),
         }
     }
 }
 
-#[derive(Debug, PartialEq)]
-pub struct X86_64CpuInfo {
-    pub processor: usize,
-    pub vendor_id: String,
-    pub model_name: String,
-    pub cpu_family: usize,
-    pub model: usize,
-    pub stepping: usize,
-    pub microcode: String,
-    pub cpu_mhz: f64,
-    pub cache_size: u32,
-    pub physical_id: usize,
-    pub siblings: usize,
-    pub core_id: usize,
-    pub cpu_cores: usize,
-    pub apicid: usize,
-    pub initial_apicid: usize,
-    pub fpu: bool,
-    pub fpu_exception: bool,
-    pub cpuid_level: usize,
-    pub wp: bool, // wp stands for ?
-    pub flags: Vec<String>,
-    pub bugs: Vec<String>,
-    pub bogomips: f32,
-    pub tlb_size: TlbSize,
-    pub clflush_size: u8,
-    pub cache_alignment: u8,
-    pub address_sizes: AddressSizes,
-    pub power_management: Vec<String>, // Add other fields you want to extract
+impl From<HostCpuMask> for GuestCpuMask {
+    fn from(value: HostCpuMask) -> Self {
+        Self { mask: value.0 }
+    }
 }
 
-impl X86_64CpuInfo {
-    fn new() -> X86_64CpuInfo {
-        X86_64CpuInfo {
-            processor: 0,
-            vendor_id: String::new(),
-            model_name: String::new(),
-            cpu_family: 0,
-            model: 0,
-            stepping: 0,
-            microcode: String::new(),
-            cpu_mhz: 0.0,
-            cache_size: 0,
-            physical_id: 0,
-            siblings: 0,
-            core_id: 0,
-            cpu_cores: 0,
-            apicid: 0,
-            initial_apicid: 0,
-            fpu: false,
-            fpu_exception: false,
-            cpuid_level: 0,
-            wp: false,
-            flags: Vec::<String>::new(),
-            bugs: Vec::<String>::new(),
-            bogomips: 0.0,
-            tlb_size: TlbSize { count: 0, unit: 0 },
-            clflush_size: 0,
-            cache_alignment: 0,
-            address_sizes: AddressSizes { phy: 0, virt: 0 },
-            power_management: Vec::<String>::new(),
+impl From<&HostAddressSizes> for GuestAddressSizes {
+    fn from(value: &HostAddressSizes) -> Self {
+        Self {
+            phy: value.phy,
+            virt: value.virt,
         }
     }
 }
 
-#[derive(Debug)]
-pub enum CPUInfo {
-    X86_64(Vec<X86_64CpuInfo>),
-    Arm64(Vec<Arm64CpuInfo>),
-    Unsupported(String),
+impl From<HostAddressSizes> for GuestAddressSizes {
+    fn from(value: HostAddressSizes) -> Self {
+        Self {
+            phy: value.phy,
+            virt: value.virt,
+        }
+    }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::CpuMask;
+impl From<&HostTlbSize> for GuestTlbSize {
+    fn from(value: &HostTlbSize) -> Self {
+        Self {
+            count: value.count,
+            unit: value.unit,
+        }
+    }
+}
 
-    #[test]
-    fn test_cpu_mask() {
-        let mask = CpuMask::from_str("0").unwrap();
-        assert_eq!(mask, CpuMask(vec![false; 4]));
+impl From<HostTlbSize> for GuestTlbSize {
+    fn from(value: HostTlbSize) -> Self {
+        Self {
+            count: value.count,
+            unit: value.unit,
+        }
+    }
+}
 
-        let mask = CpuMask::from_str("0000").unwrap();
-        assert_eq!(mask, CpuMask(vec![false; 16]));
+impl From<&HostArm64CpuInfo> for GuestArm64CpuInfo {
+    fn from(value: &HostArm64CpuInfo) -> Self {
+        Self {
+            processor: value.processor as u32,
+            bogomips: value.bogomips,
+            features: value.features.clone(),
+            cpu_implementer: value.cpu_implementer,
+            cpu_architecture: value.cpu_architecture,
+            cpu_variant: value.cpu_variant,
+            cpu_part: value.cpu_part,
+            cpu_revision: value.cpu_revision,
+            address_sizes: (&value.address_sizes).into(),
+        }
+    }
+}
 
-        let mask = CpuMask::from_str("1").unwrap();
-        assert_eq!(mask, CpuMask(vec![true, false, false, false]));
+impl From<HostArm64CpuInfo> for GuestArm64CpuInfo {
+    fn from(value: HostArm64CpuInfo) -> Self {
+        Self {
+            processor: value.processor as u32,
+            bogomips: value.bogomips,
+            features: value.features,
+            cpu_implementer: value.cpu_implementer,
+            cpu_architecture: value.cpu_architecture,
+            cpu_variant: value.cpu_variant,
+            cpu_part: value.cpu_part,
+            cpu_revision: value.cpu_revision,
+            address_sizes: value.address_sizes.into(),
+        }
+    }
+}
 
-        let mask = CpuMask::from_str("2").unwrap();
-        assert_eq!(mask, CpuMask(vec![false, true, false, false]));
+impl From<&HostX86_64CpuInfo> for GuestX64CpuInfo {
+    fn from(value: &HostX86_64CpuInfo) -> Self {
+        Self {
+            processor: value.processor as u32,
+            vendor_id: value.vendor_id.clone(),
+            model_name: value.model_name.clone(),
+            cpu_family: value.cpu_family as u32,
+            model: value.model as u32,
+            stepping: value.stepping as u32,
+            microcode: value.microcode.clone(),
+            cpu_mhz: value.cpu_mhz,
+            cache_size: value.cache_size,
+            physical_id: value.physical_id as u32,
+            siblings: value.siblings as u32,
+            core_id: value.core_id as u32,
+            cpu_cores: value.cpu_cores as u32,
+            apicid: value.apicid as u32,
+            initial_apicid: value.initial_apicid as u32,
+            fpu: value.fpu,
+            fpu_exception: value.fpu_exception,
+            cpuid_level: value.cpuid_level as u32,
+            wp: value.wp,
+            flag: value.flags.clone(),
+            bugs: value.bugs.clone(),
+            bogomips: value.bogomips,
+            tlb_size: (&value.tlb_size).into(),
+            clflush_size: value.clflush_size,
+            cache_alignment: value.cache_alignment,
+            address_sizes: (&value.address_sizes).into(),
+            power_management: value.power_management.clone(),
+        }
+    }
+}
 
-        let mask = CpuMask::from_str("f").unwrap();
-        assert_eq!(mask, CpuMask(vec![true; 4]));
+impl From<HostX86_64CpuInfo> for GuestX64CpuInfo {
+    fn from(value: HostX86_64CpuInfo) -> Self {
+        Self {
+            processor: value.processor as u32,
+            vendor_id: value.vendor_id,
+            model_name: value.model_name,
+            cpu_family: value.cpu_family as u32,
+            model: value.model as u32,
+            stepping: value.stepping as u32,
+            microcode: value.microcode,
+            cpu_mhz: value.cpu_mhz,
+            cache_size: value.cache_size,
+            physical_id: value.physical_id as u32,
+            siblings: value.siblings as u32,
+            core_id: value.core_id as u32,
+            cpu_cores: value.cpu_cores as u32,
+            apicid: value.apicid as u32,
+            initial_apicid: value.initial_apicid as u32,
+            fpu: value.fpu,
+            fpu_exception: value.fpu_exception,
+            cpuid_level: value.cpuid_level as u32,
+            wp: value.wp,
+            flag: value.flags,
+            bugs: value.bugs,
+            bogomips: value.bogomips,
+            tlb_size: value.tlb_size.into(),
+            clflush_size: value.clflush_size,
+            cache_alignment: value.cache_alignment,
+            address_sizes: value.address_sizes.into(),
+            power_management: value.power_management,
+        }
+    }
+}
 
-        let mask = CpuMask::from_str("11").unwrap();
-        assert_eq!(
-            mask,
-            CpuMask(vec![true, false, false, false, true, false, false, false])
-        );
+impl From<&HostCpuInfo> for GuestCpuInfo {
+    fn from(value: &HostCpuInfo) -> Self {
+        match value {
+            HostCpuInfo::X86_64(x64) => GuestCpuInfo::X64(x64.iter().map(Into::into).collect()),
+            HostCpuInfo::Arm64(arm64) => {
+                GuestCpuInfo::Arm64(arm64.iter().map(Into::into).collect())
+            }
+            HostCpuInfo::Unsupported(unsupported) => GuestCpuInfo::Unsupported(unsupported.clone()),
+        }
+    }
+}
 
-        let mask = CpuMask::from_str("a3").unwrap();
-        assert_eq!(
-            mask,
-            CpuMask(vec![true, true, false, false, false, true, false, true])
-        );
+impl From<HostCpuInfo> for GuestCpuInfo {
+    fn from(value: HostCpuInfo) -> Self {
+        match value {
+            HostCpuInfo::X86_64(x64) => {
+                GuestCpuInfo::X64(x64.into_iter().map(Into::into).collect())
+            }
+            HostCpuInfo::Arm64(arm64) => {
+                GuestCpuInfo::Arm64(arm64.into_iter().map(Into::into).collect())
+            }
+            HostCpuInfo::Unsupported(unsupported) => GuestCpuInfo::Unsupported(unsupported),
+        }
+    }
+}
 
-        let mask = CpuMask::from_str("a3\n");
-        assert!(mask.is_err());
+impl cpu::Host for SysCtx {
+    fn info(&mut self) -> wasmtime::Result<Result<GuestCpuInfo, String>> {
+        let cpu = self
+            .system
+            .cpu_info(std::time::Duration::from_secs(1))
+            .map(Into::into)
+            .map_err(|err| err.to_string());
+        Ok(cpu)
     }
 }

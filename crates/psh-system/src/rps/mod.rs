@@ -19,15 +19,15 @@ use crate::cpu::CpuMask;
 #[allow(dead_code)]
 #[derive(Debug, PartialEq, Clone)]
 pub struct RpsQueue {
-    name: String,
+    pub name: String,
     // FIXME: better to use more expressive type than raw string
-    cpus: Option<CpuMask>,
-    flow_cnt: Option<u32>,
+    pub cpus: Option<CpuMask>,
+    pub flow_cnt: Option<u32>,
 }
 
 #[allow(dead_code)]
 #[derive(Debug, PartialEq, Clone)]
 pub struct RpsDetails {
-    dev: String,
-    queues: Vec<RpsQueue>,
+    pub dev: String,
+    pub queues: Vec<RpsQueue>,
 }

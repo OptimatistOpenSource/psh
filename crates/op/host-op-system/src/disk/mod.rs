@@ -12,4 +12,108 @@
 // You should have received a copy of the GNU Lesser General Public License along with Perf-event-rs. If not,
 // see <https://www.gnu.org/licenses/>.
 
-mod host;
+use crate::{
+    profiling::system::disk::{
+        self, DiskOperationStat as GuestDiskOperationStat, DiskStat as GuestDiskStat,
+    },
+    SysCtx,
+};
+
+use psh_system::disk::DiskStat as HostDiskStat;
+
+impl From<&HostDiskStat> for GuestDiskStat {
+    fn from(value: &HostDiskStat) -> Self {
+        let read = GuestDiskOperationStat {
+            operations: value.reads,
+            sectors: value.sectors_read,
+            merged: value.merged,
+            time: value.time_reading,
+        };
+        let write = GuestDiskOperationStat {
+            operations: value.writes,
+            sectors: value.sectors_written,
+            merged: value.writes_merged,
+            time: value.time_writing,
+        };
+        let discard = value
+            .discards
+            .zip(value.sectors_discarded)
+            .zip(value.discards_merged)
+            .zip(value.time_discarding)
+            .map(
+                |(((operations, sectors), merged), time)| GuestDiskOperationStat {
+                    operations,
+                    sectors,
+                    merged,
+                    time,
+                },
+            );
+        Self {
+            name: value.name.clone(),
+            major: value.major,
+            minor: value.minor,
+            read,
+            write,
+            discard,
+            in_progress: value.in_progress,
+            time_in_progress: value.time_in_progress,
+            weighted_time_in_progress: value.weighted_time_in_progress,
+            flushes: value.flushes,
+            time_flushing: value.time_flushing,
+        }
+    }
+}
+
+impl From<HostDiskStat> for GuestDiskStat {
+    fn from(value: HostDiskStat) -> Self {
+        let read = GuestDiskOperationStat {
+            operations: value.reads,
+            sectors: value.sectors_read,
+            merged: value.merged,
+            time: value.time_reading,
+        };
+        let write = GuestDiskOperationStat {
+            operations: value.writes,
+            sectors: value.sectors_written,
+            merged: value.writes_merged,
+            time: value.time_writing,
+        };
+        let discard = value
+            .discards
+            .zip(value.sectors_discarded)
+            .zip(value.discards_merged)
+            .zip(value.time_discarding)
+            .map(
+                |(((operations, sectors), merged), time)| GuestDiskOperationStat {
+                    operations,
+                    sectors,
+                    merged,
+                    time,
+                },
+            );
+        Self {
+            name: value.name,
+            major: value.major,
+            minor: value.minor,
+            read,
+            write,
+            discard,
+            in_progress: value.in_progress,
+            time_in_progress: value.time_in_progress,
+            weighted_time_in_progress: value.weighted_time_in_progress,
+            flushes: value.flushes,
+            time_flushing: value.time_flushing,
+        }
+    }
+}
+
+impl disk::Host for SysCtx {
+    fn stat(&mut self) -> wasmtime::Result<Result<Vec<GuestDiskStat>, String>> {
+        let disks = self
+            .system
+            .disk_stat(std::time::Duration::from_secs(1))
+            .map(|disks| disks.into_iter().map(Into::into).collect())
+            .map_err(|err| err.to_string());
+        Ok(disks)
+    }
+}

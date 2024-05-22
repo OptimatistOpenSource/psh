@@ -12,39 +12,124 @@
 // You should have received a copy of the GNU Lesser General Public License along with Perf-event-rs. If not,
 // see <https://www.gnu.org/licenses/>.
 
-mod host;
-mod raw;
+use crate::{
+    profiling::system::os::{
+        self, DistroKind as GuestDistroKind, DistroVersion as GuestDistroVersion,
+        KernelVersion as GuestKernelVersion, OsInfo as GuestOsInfo,
+    },
+    SysCtx,
+};
 
-#[allow(dead_code)]
-#[derive(Debug, PartialEq)]
-pub struct KernelVersion {
-    pub major: u8,
-    pub minor: u8,
-    pub patch: u16,
+use psh_system::os::{
+    DistroKind as HostDistroKind, DistroVersion as HostDistroVersion,
+    KernelVersion as HostKernelVersion, OsInfo as HostOsInfo,
+};
+
+impl From<&HostDistroKind> for GuestDistroKind {
+    fn from(value: &HostDistroKind) -> Self {
+        match value {
+            HostDistroKind::Arch => GuestDistroKind::Arch,
+            HostDistroKind::CentOS => GuestDistroKind::CentOs,
+            HostDistroKind::Debian => GuestDistroKind::Debian,
+            HostDistroKind::Fedora => GuestDistroKind::Fedora,
+            HostDistroKind::Gentoo => GuestDistroKind::Gentoo,
+            HostDistroKind::Kali => GuestDistroKind::Kali,
+            HostDistroKind::Manjaro => GuestDistroKind::Manjaro,
+            HostDistroKind::Mint => GuestDistroKind::Mint,
+            HostDistroKind::NixOS => GuestDistroKind::NixOs,
+            HostDistroKind::Other(distro) => GuestDistroKind::Other(distro.clone()),
+            HostDistroKind::PopOS => GuestDistroKind::PopOs,
+            HostDistroKind::RedHat => GuestDistroKind::RedHat,
+            HostDistroKind::Slackware => GuestDistroKind::Slackware,
+            HostDistroKind::Ubuntu => GuestDistroKind::Ubuntu,
+        }
+    }
 }
 
-#[allow(dead_code)]
-#[derive(Debug, PartialEq)]
-pub enum DistroKind {
-    Arch,
-    CentOS,
-    Debian,
-    Fedora,
-    Gentoo,
-    Kali,
-    Manjaro,
-    Mint,
-    NixOS,
-    Other(String),
-    PopOS,
-    RedHat,
-    Slackware,
-    Ubuntu,
+impl From<HostDistroKind> for GuestDistroKind {
+    fn from(value: HostDistroKind) -> Self {
+        match value {
+            HostDistroKind::Arch => GuestDistroKind::Arch,
+            HostDistroKind::CentOS => GuestDistroKind::CentOs,
+            HostDistroKind::Debian => GuestDistroKind::Debian,
+            HostDistroKind::Fedora => GuestDistroKind::Fedora,
+            HostDistroKind::Gentoo => GuestDistroKind::Gentoo,
+            HostDistroKind::Kali => GuestDistroKind::Kali,
+            HostDistroKind::Manjaro => GuestDistroKind::Manjaro,
+            HostDistroKind::Mint => GuestDistroKind::Mint,
+            HostDistroKind::NixOS => GuestDistroKind::NixOs,
+            HostDistroKind::Other(distro) => GuestDistroKind::Other(distro),
+            HostDistroKind::PopOS => GuestDistroKind::PopOs,
+            HostDistroKind::RedHat => GuestDistroKind::RedHat,
+            HostDistroKind::Slackware => GuestDistroKind::Slackware,
+            HostDistroKind::Ubuntu => GuestDistroKind::Ubuntu,
+        }
+    }
 }
 
-#[allow(dead_code)]
-#[derive(Debug, PartialEq)]
-pub struct DistroVersion {
-    pub(crate) distro: DistroKind,
-    pub(crate) version: Option<String>,
+impl From<&HostDistroVersion> for GuestDistroVersion {
+    fn from(value: &HostDistroVersion) -> Self {
+        Self {
+            distro: (&value.distro).into(),
+            version: value.version.clone(),
+        }
+    }
+}
+
+impl From<HostDistroVersion> for GuestDistroVersion {
+    fn from(value: HostDistroVersion) -> Self {
+        Self {
+            distro: value.distro.into(),
+            version: value.version,
+        }
+    }
+}
+
+impl From<&HostKernelVersion> for GuestKernelVersion {
+    fn from(value: &HostKernelVersion) -> Self {
+        Self {
+            major: value.major,
+            minor: value.minor,
+            patch: value.patch,
+        }
+    }
+}
+
+impl From<HostKernelVersion> for GuestKernelVersion {
+    fn from(value: HostKernelVersion) -> Self {
+        Self {
+            major: value.major,
+            minor: value.minor,
+            patch: value.patch,
+        }
+    }
+}
+
+impl From<&HostOsInfo> for GuestOsInfo {
+    fn from(value: &HostOsInfo) -> Self {
+        Self {
+            distro_version: (&value.distro).into(),
+            kernel_version: (&value.kernel).into(),
+        }
+    }
+}
+
+impl From<HostOsInfo> for GuestOsInfo {
+    fn from(value: HostOsInfo) -> Self {
+        Self {
+            distro_version: value.distro.into(),
+            kernel_version: value.kernel.into(),
+        }
+    }
+}
+
+impl os::Host for SysCtx {
+    fn info(&mut self) -> wasmtime::Result<Result<GuestOsInfo, String>> {
+        let info = self
+            .system
+            .os_info(std::time::Duration::from_secs(1))
+            .map(Into::into)
+            .map_err(|err| err.to_string());
+        Ok(info)
+    }
 }

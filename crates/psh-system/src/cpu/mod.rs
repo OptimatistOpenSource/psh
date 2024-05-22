@@ -17,7 +17,7 @@ mod raw;
 
 // use Vec<bool> to represent CpuMask but wrap it in a tuple struct to make it a distinct type
 #[derive(Debug, PartialEq, Eq, Clone)]
-pub struct CpuMask(pub(crate) Vec<bool>);
+pub struct CpuMask(pub Vec<bool>);
 
 #[allow(dead_code)]
 impl CpuMask {

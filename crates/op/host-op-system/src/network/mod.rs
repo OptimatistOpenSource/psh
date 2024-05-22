@@ -12,4 +12,69 @@
 // You should have received a copy of the GNU Lesser General Public License along with Perf-event-rs. If not,
 // see <https://www.gnu.org/licenses/>.
 
-mod host;
+use crate::{
+    profiling::system::network::{self, NetworkStat as GuestNetworkStat},
+    SysCtx,
+};
+
+use psh_system::network::DeviceStatus;
+
+impl From<&DeviceStatus> for GuestNetworkStat {
+    fn from(value: &DeviceStatus) -> Self {
+        Self {
+            name: value.name.clone(),
+            recv_bytes: value.recv_bytes,
+            recv_packets: value.recv_packets,
+            recv_errors: value.recv_errs,
+            recv_drop: value.recv_drop,
+            recv_fifo: value.recv_fifo,
+            recv_frame: value.recv_frame,
+            recv_compressed: value.recv_compressed,
+            recv_multicast: value.recv_multicast,
+            sent_bytes: value.sent_bytes,
+            sent_packets: value.sent_packets,
+            sent_errors: value.sent_errs,
+            sent_drop: value.sent_drop,
+            sent_fifo: value.sent_fifo,
+            sent_collisions: value.sent_colls,
+            sent_carrier: value.sent_carrier,
+            sent_compressed: value.sent_compressed,
+        }
+    }
+}
+
+impl From<DeviceStatus> for GuestNetworkStat {
+    fn from(value: DeviceStatus) -> Self {
+        Self {
+            name: value.name,
+            recv_bytes: value.recv_bytes,
+            recv_packets: value.recv_packets,
+            recv_errors: value.recv_errs,
+            recv_drop: value.recv_drop,
+            recv_fifo: value.recv_fifo,
+            recv_frame: value.recv_frame,
+            recv_compressed: value.recv_compressed,
+            recv_multicast: value.recv_multicast,
+            sent_bytes: value.sent_bytes,
+            sent_packets: value.sent_packets,
+            sent_errors: value.sent_errs,
+            sent_drop: value.sent_drop,
+            sent_fifo: value.sent_fifo,
+            sent_collisions: value.sent_colls,
+            sent_carrier: value.sent_carrier,
+            sent_compressed: value.sent_compressed,
+        }
+    }
+}
+
+impl network::Host for SysCtx {
+    fn stat(&mut self) -> wasmtime::Result<Result<Vec<GuestNetworkStat>, String>> {
+        let networks = self
+            .system
+            .network_stat(std::time::Duration::from_secs(1))
+            .map(|nets| nets.into_iter().map(|(_, v)| v.into()).collect())
+            .map_err(|err| err.to_string());
+
+        Ok(networks)
+    }
+}
