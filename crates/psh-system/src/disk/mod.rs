@@ -13,3 +13,4 @@
 // see <https://www.gnu.org/licenses/>.
 
 pub(crate) mod global;
+pub use procfs::DiskStat;

@@ -12,16 +12,18 @@
 // You should have received a copy of the GNU Lesser General Public License along with Perf-event-rs. If not,
 // see <https://www.gnu.org/licenses/>.
 
-mod cpu;
-mod disk;
+pub mod cpu;
+pub mod disk;
 pub mod error;
-mod interrupt;
-mod memory;
-mod network;
-mod os;
-// mod process;
-mod rps;
-mod utils;
+pub mod interrupt;
+pub mod memory;
+pub mod network;
+pub mod os;
+// pub mod process;
+pub mod rps;
+pub mod utils;
+
+pub use procfs::process::Process;
 
 use std::{collections::HashMap, time::Duration};
 
@@ -30,7 +32,6 @@ use error::Result;
 use interrupt::{InterruptDetails, IrqDetails};
 use memory::{MemInfo, MemoryModule};
 use os::OsInfo;
-pub use procfs::process::Process;
 use procfs::{net::DeviceStatus, DiskStat};
 use rps::RpsDetails;
 use utils::Handle;

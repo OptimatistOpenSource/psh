@@ -20,8 +20,8 @@ mod network;
 mod os;
 mod process;
 mod rps;
-mod utils;
 
+use psh_system::System;
 use wasmtime::component::{Linker, ResourceTable};
 
 pub use procfs::process::Process;
@@ -36,19 +36,15 @@ wasmtime::component::bindgen!({
 
 #[allow(dead_code)]
 pub struct SysCtx {
-    page_size: u64,
-    boot_time_sec: u64,
-    tick_per_sec: u64,
     table: ResourceTable,
+    system: System,
 }
 
 impl Default for SysCtx {
     fn default() -> Self {
         Self {
-            page_size: procfs::page_size(),
-            boot_time_sec: procfs::boot_time_secs().unwrap_or(0),
-            tick_per_sec: procfs::ticks_per_second(),
             table: ResourceTable::default(),
+            system: System::default(),
         }
     }
 }

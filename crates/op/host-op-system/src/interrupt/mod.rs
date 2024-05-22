@@ -11,51 +11,88 @@
 //
 // You should have received a copy of the GNU Lesser General Public License along with Perf-event-rs. If not,
 // see <https://www.gnu.org/licenses/>.
-mod host;
-mod irq;
-mod raw;
-mod stat;
 
-#[derive(Debug, PartialEq)]
-pub enum InterruptType {
-    Common(u32),
-    ArchSpecific(String),
-}
+use crate::profiling::system::interrupt;
+use crate::SysCtx;
 
-pub struct InterruptDetails {
-    pub cpu_counts: Vec<u64>,
-    pub interrupt_type: InterruptType,
-    pub description: String,
-}
+use psh_system::interrupt::{InterruptDetails, InterruptType, IrqDetails};
 
-impl InterruptDetails {
-    fn new(cpu_counts: Vec<u64>, interrupt_type: InterruptType, description: String) -> Self {
-        Self {
-            cpu_counts,
-            interrupt_type,
-            description,
+impl From<&InterruptType> for interrupt::InterruptType {
+    fn from(value: &InterruptType) -> Self {
+        match value {
+            InterruptType::Common(irq) => interrupt::InterruptType::Common(*irq),
+            InterruptType::ArchSpecific(irq) => interrupt::InterruptType::ArchSpecific(irq.clone()),
         }
     }
 }
 
-#[derive(Debug)]
-pub struct IrqDetails {
-    pub irq_number: u32,
-    pub smp_affinity: Option<String>,
-    pub smp_affinity_list: Option<String>,
-    // Fixme (Chengdong Li): I think it would be better to
-    // specify a concrete type instead String.
-    pub node: Option<String>,
+impl From<InterruptType> for interrupt::InterruptType {
+    fn from(value: InterruptType) -> Self {
+        match value {
+            InterruptType::Common(irq) => interrupt::InterruptType::Common(irq),
+            InterruptType::ArchSpecific(irq) => interrupt::InterruptType::ArchSpecific(irq),
+        }
+    }
 }
 
-#[allow(dead_code)]
-impl IrqDetails {
-    fn new(irq_number: u32) -> Self {
+impl From<&IrqDetails> for interrupt::InterruptInfo {
+    fn from(value: &IrqDetails) -> Self {
         Self {
-            irq_number,
-            smp_affinity: None,
-            smp_affinity_list: None,
-            node: None,
+            number: value.irq_number,
+            smp_affinity: value.smp_affinity.clone(),
+            smp_affinity_list: value.smp_affinity_list.clone(),
+            node: value.node.clone(),
         }
+    }
+}
+
+impl From<IrqDetails> for interrupt::InterruptInfo {
+    fn from(value: IrqDetails) -> Self {
+        Self {
+            number: value.irq_number,
+            smp_affinity: value.smp_affinity,
+            smp_affinity_list: value.smp_affinity_list,
+            node: value.node,
+        }
+    }
+}
+
+impl From<&InterruptDetails> for interrupt::InterruptStat {
+    fn from(value: &InterruptDetails) -> Self {
+        Self {
+            interrupt_type: (&value.interrupt_type).into(),
+            description: value.description.clone(),
+            per_cpu_counts: value.cpu_counts.clone(),
+        }
+    }
+}
+
+impl From<InterruptDetails> for interrupt::InterruptStat {
+    fn from(value: InterruptDetails) -> Self {
+        Self {
+            interrupt_type: value.interrupt_type.into(),
+            description: value.description,
+            per_cpu_counts: value.cpu_counts,
+        }
+    }
+}
+
+impl interrupt::Host for SysCtx {
+    fn info(&mut self) -> wasmtime::Result<Result<Vec<interrupt::InterruptInfo>, String>> {
+        let info = self
+            .system
+            .interrupt_info(std::time::Duration::from_secs(1))
+            .map(|ints| ints.into_iter().map(Into::into).collect())
+            .map_err(|err| err.to_string());
+        Ok(info)
+    }
+
+    fn stat(&mut self) -> wasmtime::Result<Result<Vec<interrupt::InterruptStat>, String>> {
+        let stat = self
+            .system
+            .interrupt_stat(std::time::Duration::from_secs(1))
+            .map(|stats| stats.into_iter().map(Into::into).collect())
+            .map_err(|err| err.to_string());
+        Ok(stat)
     }
 }
