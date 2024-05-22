@@ -7,7 +7,7 @@ edition = "2021"
 
 [workspace]
 members = [
-  "crates/op/*", "psh-system",
+  "crates/op/*", "crates/psh-system",
 ]
 exclude = ["test_resources/profiling"]
 
@@ -35,7 +35,7 @@ opentelemetry_sdk = { version = "0.22.1", features = ["metrics", "opentelemetry-
 [workspace.dependencies]
 host-op-perf = { path = "crates/op/host-op-perf" }
 host-op-system = { path = "crates/op/host-op-system" }
-psh-system = { path = "psh-system" }
+psh-system = { path = "crates/psh-system" }
 
 [build-dependencies]
 tonic-build = "0.10"
