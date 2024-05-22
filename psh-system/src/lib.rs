@@ -23,9 +23,10 @@ mod os;
 mod rps;
 mod utils;
 
-use std::collections::HashMap;
+use std::{collections::HashMap, time::Duration};
 
 use cpu::CPUInfo;
+use error::Result;
 use interrupt::{InterruptDetails, IrqDetails};
 use memory::{MemInfo, MemoryModule};
 use os::OsInfo;
@@ -40,15 +41,53 @@ pub struct System {
     pub page_size: u64,
     pub boot_time_sec: u64,
     pub tick_per_sec: u64,
-    pub cpu_info_handle: Handle<CPUInfo>,
-    pub disk_stat_handle: Handle<Vec<DiskStat>>,
-    pub interrupt_info_handle: Handle<Vec<IrqDetails>>,
-    pub interrupt_stat_handle: Handle<Vec<InterruptDetails>>,
-    pub memory_info_handle: Handle<Vec<MemoryModule>>,
-    pub memory_stat_handle: Handle<MemInfo>,
-    pub network_stat_handle: Handle<HashMap<String, DeviceStatus>>,
-    pub os_info_handle: Handle<OsInfo>,
-    pub rps_info_handle: Handle<Vec<RpsDetails>>,
+    cpu_info_handle: Handle<CPUInfo>,
+    disk_stat_handle: Handle<Vec<DiskStat>>,
+    interrupt_info_handle: Handle<Vec<IrqDetails>>,
+    interrupt_stat_handle: Handle<Vec<InterruptDetails>>,
+    memory_info_handle: Handle<Vec<MemoryModule>>,
+    memory_stat_handle: Handle<MemInfo>,
+    network_stat_handle: Handle<HashMap<String, DeviceStatus>>,
+    os_info_handle: Handle<OsInfo>,
+    rps_info_handle: Handle<Vec<RpsDetails>>,
+}
+
+impl System {
+    pub fn cpu_info(&self, aging: Duration) -> Result<CPUInfo> {
+        self.cpu_info_handle.get(aging)
+    }
+
+    pub fn disk_stat(&self, aging: Duration) -> Result<Vec<DiskStat>> {
+        self.disk_stat_handle.get(aging)
+    }
+
+    pub fn interrupt_info(&self, aging: Duration) -> Result<Vec<IrqDetails>> {
+        self.interrupt_info_handle.get(aging)
+    }
+
+    pub fn interrupt_stat(&self, aging: Duration) -> Result<Vec<InterruptDetails>> {
+        self.interrupt_stat_handle.get(aging)
+    }
+
+    pub fn memory_info(&self, aging: Duration) -> Result<Vec<MemoryModule>> {
+        self.memory_info_handle.get(aging)
+    }
+
+    pub fn memory_stat(&self, aging: Duration) -> Result<MemInfo> {
+        self.memory_stat_handle.get(aging)
+    }
+
+    pub fn network_stat(&self, aging: Duration) -> Result<HashMap<String, DeviceStatus>> {
+        self.network_stat_handle.get(aging)
+    }
+
+    pub fn os_info(&self, aging: Duration) -> Result<OsInfo> {
+        self.os_info_handle.get(aging)
+    }
+
+    pub fn rps_info(&self, aging: Duration) -> Result<Vec<RpsDetails>> {
+        self.rps_info_handle.get(aging)
+    }
 }
 
 impl Default for System {

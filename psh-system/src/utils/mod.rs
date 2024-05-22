@@ -66,7 +66,7 @@ where
         Self(Arc::new(Mutex::new(ResourceInner::new(func))))
     }
 
-    pub fn get(&self) -> Result<T>
+    pub fn get(&self, aging: Duration) -> Result<T>
     where
         T: Clone,
     {
@@ -74,7 +74,7 @@ where
         let Ok(mut guard) = self.0.lock() else {
             return Err(Error::SyncError);
         };
-        if now - guard.timestamp > Duration::from_secs(1) || guard.resource.is_none() {
+        if now - guard.timestamp > aging || guard.resource.is_none() {
             guard.update()?;
         }
         guard.get().ok_or(Error::EmptyValue)

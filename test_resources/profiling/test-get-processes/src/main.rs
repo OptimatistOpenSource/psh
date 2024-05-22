@@ -53,7 +53,7 @@ fn intersection<'p>(
 
 fn main() -> Result<(), Box<dyn Error>> {
     let mut pre = process::all()?;
-    for _ in 0..3 {
+    loop {
         std::thread::sleep(std::time::Duration::from_secs(1));
         let post = process::all()?;
 
@@ -80,6 +80,4 @@ fn main() -> Result<(), Box<dyn Error>> {
         println!();
         pre = post;
     }
-
-    Ok(())
 }
