@@ -223,10 +223,10 @@ impl From<HostMemoryInfo> for GuestMemoryInfo {
 }
 
 impl memory::Host for SysCtx {
-    fn stat(&mut self) -> wasmtime::Result<Result<GuestMemoryStat, String>> {
+    fn stat(&mut self, interval_ms: u64) -> wasmtime::Result<Result<GuestMemoryStat, String>> {
         let mem_stat = self
             .system
-            .memory_stat(std::time::Duration::from_secs(1))
+            .memory_stat(Some(std::time::Duration::from_millis(interval_ms)))
             .map(Into::into)
             .map_err(|err| err.to_string());
         Ok(mem_stat)
@@ -235,7 +235,7 @@ impl memory::Host for SysCtx {
     fn info(&mut self) -> wasmtime::Result<Result<Vec<GuestMemoryInfo>, String>> {
         let mem_info = self
             .system
-            .memory_info(std::time::Duration::from_secs(1))
+            .memory_info()
             .map(|info| info.into_iter().map(Into::into).collect())
             .map_err(|err| err.to_string());
         Ok(mem_info)

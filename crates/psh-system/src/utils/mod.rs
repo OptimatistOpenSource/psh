@@ -66,7 +66,10 @@ where
         Self(Arc::new(Mutex::new(ResourceInner::new(func))))
     }
 
-    pub fn get(&self, aging: Duration) -> Result<T>
+    /// retrive the inner resource, interval should match the interval of user loop,
+    /// and is treated as an hint of data retrival,
+    /// any data within interval/10 would be considered new thus won't be updated
+    pub fn get(&self, interval: Option<Duration>) -> Result<T>
     where
         T: Clone,
     {
@@ -74,7 +77,12 @@ where
         let Ok(mut guard) = self.0.lock() else {
             return Err(Error::SyncError);
         };
-        if now - guard.timestamp > aging || guard.resource.is_none() {
+        let is_outdated = match interval {
+            Some(interval) => (now - guard.timestamp) * 10 > interval,
+            None => true,
+        };
+
+        if is_outdated || guard.resource.is_none() {
             guard.update()?;
         }
         guard.get().ok_or(Error::EmptyValue)

@@ -68,10 +68,13 @@ impl From<DeviceStatus> for GuestNetworkStat {
 }
 
 impl network::Host for SysCtx {
-    fn stat(&mut self) -> wasmtime::Result<Result<Vec<GuestNetworkStat>, String>> {
+    fn stat(
+        &mut self,
+        interval_ms: u64,
+    ) -> wasmtime::Result<Result<Vec<GuestNetworkStat>, String>> {
         let networks = self
             .system
-            .network_stat(std::time::Duration::from_secs(1))
+            .network_stat(Some(std::time::Duration::from_millis(interval_ms)))
             .map(|nets| nets.into_values().map(Into::into).collect())
             .map_err(|err| err.to_string());
 
