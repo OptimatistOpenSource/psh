@@ -12,142 +12,28 @@
 // You should have received a copy of the GNU Lesser General Public License along with Perf-event-rs. If not,
 // see <https://www.gnu.org/licenses/>.
 
-use std::{collections::HashMap, ffi::OsString, path::PathBuf};
+use std::sync::Arc;
 
-use procfs::process::{ProcState, Process};
+use once_cell::sync::Lazy;
+use procfs::process::Process;
 
-// use crate::{
-//     profiling::system::process::{
-//         self, ProcessStat as GuestProcessStat, ProcessState as GuestProcessState,
-//     },
-//     System,
-// };
+use crate::utils::Handle;
 
-// fn path_to_str(path: PathBuf) -> String {
-//     path.to_string_lossy().to_string()
-// }
+static STAT_SELF_GLOBAL: Lazy<Handle<Arc<Process>>> =
+    Lazy::new(|| Handle::new(|| Process::myself().map(Arc::new).map_err(Into::into)));
 
-// fn env_to_tuple((name, val): (OsString, OsString)) -> (String, String) {
-//     let to_str = |os_str: OsString| os_str.to_string_lossy().to_string();
-//     (to_str(name), to_str(val))
-// }
+pub fn stat_self_handle() -> Handle<Arc<Process>> {
+    STAT_SELF_GLOBAL.clone()
+}
 
-// fn envs_to_vec(vars: HashMap<OsString, OsString>) -> Vec<(String, String)> {
-//     vars.into_iter().map(env_to_tuple).collect::<Vec<_>>()
-// }
+static STAT_ALL_GLOBAL: Lazy<Handle<Vec<Arc<Process>>>> = Lazy::new(|| {
+    Handle::new(|| {
+        procfs::process::all_processes()
+            .map_err(Into::into)
+            .map(|iter| iter.filter_map(|proc| proc.ok().map(Arc::new)).collect())
+    })
+});
 
-// impl process::HostProcess for System {
-//     fn pid(&mut self, self_: Resource<Process>) -> wasmtime::Result<i32> {
-//         let process = self.table.get(&self_)?;
-//         Ok(process.pid)
-//     }
-
-//     fn cmd(&mut self, self_: Resource<Process>) -> wasmtime::Result<Result<Vec<String>, String>> {
-//         let proc = self.table.get(&self_)?;
-//         Ok(proc.cmdline().map_err(|err| err.to_string()))
-//     }
-
-//     fn exe(&mut self, self_: Resource<Process>) -> wasmtime::Result<Result<String, String>> {
-//         let proc = self.table.get(&self_)?;
-//         Ok(proc.exe().map_err(|err| err.to_string()).map(path_to_str))
-//     }
-
-//     fn environ(
-//         &mut self,
-//         self_: Resource<Process>,
-//     ) -> wasmtime::Result<Result<Vec<(String, String)>, String>> {
-//         let proc = self.table.get(&self_)?;
-//         Ok(proc
-//             .environ()
-//             .map_err(|err| err.to_string())
-//             .map(envs_to_vec))
-//     }
-
-//     fn cwd(&mut self, self_: Resource<Process>) -> wasmtime::Result<Result<String, String>> {
-//         let proc = self.table.get(&self_)?;
-//         Ok(proc.cwd().map_err(|err| err.to_string()).map(path_to_str))
-//     }
-
-//     fn root(&mut self, self_: Resource<Process>) -> wasmtime::Result<Result<String, String>> {
-//         let proc = self.table.get(&self_)?;
-//         Ok(proc.root().map_err(|err| err.to_string()).map(path_to_str))
-//     }
-
-//     fn user_id(&mut self, self_: Resource<Process>) -> wasmtime::Result<Result<u32, String>> {
-//         let proc = self.table.get(&self_)?;
-//         Ok(proc.uid().map_err(|err| err.to_string()))
-//     }
-
-//     fn drop(&mut self, rep: Resource<Process>) -> wasmtime::Result<()> {
-//         self.table.delete(rep)?;
-//         Ok(())
-//     }
-// }
-
-// impl process::Host for System {
-//     fn all(&mut self) -> wasmtime::Result<Result<Vec<GuestProcessStat>, String>> {
-//         // don't return top level Error unless it's not our fault
-//         // example: self.table.(push/get/delete)
-//         let proc_iter = match procfs::process::all_processes() {
-//             Ok(proc_iter) => proc_iter,
-//             Err(err) => {
-//                 return Ok(Err(err.to_string()));
-//             }
-//         };
-
-//         let processes: Vec<_> = proc_iter
-//             .filter_map(|proc| proc.ok())
-//             .filter_map(|proc| {
-//                 let (Ok(stat), Ok(io), Ok(mem)) = (proc.stat(), proc.io(), proc.statm()) else {
-//                     return None;
-//                 };
-//                 let Ok(state) = stat.state() else {
-//                     return None;
-//                 };
-//                 Some((proc, stat, io, mem, state))
-//             })
-//             .collect();
-
-//         let processes: Vec<_> = processes
-//             .into_iter()
-//             .map(|(proc, stat, io, mem, ref state)| {
-//                 let (pid, parent_id) = (proc.pid, stat.ppid);
-//                 match self.table.push(proc) {
-//                     Ok(proc) => Ok(GuestProcessStat {
-//                         pid,
-//                         proc,
-//                         name: stat.comm,
-//                         utime: stat.utime * 1000 / self.tick_per_sec,
-//                         stime: stat.stime * 1000 / self.tick_per_sec,
-//                         cutime: stat.cutime * 1000 / self.tick_per_sec as i64,
-//                         cstime: stat.cstime * 1000 / self.tick_per_sec as i64,
-//                         priority: stat.priority,
-//                         nice: stat.nice,
-//                         num_threads: stat.num_threads,
-//                         start_time: stat.starttime * 1000 / self.tick_per_sec,
-//                         state: state.into(),
-//                         written_bytes: io.write_bytes,
-//                         read_bytes: io.read_bytes,
-//                         memory_usage: mem.resident * self.page_size,
-//                         virtual_memory_usage: mem.size * self.page_size,
-//                         parent_id,
-//                     }),
-//                     Err(err) => Err(err),
-//                 }
-//             })
-//             .collect::<Result<_, _>>()?; // failure of this collect means self.table.push failed, so we give up
-
-//         Ok(Ok(processes))
-//     }
-
-//     fn current(&mut self) -> wasmtime::Result<Result<Resource<Process>, String>> {
-//         let proc = match procfs::process::Process::myself() {
-//             Ok(proc) => {
-//                 let handle = self.table.push(proc)?;
-//                 Ok(handle)
-//             }
-//             Err(err) => Err(err.to_string()),
-//         };
-//         Ok(proc)
-//     }
-// }
+pub fn stat_all_handle() -> Handle<Vec<Arc<Process>>> {
+    STAT_ALL_GLOBAL.clone()
+}

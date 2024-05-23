@@ -21,16 +21,20 @@ mod os;
 mod process;
 mod rps;
 
-use psh_system::System;
+use std::sync::Arc;
+
 use wasmtime::component::{Linker, ResourceTable};
 
-pub use procfs::process::Process;
+use psh_system::process::Process;
+use psh_system::System;
+
+pub type HostProc = Arc<Process>;
 
 wasmtime::component::bindgen!({
     path: "../../../psh-sdk-wit/wit/deps/system",
     world: "imports",
     with: {
-        "profiling:system/process/process": Process,
+        "profiling:system/process/process": HostProc,
     }
 });
 

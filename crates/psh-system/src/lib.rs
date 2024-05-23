@@ -19,12 +19,11 @@ pub mod interrupt;
 pub mod memory;
 pub mod network;
 pub mod os;
-// pub mod process;
+pub mod process;
 pub mod rps;
-pub mod utils;
+mod utils;
 
-pub use procfs::process::Process;
-
+use std::sync::Arc;
 use std::{collections::HashMap, time::Duration};
 
 use cpu::CPUInfo;
@@ -32,6 +31,7 @@ use error::Result;
 use interrupt::{InterruptDetails, IrqDetails};
 use memory::{MemInfo, MemoryModule};
 use os::OsInfo;
+use procfs::process::Process;
 use procfs::{net::DeviceStatus, DiskStat};
 use rps::RpsDetails;
 use utils::Handle;
@@ -51,6 +51,8 @@ pub struct System {
     network_stat_handle: Handle<HashMap<String, DeviceStatus>>,
     os_info_handle: Handle<OsInfo>,
     rps_info_handle: Handle<Vec<RpsDetails>>,
+    process_stat_self_handle: Handle<Arc<Process>>,
+    process_stat_all_handle: Handle<Vec<Arc<Process>>>,
 }
 
 impl System {
@@ -89,6 +91,14 @@ impl System {
     pub fn rps_info(&self, aging: Duration) -> Result<Vec<RpsDetails>> {
         self.rps_info_handle.get(aging)
     }
+
+    pub fn process_self_stat(&self, aging: Duration) -> Result<Arc<Process>> {
+        self.process_stat_self_handle.get(aging)
+    }
+
+    pub fn process_all_stat(&self, aging: Duration) -> Result<Vec<Arc<Process>>> {
+        self.process_stat_all_handle.get(aging)
+    }
 }
 
 impl Default for System {
@@ -106,6 +116,8 @@ impl Default for System {
             network_stat_handle: network::global::stat_handle(),
             os_info_handle: os::global::info_handle(),
             rps_info_handle: rps::global::info_handle(),
+            process_stat_self_handle: process::global::stat_self_handle(),
+            process_stat_all_handle: process::global::stat_all_handle(),
         }
     }
 }
