@@ -12,6 +12,10 @@
 // You should have received a copy of the GNU Lesser General Public License along with Perf-event-rs. If not,
 // see <https://www.gnu.org/licenses/>.
 
+use std::str::FromStr;
+
+use crate::error::{Error, Result};
+
 pub(crate) mod global;
 mod raw;
 
@@ -20,8 +24,10 @@ mod raw;
 pub struct CpuMask(pub Vec<bool>);
 
 #[allow(dead_code)]
-impl CpuMask {
-    pub fn from_str(mask: &str) -> anyhow::Result<CpuMask> {
+impl FromStr for CpuMask {
+    type Err = Error;
+
+    fn from_str(mask: &str) -> Result<CpuMask> {
         #[allow(clippy::identity_op)]
         let num_to_mask = |num: u32| {
             // num is guaranteed in range [0, 16)
@@ -40,9 +46,9 @@ impl CpuMask {
                 '0'..='9' => Ok(u32::from(c) - u32::from('0')),
                 'a'..='f' => Ok(u32::from(c) - u32::from('a') + 10),
                 'A'..='F' => Ok(u32::from(c) - u32::from('A') + 10),
-                _ => Err(anyhow::anyhow!("Invalid cpumask: \"{}\"", mask)),
+                _ => Err(Error::InvalidCpuMask(mask.to_string())),
             })
-            .collect::<anyhow::Result<Vec<u32>>>()
+            .collect::<Result<Vec<u32>>>()
             .map(|masks| CpuMask(masks.iter().flat_map(|&bits| num_to_mask(bits)).collect()))
     }
 }
@@ -166,34 +172,34 @@ mod tests {
 
     #[test]
     fn test_cpu_mask() {
-        let mask = CpuMask::from_str("0").unwrap();
+        let mask: CpuMask = "0".parse().unwrap();
         assert_eq!(mask, CpuMask(vec![false; 4]));
 
-        let mask = CpuMask::from_str("0000").unwrap();
+        let mask: CpuMask = "0000".parse().unwrap();
         assert_eq!(mask, CpuMask(vec![false; 16]));
 
-        let mask = CpuMask::from_str("1").unwrap();
+        let mask: CpuMask = "1".parse().unwrap();
         assert_eq!(mask, CpuMask(vec![true, false, false, false]));
 
-        let mask = CpuMask::from_str("2").unwrap();
+        let mask: CpuMask = "2".parse().unwrap();
         assert_eq!(mask, CpuMask(vec![false, true, false, false]));
 
-        let mask = CpuMask::from_str("f").unwrap();
+        let mask: CpuMask = "f".parse().unwrap();
         assert_eq!(mask, CpuMask(vec![true; 4]));
 
-        let mask = CpuMask::from_str("11").unwrap();
+        let mask: CpuMask = "11".parse().unwrap();
         assert_eq!(
             mask,
             CpuMask(vec![true, false, false, false, true, false, false, false])
         );
 
-        let mask = CpuMask::from_str("a3").unwrap();
+        let mask: CpuMask = "a3".parse().unwrap();
         assert_eq!(
             mask,
             CpuMask(vec![true, true, false, false, false, true, false, true])
         );
 
-        let mask = CpuMask::from_str("a3\n");
+        let mask: Result<CpuMask, _> = "a3\n".parse();
         assert!(mask.is_err());
     }
 }

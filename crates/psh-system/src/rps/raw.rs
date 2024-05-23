@@ -13,8 +13,6 @@
 // see <https://www.gnu.org/licenses/>.
 use std::fs;
 
-use crate::cpu::CpuMask;
-
 use super::{RpsDetails, RpsQueue};
 
 fn parse_queue_impl(dir: fs::DirEntry) -> Option<RpsQueue> {
@@ -26,9 +24,7 @@ fn parse_queue_impl(dir: fs::DirEntry) -> Option<RpsQueue> {
         let flow = fs::read_to_string(rx_path.join("rps_flow_cnt"));
         RpsQueue {
             name: rx_name,
-            cpus: cpu
-                .ok()
-                .and_then(|mask| CpuMask::from_str(mask.trim()).ok()),
+            cpus: cpu.ok().and_then(|mask| mask.trim().parse().ok()),
             flow_cnt: flow.ok().and_then(|s| s.trim().parse().ok()),
         }
     })

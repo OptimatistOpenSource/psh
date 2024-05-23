@@ -14,6 +14,8 @@ pub enum Error {
     Utf8Error(#[from] Utf8Error),
     #[error("Failed to find executable binary: {0}.")]
     WhichError(#[from] which::Error),
+    #[error("Invalid Cpu Mask: {0}")]
+    InvalidCpuMask(String),
     #[error("Value is empty")]
     EmptyValue,
 }
