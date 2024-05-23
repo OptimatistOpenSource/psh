@@ -72,7 +72,7 @@ impl network::Host for SysCtx {
         let networks = self
             .system
             .network_stat(std::time::Duration::from_secs(1))
-            .map(|nets| nets.into_iter().map(|(_, v)| v.into()).collect())
+            .map(|nets| nets.into_values().map(Into::into).collect())
             .map_err(|err| err.to_string());
 
         Ok(networks)

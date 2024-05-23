@@ -39,18 +39,10 @@ wasmtime::component::bindgen!({
 });
 
 #[allow(dead_code)]
+#[derive(Debug, Default)]
 pub struct SysCtx {
     table: ResourceTable,
     system: System,
-}
-
-impl Default for SysCtx {
-    fn default() -> Self {
-        Self {
-            table: ResourceTable::default(),
-            system: System::default(),
-        }
-    }
 }
 
 pub fn add_to_linker<T>(
