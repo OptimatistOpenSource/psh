@@ -9,7 +9,4 @@ version.workspace = true
 wasmtime = "18.0.1"
 anyhow = "1.0.80"
 wasmtime-wasi = "18.0.1"
-uname = "0.1.1"
-num_cpus = "1.16.0"
-procfs = "0.16.0"
 psh-system = { version = "0.1.0", path = "../../psh-system" }

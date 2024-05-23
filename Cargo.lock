@@ -1061,10 +1061,7 @@ name = "host-op-system"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "num_cpus",
- "procfs",
  "psh-system",
- "uname",
  "wasmtime",
  "wasmtime-wasi",
 ]

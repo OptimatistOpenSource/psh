@@ -12,10 +12,11 @@
 // You should have received a copy of the GNU Lesser General Public License along with Perf-event-rs. If not,
 // see <https://www.gnu.org/licenses/>.
 
-use std::{collections::HashMap, ffi::OsString, path::PathBuf};
+use std::{collections::HashMap, ffi::OsString, path::PathBuf, sync::Arc};
 
-use procfs::process::{ProcState, Process};
 use wasmtime::component::Resource;
+
+use psh_system::process::{ProcState, Process};
 
 use crate::{
     profiling::system::process::{
@@ -74,24 +75,27 @@ fn envs_to_vec(vars: HashMap<OsString, OsString>) -> Vec<(String, String)> {
 }
 
 impl process::HostProcess for SysCtx {
-    fn pid(&mut self, self_: Resource<Process>) -> wasmtime::Result<i32> {
+    fn pid(&mut self, self_: Resource<Arc<Process>>) -> wasmtime::Result<i32> {
         let process = self.table.get(&self_)?;
         Ok(process.pid)
     }
 
-    fn cmd(&mut self, self_: Resource<Process>) -> wasmtime::Result<Result<Vec<String>, String>> {
+    fn cmd(
+        &mut self,
+        self_: Resource<Arc<Process>>,
+    ) -> wasmtime::Result<Result<Vec<String>, String>> {
         let proc = self.table.get(&self_)?;
         Ok(proc.cmdline().map_err(|err| err.to_string()))
     }
 
-    fn exe(&mut self, self_: Resource<Process>) -> wasmtime::Result<Result<String, String>> {
+    fn exe(&mut self, self_: Resource<Arc<Process>>) -> wasmtime::Result<Result<String, String>> {
         let proc = self.table.get(&self_)?;
         Ok(proc.exe().map_err(|err| err.to_string()).map(path_to_str))
     }
 
     fn environ(
         &mut self,
-        self_: Resource<Process>,
+        self_: Resource<Arc<Process>>,
     ) -> wasmtime::Result<Result<Vec<(String, String)>, String>> {
         let proc = self.table.get(&self_)?;
         Ok(proc
@@ -100,22 +104,22 @@ impl process::HostProcess for SysCtx {
             .map(envs_to_vec))
     }
 
-    fn cwd(&mut self, self_: Resource<Process>) -> wasmtime::Result<Result<String, String>> {
+    fn cwd(&mut self, self_: Resource<Arc<Process>>) -> wasmtime::Result<Result<String, String>> {
         let proc = self.table.get(&self_)?;
         Ok(proc.cwd().map_err(|err| err.to_string()).map(path_to_str))
     }
 
-    fn root(&mut self, self_: Resource<Process>) -> wasmtime::Result<Result<String, String>> {
+    fn root(&mut self, self_: Resource<Arc<Process>>) -> wasmtime::Result<Result<String, String>> {
         let proc = self.table.get(&self_)?;
         Ok(proc.root().map_err(|err| err.to_string()).map(path_to_str))
     }
 
-    fn user_id(&mut self, self_: Resource<Process>) -> wasmtime::Result<Result<u32, String>> {
+    fn user_id(&mut self, self_: Resource<Arc<Process>>) -> wasmtime::Result<Result<u32, String>> {
         let proc = self.table.get(&self_)?;
         Ok(proc.uid().map_err(|err| err.to_string()))
     }
 
-    fn drop(&mut self, rep: Resource<Process>) -> wasmtime::Result<()> {
+    fn drop(&mut self, rep: Resource<Arc<Process>>) -> wasmtime::Result<()> {
         self.table.delete(rep)?;
         Ok(())
     }
@@ -125,15 +129,16 @@ impl process::Host for SysCtx {
     fn all(&mut self) -> wasmtime::Result<Result<Vec<GuestProcessStat>, String>> {
         // don't return top level Error unless it's not our fault
         // example: self.table.(push/get/delete)
-        let proc_iter = match procfs::process::all_processes() {
-            Ok(proc_iter) => proc_iter,
-            Err(err) => {
-                return Ok(Err(err.to_string()));
-            }
+        let procs = match self
+            .system
+            .process_all_stat(std::time::Duration::from_secs(1))
+        {
+            Ok(procs) => procs,
+            Err(err) => return Ok(Err(err.to_string())),
         };
 
-        let processes: Vec<_> = proc_iter
-            .filter_map(|proc| proc.ok())
+        let processes: Vec<_> = procs
+            .into_iter()
             .filter_map(|proc| {
                 let (Ok(stat), Ok(io), Ok(mem)) = (proc.stat(), proc.io(), proc.statm()) else {
                     return None;
@@ -177,12 +182,12 @@ impl process::Host for SysCtx {
         Ok(Ok(processes))
     }
 
-    fn current(&mut self) -> wasmtime::Result<Result<Resource<Process>, String>> {
-        let proc = match procfs::process::Process::myself() {
-            Ok(proc) => {
-                let handle = self.table.push(proc)?;
-                Ok(handle)
-            }
+    fn current(&mut self) -> wasmtime::Result<Result<Resource<Arc<Process>>, String>> {
+        let proc = match self
+            .system
+            .process_self_stat(std::time::Duration::from_secs(1))
+        {
+            Ok(proc) => Ok(self.table.push(proc)?),
             Err(err) => Err(err.to_string()),
         };
         Ok(proc)
