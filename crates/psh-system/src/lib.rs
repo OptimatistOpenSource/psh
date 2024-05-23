@@ -51,52 +51,52 @@ pub struct System {
     network_stat_handle: Handle<HashMap<String, DeviceStatus>>,
     os_info_handle: Handle<OsInfo>,
     rps_info_handle: Handle<Vec<RpsDetails>>,
-    process_stat_self_handle: Handle<Arc<Process>>,
+    process_info_self_handle: Handle<Arc<Process>>,
     process_stat_all_handle: Handle<Vec<Arc<Process>>>,
 }
 
 impl System {
-    pub fn cpu_info(&self, aging: Duration) -> Result<CPUInfo> {
-        self.cpu_info_handle.get(aging)
+    pub fn cpu_info(&self) -> Result<CPUInfo> {
+        self.cpu_info_handle.get(None)
     }
 
-    pub fn disk_stat(&self, aging: Duration) -> Result<Vec<DiskStat>> {
+    pub fn disk_stat(&self, aging: Option<Duration>) -> Result<Vec<DiskStat>> {
         self.disk_stat_handle.get(aging)
     }
 
-    pub fn interrupt_info(&self, aging: Duration) -> Result<Vec<IrqDetails>> {
-        self.interrupt_info_handle.get(aging)
+    pub fn interrupt_info(&self) -> Result<Vec<IrqDetails>> {
+        self.interrupt_info_handle.get(None)
     }
 
-    pub fn interrupt_stat(&self, aging: Duration) -> Result<Vec<InterruptDetails>> {
+    pub fn interrupt_stat(&self, aging: Option<Duration>) -> Result<Vec<InterruptDetails>> {
         self.interrupt_stat_handle.get(aging)
     }
 
-    pub fn memory_info(&self, aging: Duration) -> Result<Vec<MemoryModule>> {
-        self.memory_info_handle.get(aging)
+    pub fn memory_info(&self) -> Result<Vec<MemoryModule>> {
+        self.memory_info_handle.get(None)
     }
 
-    pub fn memory_stat(&self, aging: Duration) -> Result<MemInfo> {
+    pub fn memory_stat(&self, aging: Option<Duration>) -> Result<MemInfo> {
         self.memory_stat_handle.get(aging)
     }
 
-    pub fn network_stat(&self, aging: Duration) -> Result<HashMap<String, DeviceStatus>> {
+    pub fn network_stat(&self, aging: Option<Duration>) -> Result<HashMap<String, DeviceStatus>> {
         self.network_stat_handle.get(aging)
     }
 
-    pub fn os_info(&self, aging: Duration) -> Result<OsInfo> {
-        self.os_info_handle.get(aging)
+    pub fn os_info(&self) -> Result<OsInfo> {
+        self.os_info_handle.get(None)
     }
 
-    pub fn rps_info(&self, aging: Duration) -> Result<Vec<RpsDetails>> {
-        self.rps_info_handle.get(aging)
+    pub fn rps_info(&self) -> Result<Vec<RpsDetails>> {
+        self.rps_info_handle.get(None)
     }
 
-    pub fn process_self_stat(&self, aging: Duration) -> Result<Arc<Process>> {
-        self.process_stat_self_handle.get(aging)
+    pub fn process_self_info(&self, aging: Option<Duration>) -> Result<Arc<Process>> {
+        self.process_info_self_handle.get(aging)
     }
 
-    pub fn process_all_stat(&self, aging: Duration) -> Result<Vec<Arc<Process>>> {
+    pub fn process_all_stat(&self, aging: Option<Duration>) -> Result<Vec<Arc<Process>>> {
         self.process_stat_all_handle.get(aging)
     }
 }
@@ -116,7 +116,7 @@ impl Default for System {
             network_stat_handle: network::global::stat_handle(),
             os_info_handle: os::global::info_handle(),
             rps_info_handle: rps::global::info_handle(),
-            process_stat_self_handle: process::global::stat_self_handle(),
+            process_info_self_handle: process::global::stat_self_handle(),
             process_stat_all_handle: process::global::stat_all_handle(),
         }
     }

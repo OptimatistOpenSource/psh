@@ -60,7 +60,7 @@ impl rps::Host for SysCtx {
     fn info(&mut self) -> wasmtime::Result<Vec<GuestRpsInfo>> {
         Ok(self
             .system
-            .rps_info(std::time::Duration::from_secs(1))
+            .rps_info()
             .map_or(vec![], |info| info.into_iter().map(Into::into).collect()))
     }
 }

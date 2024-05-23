@@ -81,16 +81,19 @@ impl interrupt::Host for SysCtx {
     fn info(&mut self) -> wasmtime::Result<Result<Vec<interrupt::InterruptInfo>, String>> {
         let info = self
             .system
-            .interrupt_info(std::time::Duration::from_secs(1))
+            .interrupt_info()
             .map(|ints| ints.into_iter().map(Into::into).collect())
             .map_err(|err| err.to_string());
         Ok(info)
     }
 
-    fn stat(&mut self) -> wasmtime::Result<Result<Vec<interrupt::InterruptStat>, String>> {
+    fn stat(
+        &mut self,
+        interval_ms: u64,
+    ) -> wasmtime::Result<Result<Vec<interrupt::InterruptStat>, String>> {
         let stat = self
             .system
-            .interrupt_stat(std::time::Duration::from_secs(1))
+            .interrupt_stat(Some(std::time::Duration::from_millis(interval_ms)))
             .map(|stats| stats.into_iter().map(Into::into).collect())
             .map_err(|err| err.to_string());
         Ok(stat)

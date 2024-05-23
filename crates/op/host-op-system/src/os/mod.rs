@@ -127,7 +127,7 @@ impl os::Host for SysCtx {
     fn info(&mut self) -> wasmtime::Result<Result<GuestOsInfo, String>> {
         let info = self
             .system
-            .os_info(std::time::Duration::from_secs(1))
+            .os_info()
             .map(Into::into)
             .map_err(|err| err.to_string());
         Ok(info)

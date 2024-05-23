@@ -42,7 +42,7 @@ async fn otlp() -> anyhow::Result<()> {
         .with_description("System profile memory statistics.")
         .with_unit(Unit::new("GiB"))
         .with_callback(move |gauge| {
-            if let Ok(mem) = system.memory_stat(interval) {
+            if let Ok(mem) = system.memory_stat(Some(interval)) {
                 let unit = 1024.0 * 1024.0;
                 gauge.observe(
                     mem.mem_free as f64 / unit,
