@@ -26,9 +26,15 @@ static STAT_GLOBAL: Lazy<Handle<HashMap<String, DeviceStatus>>> =
 #[derive(Debug, Clone)]
 pub struct NetworkHandle(Handle<HashMap<String, DeviceStatus>>);
 
+impl Default for NetworkHandle {
+    fn default() -> Self {
+        Self(STAT_GLOBAL.clone())
+    }
+}
+
 impl NetworkHandle {
     pub fn new() -> Self {
-        Self(STAT_GLOBAL.clone())
+        Self::default()
     }
 
     pub fn stat(&self, interval: Option<Duration>) -> Result<HashMap<String, DeviceStatus>> {

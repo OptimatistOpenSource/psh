@@ -32,9 +32,15 @@ static INFO_GLOBAL: Lazy<Handle<OsInfo>> = Lazy::new(|| {
 #[derive(Debug, Clone)]
 pub struct OsHandle(Handle<OsInfo>);
 
+impl Default for OsHandle {
+    fn default() -> Self {
+        Self(INFO_GLOBAL.clone())
+    }
+}
+
 impl OsHandle {
     pub fn new() -> Self {
-        Self(INFO_GLOBAL.clone())
+        Self::default()
     }
 
     pub fn info(&self) -> Result<OsInfo> {
