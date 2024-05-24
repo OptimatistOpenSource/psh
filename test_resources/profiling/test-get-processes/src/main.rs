@@ -52,10 +52,11 @@ fn intersection<'p>(
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let mut pre = process::all()?;
+    let interval = std::time::Duration::from_secs(1);
+    let mut pre = process::all(interval.as_millis() as u64)?;
     loop {
-        std::thread::sleep(std::time::Duration::from_secs(1));
-        let post = process::all()?;
+        std::thread::sleep(interval);
+        let post = process::all(interval.as_millis() as u64)?;
 
         let common = intersection(&pre, &post);
         let mut procs: Vec<_> = common

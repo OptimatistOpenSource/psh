@@ -26,14 +26,15 @@ fn main() {
     }
 
     let mut c = 0;
+    let dur = std::time::Duration::from_secs(1);
     loop {
-        let interrupts_stat = stat().unwrap();
+        let interrupts_stat = stat(dur.as_millis() as u64).unwrap();
         for stat in interrupts_stat {
             println!("{:?}", stat);
         }
         println!();
 
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        std::thread::sleep(dur);
         c += 1;
         if c > 3 {
             break;
