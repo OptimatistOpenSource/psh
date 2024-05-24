@@ -429,8 +429,8 @@ pub fn otlp_disks(meter: Meter, interval: Duration) -> anyhow::Result<Observable
 pub fn otlp_interrupt(meter: Meter, interval: Duration) -> anyhow::Result<ObservableGauge<u64>> {
     let interrupt = InterruptHandle::new();
     let gauge = meter
-        .u64_observable_gauge("NetworkStat")
-        .with_description("System profile network statistics.")
+        .u64_observable_gauge("InterruptStat")
+        .with_description("System profile interrupt statistics.")
         // .with_unit(Unit::new("KiB"))
         .with_callback(move |gauge| {
             let Ok(irqs) = interrupt.stat(Some(interval)) else {

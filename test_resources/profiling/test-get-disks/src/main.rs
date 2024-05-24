@@ -78,14 +78,14 @@ fn differential(pre: &Vec<DiskStat>, post: &Vec<DiskStat>, dur: std::time::Durat
 
 fn main() -> Result<(), Box<dyn Error>> {
     let mut pre_now = std::time::Instant::now();
-    let mut pre = disk::stat()?;
     let dur = std::time::Duration::from_secs(1);
+    let mut pre = disk::stat(dur.as_millis() as u64)?;
 
     // only iterate 3 times for testing purpose.
     for _ in 0..3 {
         std::thread::sleep(dur);
         let post_now = std::time::Instant::now();
-        let post = disk::stat()?;
+        let post = disk::stat(dur.as_millis() as u64)?;
         differential(&pre, &post, post_now - pre_now);
         pre = post;
         pre_now = post_now;

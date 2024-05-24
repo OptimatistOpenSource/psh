@@ -62,11 +62,11 @@ fn differential(pre: &Vec<NetworkStat>, post: &Vec<NetworkStat>, dur: std::time:
 fn main() {
     let duration = std::time::Duration::from_secs(1);
     let mut pre_now = std::time::Instant::now();
-    let mut pre_networks = network::stat().unwrap();
+    let mut pre_networks = network::stat(duration.as_millis() as u64).unwrap();
     for _ in 0..3 {
         std::thread::sleep(duration);
         let now = std::time::Instant::now();
-        let networks = network::stat().unwrap();
+        let networks = network::stat(duration.as_millis() as u64).unwrap();
         differential(&pre_networks, &networks, now - pre_now);
         pre_now = now;
         pre_networks = networks;

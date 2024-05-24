@@ -23,7 +23,7 @@ fn main() {
         println!("{:?}", memory_info)
     }
 
-    let memory_stat_vec = memory::stat().unwrap();
+    let memory_stat_vec = memory::stat(1).unwrap();
 
     println!("Dump Memory Statistics:");
     println!("{:?}", memory_stat_vec);
