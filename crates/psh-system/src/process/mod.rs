@@ -13,4 +13,5 @@
 // see <https://www.gnu.org/licenses/>.
 
 pub(crate) mod handle;
+pub use handle::ProcessHandle;
 pub use procfs::process::{ProcState, Process};

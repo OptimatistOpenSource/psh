@@ -15,6 +15,8 @@
 pub(crate) mod handle;
 mod raw;
 
+pub use handle::RpsHandle;
+
 use crate::cpu::CpuMask;
 
 #[allow(dead_code)]

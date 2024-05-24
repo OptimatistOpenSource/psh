@@ -13,4 +13,5 @@
 // see <https://www.gnu.org/licenses/>.
 
 pub(crate) mod handle;
+pub use handle::DiskHandle;
 pub use procfs::DiskStat;

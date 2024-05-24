@@ -17,6 +17,8 @@ mod irq;
 mod raw;
 mod stat;
 
+pub use handle::InterruptHandle;
+
 #[derive(Debug, PartialEq, Clone)]
 pub enum InterruptType {
     Common(u32),

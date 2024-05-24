@@ -56,20 +56,20 @@ impl<T, F> ResourceInner<T, F> {
 }
 
 #[derive(Debug, Clone)]
-pub struct Resource<T, F>(Arc<Mutex<ResourceInner<T, F>>>);
+pub(crate) struct Resource<T, F>(Arc<Mutex<ResourceInner<T, F>>>);
 
 impl<T, F> Resource<T, F>
 where
     F: FnMut() -> Result<T>,
 {
-    pub fn new(func: F) -> Self {
+    pub(crate) fn new(func: F) -> Self {
         Self(Arc::new(Mutex::new(ResourceInner::new(func))))
     }
 
     /// retrive the inner resource, interval should match the interval of user loop,
     /// and is treated as an hint of data retrival,
     /// any data within interval/10 would be considered new thus won't be updated
-    pub fn get(&self, interval: Option<Duration>) -> Result<T>
+    pub(crate) fn get(&self, interval: Option<Duration>) -> Result<T>
     where
         T: Clone,
     {
@@ -89,4 +89,4 @@ where
     }
 }
 
-pub type Handle<T, E = Error> = Resource<T, fn() -> Result<T, E>>;
+pub(crate) type Handle<T, E = Error> = Resource<T, fn() -> Result<T, E>>;

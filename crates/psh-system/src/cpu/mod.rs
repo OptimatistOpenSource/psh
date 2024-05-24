@@ -19,6 +19,8 @@ use crate::error::{Error, Result};
 pub(crate) mod handle;
 mod raw;
 
+pub use handle::CpuHandle;
+
 // use Vec<bool> to represent CpuMask but wrap it in a tuple struct to make it a distinct type
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct CpuMask(pub Vec<bool>);

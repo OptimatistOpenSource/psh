@@ -12,16 +12,26 @@
 // You should have received a copy of the GNU Lesser General Public License along with Perf-event-rs. If not,
 // see <https://www.gnu.org/licenses/>.
 
-use std::collections::HashMap;
+use std::{collections::HashMap, time::Duration};
 
 use once_cell::sync::Lazy;
 use procfs::net::{self, DeviceStatus};
 
+use crate::error::Result;
 use crate::utils::Handle;
 
 static STAT_GLOBAL: Lazy<Handle<HashMap<String, DeviceStatus>>> =
     Lazy::new(|| Handle::new(|| net::dev_status().map_err(Into::into)));
 
-pub fn stat_handle() -> Handle<HashMap<String, DeviceStatus>> {
-    STAT_GLOBAL.clone()
+#[derive(Debug, Clone)]
+pub struct NetworkHandle(Handle<HashMap<String, DeviceStatus>>);
+
+impl NetworkHandle {
+    pub fn new() -> Self {
+        Self(STAT_GLOBAL.clone())
+    }
+
+    pub fn stat(&self, interval: Option<Duration>) -> Result<HashMap<String, DeviceStatus>> {
+        self.0.get(interval)
+    }
 }

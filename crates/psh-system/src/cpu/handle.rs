@@ -15,11 +15,21 @@
 use once_cell::sync::Lazy;
 
 use super::{raw::parse_cpuinfo, CPUInfo};
+use crate::error::Result;
 use crate::utils::Handle;
 
 static INFO_GLOBAL: Lazy<Handle<CPUInfo>> =
     Lazy::new(|| Handle::new(|| parse_cpuinfo!().map_err(Into::into)));
 
-pub fn info_handle() -> Handle<CPUInfo> {
-    INFO_GLOBAL.clone()
+#[derive(Debug, Clone)]
+pub struct CpuHandle(Handle<CPUInfo>);
+
+impl CpuHandle {
+    pub fn new() -> Self {
+        Self(INFO_GLOBAL.clone())
+    }
+
+    pub fn info(&self) -> Result<CPUInfo> {
+        self.0.get(None)
+    }
 }

@@ -12,14 +12,23 @@
 // You should have received a copy of the GNU Lesser General Public License along with Perf-event-rs. If not,
 // see <https://www.gnu.org/licenses/>.
 
-use crate::rps::{raw::parse_rps, RpsDetails};
-
 use once_cell::sync::Lazy;
 
+use crate::error::Result;
+use crate::rps::{raw::parse_rps, RpsDetails};
 use crate::utils::Handle;
 
 static INFO_GLOBAL: Lazy<Handle<Vec<RpsDetails>>> = Lazy::new(|| Handle::new(|| Ok(parse_rps!())));
 
-pub fn info_handle() -> Handle<Vec<RpsDetails>> {
-    INFO_GLOBAL.clone()
+#[derive(Debug, Clone)]
+pub struct RpsHandle(Handle<Vec<RpsDetails>>);
+
+impl RpsHandle {
+    pub fn new() -> Self {
+        Self(INFO_GLOBAL.clone())
+    }
+
+    pub fn info(&self) -> Result<Vec<RpsDetails>> {
+        self.0.get(None)
+    }
 }
