@@ -126,8 +126,8 @@ impl From<HostOsInfo> for GuestOsInfo {
 impl os::Host for SysCtx {
     fn info(&mut self) -> wasmtime::Result<Result<GuestOsInfo, String>> {
         let info = self
-            .system
-            .os_info()
+            .os
+            .info()
             .map(Into::into)
             .map_err(|err| err.to_string());
         Ok(info)

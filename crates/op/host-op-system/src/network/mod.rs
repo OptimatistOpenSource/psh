@@ -12,6 +12,8 @@
 // You should have received a copy of the GNU Lesser General Public License along with Perf-event-rs. If not,
 // see <https://www.gnu.org/licenses/>.
 
+use std::time::Duration;
+
 use crate::{
     profiling::system::network::{self, NetworkStat as GuestNetworkStat},
     SysCtx,
@@ -73,8 +75,8 @@ impl network::Host for SysCtx {
         interval_ms: u64,
     ) -> wasmtime::Result<Result<Vec<GuestNetworkStat>, String>> {
         let networks = self
-            .system
-            .network_stat(Some(std::time::Duration::from_millis(interval_ms)))
+            .network
+            .stat(Some(Duration::from_millis(interval_ms)))
             .map(|nets| nets.into_values().map(Into::into).collect())
             .map_err(|err| err.to_string());
 

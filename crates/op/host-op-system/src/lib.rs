@@ -23,9 +23,16 @@ mod rps;
 
 use std::sync::Arc;
 
+use psh_system::cpu::CpuHandle;
+use psh_system::disk::DiskHandle;
+use psh_system::interrupt::InterruptHandle;
+use psh_system::memory::MemoryHandle;
+use psh_system::network::NetworkHandle;
+use psh_system::os::OsHandle;
+use psh_system::rps::RpsHandle;
 use wasmtime::component::{Linker, ResourceTable};
 
-use psh_system::process::Process;
+use psh_system::process::{Process, ProcessHandle};
 use psh_system::System;
 
 pub type HostProc = Arc<Process>;
@@ -43,6 +50,14 @@ wasmtime::component::bindgen!({
 pub struct SysCtx {
     table: ResourceTable,
     system: System,
+    os: OsHandle,
+    cpu: CpuHandle,
+    disk: DiskHandle,
+    memory: MemoryHandle,
+    process: ProcessHandle,
+    rps: RpsHandle,
+    network: NetworkHandle,
+    interrupt: InterruptHandle,
 }
 
 pub fn add_to_linker<T>(

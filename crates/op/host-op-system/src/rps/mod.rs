@@ -59,8 +59,8 @@ impl From<HostRpsInfo> for GuestRpsInfo {
 impl rps::Host for SysCtx {
     fn info(&mut self) -> wasmtime::Result<Vec<GuestRpsInfo>> {
         Ok(self
-            .system
-            .rps_info()
+            .rps
+            .info()
             .map_or(vec![], |info| info.into_iter().map(Into::into).collect()))
     }
 }

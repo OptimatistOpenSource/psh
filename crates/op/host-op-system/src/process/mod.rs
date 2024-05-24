@@ -12,7 +12,7 @@
 // You should have received a copy of the GNU Lesser General Public License along with Perf-event-rs. If not,
 // see <https://www.gnu.org/licenses/>.
 
-use std::{collections::HashMap, ffi::OsString, path::PathBuf, sync::Arc};
+use std::{collections::HashMap, ffi::OsString, path::PathBuf, sync::Arc, time::Duration};
 
 use wasmtime::component::Resource;
 
@@ -129,10 +129,7 @@ impl process::Host for SysCtx {
     fn all(&mut self, interval_ms: u64) -> wasmtime::Result<Result<Vec<GuestProcessStat>, String>> {
         // don't return top level Error unless it's not our fault
         // example: self.table.(push/get/delete)
-        let procs = match self
-            .system
-            .process_all_stat(Some(std::time::Duration::from_millis(interval_ms)))
-        {
+        let procs = match self.process.all(Some(Duration::from_millis(interval_ms))) {
             Ok(procs) => procs,
             Err(err) => return Ok(Err(err.to_string())),
         };
@@ -183,7 +180,7 @@ impl process::Host for SysCtx {
     }
 
     fn current(&mut self) -> wasmtime::Result<Result<Resource<Arc<Process>>, String>> {
-        let proc = match self.system.process_self_info(None) {
+        let proc = match self.process.myself() {
             Ok(proc) => Ok(self.table.push(proc)?),
             Err(err) => Err(err.to_string()),
         };
