@@ -33,12 +33,18 @@ pub struct InterruptHandle {
     stat: Handle<Vec<InterruptDetails>>,
 }
 
-impl InterruptHandle {
-    pub fn new() -> Self {
+impl Default for InterruptHandle {
+    fn default() -> Self {
         Self {
             info: INFO_GLOBAL.clone(),
             stat: STAT_GLOBAL.clone(),
         }
+    }
+}
+
+impl InterruptHandle {
+    pub fn new() -> Self {
+        Self::default()
     }
 
     pub fn info(&self) -> Result<Vec<IrqDetails>> {

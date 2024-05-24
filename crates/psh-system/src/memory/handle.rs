@@ -44,12 +44,18 @@ pub struct MemoryHandle {
     stat: Handle<MemInfo>,
 }
 
-impl MemoryHandle {
-    pub fn new() -> Self {
+impl Default for MemoryHandle {
+    fn default() -> Self {
         Self {
             info: INFO_GLOBAL.clone(),
             stat: STAT_GLOBAL.clone(),
         }
+    }
+}
+
+impl MemoryHandle {
+    pub fn new() -> Self {
+        Self::default()
     }
 
     pub fn info(&self) -> Result<Vec<MemoryModule>> {

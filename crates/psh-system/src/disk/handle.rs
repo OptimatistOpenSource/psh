@@ -26,9 +26,15 @@ static STAT_GLOBAL: Lazy<Handle<Vec<DiskStat>>> =
 #[derive(Debug, Clone)]
 pub struct DiskHandle(Handle<Vec<DiskStat>>);
 
+impl Default for DiskHandle {
+    fn default() -> Self {
+        Self(STAT_GLOBAL.clone())
+    }
+}
+
 impl DiskHandle {
     pub fn new() -> Self {
-        Self(STAT_GLOBAL.clone())
+        Self::default()
     }
 
     pub fn stat(&self, interval: Option<Duration>) -> Result<Vec<DiskStat>> {

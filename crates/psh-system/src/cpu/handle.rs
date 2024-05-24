@@ -24,9 +24,15 @@ static INFO_GLOBAL: Lazy<Handle<CPUInfo>> =
 #[derive(Debug, Clone)]
 pub struct CpuHandle(Handle<CPUInfo>);
 
+impl Default for CpuHandle {
+    fn default() -> Self {
+        Self(INFO_GLOBAL.clone())
+    }
+}
+
 impl CpuHandle {
     pub fn new() -> Self {
-        Self(INFO_GLOBAL.clone())
+        Self::default()
     }
 
     pub fn info(&self) -> Result<CPUInfo> {

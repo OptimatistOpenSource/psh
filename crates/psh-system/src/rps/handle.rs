@@ -23,9 +23,15 @@ static INFO_GLOBAL: Lazy<Handle<Vec<RpsDetails>>> = Lazy::new(|| Handle::new(|| 
 #[derive(Debug, Clone)]
 pub struct RpsHandle(Handle<Vec<RpsDetails>>);
 
+impl Default for RpsHandle {
+    fn default() -> Self {
+        Self(INFO_GLOBAL.clone())
+    }
+}
+
 impl RpsHandle {
     pub fn new() -> Self {
-        Self(INFO_GLOBAL.clone())
+        Self::default()
     }
 
     pub fn info(&self) -> Result<Vec<RpsDetails>> {

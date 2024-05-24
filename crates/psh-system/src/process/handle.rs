@@ -38,12 +38,18 @@ pub struct ProcessHandle {
     all: Handle<Vec<Arc<Process>>>,
 }
 
-impl ProcessHandle {
-    pub fn new() -> Self {
+impl Default for ProcessHandle {
+    fn default() -> Self {
         Self {
             myself: INFO_SELF_GLOBAL.clone(),
             all: STAT_ALL_GLOBAL.clone(),
         }
+    }
+}
+
+impl ProcessHandle {
+    pub fn new() -> Self {
+        Self::default()
     }
 
     pub fn myself(&self) -> Result<Arc<Process>> {
