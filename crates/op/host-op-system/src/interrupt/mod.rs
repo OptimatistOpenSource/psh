@@ -12,6 +12,8 @@
 // You should have received a copy of the GNU Lesser General Public License along with Perf-event-rs. If not,
 // see <https://www.gnu.org/licenses/>.
 
+use std::time::Duration;
+
 use crate::profiling::system::interrupt;
 use crate::SysCtx;
 
@@ -80,8 +82,8 @@ impl From<InterruptDetails> for interrupt::InterruptStat {
 impl interrupt::Host for SysCtx {
     fn info(&mut self) -> wasmtime::Result<Result<Vec<interrupt::InterruptInfo>, String>> {
         let info = self
-            .system
-            .interrupt_info()
+            .interrupt
+            .info()
             .map(|ints| ints.into_iter().map(Into::into).collect())
             .map_err(|err| err.to_string());
         Ok(info)
@@ -92,8 +94,8 @@ impl interrupt::Host for SysCtx {
         interval_ms: u64,
     ) -> wasmtime::Result<Result<Vec<interrupt::InterruptStat>, String>> {
         let stat = self
-            .system
-            .interrupt_stat(Some(std::time::Duration::from_millis(interval_ms)))
+            .interrupt
+            .stat(Some(Duration::from_millis(interval_ms)))
             .map(|stats| stats.into_iter().map(Into::into).collect())
             .map_err(|err| err.to_string());
         Ok(stat)

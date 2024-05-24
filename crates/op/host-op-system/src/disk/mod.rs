@@ -12,6 +12,8 @@
 // You should have received a copy of the GNU Lesser General Public License along with Perf-event-rs. If not,
 // see <https://www.gnu.org/licenses/>.
 
+use std::time::Duration;
+
 use crate::{
     profiling::system::disk::{
         self, DiskOperationStat as GuestDiskOperationStat, DiskStat as GuestDiskStat,
@@ -110,8 +112,8 @@ impl From<HostDiskStat> for GuestDiskStat {
 impl disk::Host for SysCtx {
     fn stat(&mut self, interval_ms: u64) -> wasmtime::Result<Result<Vec<GuestDiskStat>, String>> {
         let disks = self
-            .system
-            .disk_stat(Some(std::time::Duration::from_millis(interval_ms)))
+            .disk
+            .stat(Some(Duration::from_millis(interval_ms)))
             .map(|disks| disks.into_iter().map(Into::into).collect())
             .map_err(|err| err.to_string());
         Ok(disks)

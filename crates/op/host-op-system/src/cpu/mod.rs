@@ -205,8 +205,8 @@ impl From<HostCpuInfo> for GuestCpuInfo {
 impl cpu::Host for SysCtx {
     fn info(&mut self) -> wasmtime::Result<Result<GuestCpuInfo, String>> {
         let cpu = self
-            .system
-            .cpu_info()
+            .cpu
+            .info()
             .map(Into::into)
             .map_err(|err| err.to_string());
         Ok(cpu)
