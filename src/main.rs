@@ -25,47 +25,7 @@ use anyhow::Context;
 use clap::Parser;
 
 use args::Args;
-use opentelemetry::{
-    metrics::{MeterProvider, Unit},
-    KeyValue,
-};
 use runtime::PshEngineBuilder;
-
-async fn otlp() -> anyhow::Result<()> {
-    let memory = psh_system::memory::MemoryHandle::new();
-
-    let provider = otlp::meter_provider()?;
-    let meter = provider.meter("SystemProfile");
-    let interval = std::time::Duration::from_secs(1);
-    meter
-        .f64_observable_gauge("MemoryStat")
-        .with_description("System profile memory statistics.")
-        .with_unit(Unit::new("GiB"))
-        .with_callback(move |gauge| {
-            if let Ok(mem) = memory.stat(Some(interval)) {
-                let unit = 1024.0 * 1024.0;
-                gauge.observe(
-                    mem.mem_free as f64 / unit,
-                    &[KeyValue::new("mem.stat", "free")],
-                );
-                gauge.observe(
-                    mem.mem_available as f64 / unit,
-                    &[KeyValue::new("mem.stat", "available")],
-                );
-                gauge.observe(
-                    mem.cached as f64 / unit,
-                    &[KeyValue::new("mem.stat", "cached")],
-                );
-                // gauge.observe(mem.swap_free, &[KeyValue::new("mem.stat", "swap_free")]);
-                // gauge.observe(mem.dirty, &[KeyValue::new("mem.stat", "dirty")]);
-                // gauge.observe(mem.mapped, &[KeyValue::new("mem.stat", "mapped")]);
-            }
-        })
-        .try_init()?;
-    loop {
-        tokio::time::sleep(interval).await;
-    }
-}
 
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
@@ -73,7 +33,7 @@ fn main() -> anyhow::Result<()> {
     let mut component_args: Vec<String> = vec![args.psh_wasm_component.clone()];
     component_args.extend(args.extra_args);
 
-    let th = std::thread::spawn(|| tokio::runtime::Runtime::new()?.block_on(otlp()));
+    let th = std::thread::spawn(|| tokio::runtime::Runtime::new()?.block_on(otlp::otlp_tasks()));
 
     let mut engine = PshEngineBuilder::new()
         .wasi_inherit_stdio()
