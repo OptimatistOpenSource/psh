@@ -13,18 +13,16 @@
 // see <https://www.gnu.org/licenses/>.
 
 use std::sync::Arc;
+use std::time::Duration;
 
 use once_cell::sync::Lazy;
 use procfs::process::Process;
 
+use crate::error::Result;
 use crate::utils::Handle;
 
-static STAT_SELF_GLOBAL: Lazy<Handle<Arc<Process>>> =
+static INFO_SELF_GLOBAL: Lazy<Handle<Arc<Process>>> =
     Lazy::new(|| Handle::new(|| Process::myself().map(Arc::new).map_err(Into::into)));
-
-pub fn stat_self_handle() -> Handle<Arc<Process>> {
-    STAT_SELF_GLOBAL.clone()
-}
 
 static STAT_ALL_GLOBAL: Lazy<Handle<Vec<Arc<Process>>>> = Lazy::new(|| {
     Handle::new(|| {
@@ -34,6 +32,25 @@ static STAT_ALL_GLOBAL: Lazy<Handle<Vec<Arc<Process>>>> = Lazy::new(|| {
     })
 });
 
-pub fn stat_all_handle() -> Handle<Vec<Arc<Process>>> {
-    STAT_ALL_GLOBAL.clone()
+#[derive(Debug, Clone)]
+pub struct ProcessHandle {
+    myself: Handle<Arc<Process>>,
+    all: Handle<Vec<Arc<Process>>>,
+}
+
+impl ProcessHandle {
+    pub fn new() -> Self {
+        Self {
+            myself: INFO_SELF_GLOBAL.clone(),
+            all: STAT_ALL_GLOBAL.clone(),
+        }
+    }
+
+    pub fn myself(&self) -> Result<Arc<Process>> {
+        self.myself.get(None)
+    }
+
+    pub fn all(&self, interval: Option<Duration>) -> Result<Vec<Arc<Process>>> {
+        self.all.get(interval)
+    }
 }

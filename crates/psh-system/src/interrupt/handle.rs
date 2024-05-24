@@ -12,22 +12,40 @@
 // You should have received a copy of the GNU Lesser General Public License along with Perf-event-rs. If not,
 // see <https://www.gnu.org/licenses/>.
 
+use std::time::Duration;
+
 use once_cell::sync::Lazy;
 
 use super::{InterruptDetails, IrqDetails};
+use crate::error::Result;
 use crate::interrupt::raw::{parse_interrupts, parse_irq};
 use crate::utils::Handle;
 
 static INFO_GLOBAL: Lazy<Handle<Vec<IrqDetails>>> =
     Lazy::new(|| Handle::new(|| parse_irq!().map_err(Into::into)));
 
-pub fn info_handle() -> Handle<Vec<IrqDetails>> {
-    INFO_GLOBAL.clone()
-}
-
 static STAT_GLOBAL: Lazy<Handle<Vec<InterruptDetails>>> =
     Lazy::new(|| Handle::new(|| parse_interrupts!().map_err(Into::into)));
 
-pub fn stat_handle() -> Handle<Vec<InterruptDetails>> {
-    STAT_GLOBAL.clone()
+#[derive(Debug, Clone)]
+pub struct InterruptHandle {
+    info: Handle<Vec<IrqDetails>>,
+    stat: Handle<Vec<InterruptDetails>>,
+}
+
+impl InterruptHandle {
+    pub fn new() -> Self {
+        Self {
+            info: INFO_GLOBAL.clone(),
+            stat: STAT_GLOBAL.clone(),
+        }
+    }
+
+    pub fn info(&self) -> Result<Vec<IrqDetails>> {
+        self.info.get(None)
+    }
+
+    pub fn stat(&self, interval: Option<Duration>) -> Result<Vec<InterruptDetails>> {
+        self.stat.get(interval)
+    }
 }

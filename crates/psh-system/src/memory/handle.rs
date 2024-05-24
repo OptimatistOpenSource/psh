@@ -13,19 +13,17 @@
 // see <https://www.gnu.org/licenses/>.
 
 use std::process::Command;
+use std::time::Duration;
 
 use once_cell::sync::Lazy;
 
 use super::raw::{parse_meminfo, parse_memory_module};
 use super::{MemInfo, MemoryModule};
+use crate::error::Result;
 use crate::utils::Handle;
 
 static STAT_GLOBAL: Lazy<Handle<MemInfo>> =
     Lazy::new(|| Handle::new(|| parse_meminfo!().map_err(Into::into)));
-
-pub fn stat_handle() -> Handle<MemInfo> {
-    STAT_GLOBAL.clone()
-}
 
 static INFO_GLOBAL: Lazy<Handle<Vec<MemoryModule>>> = Lazy::new(|| {
     Handle::new(|| {
@@ -40,6 +38,25 @@ static INFO_GLOBAL: Lazy<Handle<Vec<MemoryModule>>> = Lazy::new(|| {
     })
 });
 
-pub fn info_handle() -> Handle<Vec<MemoryModule>> {
-    INFO_GLOBAL.clone()
+#[derive(Debug, Clone)]
+pub struct MemoryHandle {
+    info: Handle<Vec<MemoryModule>>,
+    stat: Handle<MemInfo>,
+}
+
+impl MemoryHandle {
+    pub fn new() -> Self {
+        Self {
+            info: INFO_GLOBAL.clone(),
+            stat: STAT_GLOBAL.clone(),
+        }
+    }
+
+    pub fn info(&self) -> Result<Vec<MemoryModule>> {
+        self.info.get(None)
+    }
+
+    pub fn stat(&self, interval: Option<Duration>) -> Result<MemInfo> {
+        self.stat.get(interval)
+    }
 }

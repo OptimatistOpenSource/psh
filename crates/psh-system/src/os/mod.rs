@@ -15,6 +15,8 @@
 pub(crate) mod handle;
 mod raw;
 
+pub use handle::OsHandle;
+
 #[allow(dead_code)]
 #[derive(Debug, PartialEq, Clone)]
 pub struct KernelVersion {

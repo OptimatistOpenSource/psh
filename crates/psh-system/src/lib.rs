@@ -23,82 +23,12 @@ pub mod process;
 pub mod rps;
 mod utils;
 
-use std::sync::Arc;
-use std::{collections::HashMap, time::Duration};
-
-use cpu::CPUInfo;
-use error::Result;
-use interrupt::{InterruptDetails, IrqDetails};
-use memory::{MemInfo, MemoryModule};
-use os::OsInfo;
-use procfs::process::Process;
-use procfs::{net::DeviceStatus, DiskStat};
-use rps::RpsDetails;
-use utils::Handle;
-
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct System {
     pub page_size: u64,
     pub boot_time_sec: u64,
     pub tick_per_sec: u64,
-    cpu_info_handle: Handle<CPUInfo>,
-    disk_stat_handle: Handle<Vec<DiskStat>>,
-    interrupt_info_handle: Handle<Vec<IrqDetails>>,
-    interrupt_stat_handle: Handle<Vec<InterruptDetails>>,
-    memory_info_handle: Handle<Vec<MemoryModule>>,
-    memory_stat_handle: Handle<MemInfo>,
-    network_stat_handle: Handle<HashMap<String, DeviceStatus>>,
-    os_info_handle: Handle<OsInfo>,
-    rps_info_handle: Handle<Vec<RpsDetails>>,
-    process_info_self_handle: Handle<Arc<Process>>,
-    process_stat_all_handle: Handle<Vec<Arc<Process>>>,
-}
-
-impl System {
-    pub fn cpu_info(&self) -> Result<CPUInfo> {
-        self.cpu_info_handle.get(None)
-    }
-
-    pub fn disk_stat(&self, aging: Option<Duration>) -> Result<Vec<DiskStat>> {
-        self.disk_stat_handle.get(aging)
-    }
-
-    pub fn interrupt_info(&self) -> Result<Vec<IrqDetails>> {
-        self.interrupt_info_handle.get(None)
-    }
-
-    pub fn interrupt_stat(&self, aging: Option<Duration>) -> Result<Vec<InterruptDetails>> {
-        self.interrupt_stat_handle.get(aging)
-    }
-
-    pub fn memory_info(&self) -> Result<Vec<MemoryModule>> {
-        self.memory_info_handle.get(None)
-    }
-
-    pub fn memory_stat(&self, aging: Option<Duration>) -> Result<MemInfo> {
-        self.memory_stat_handle.get(aging)
-    }
-
-    pub fn network_stat(&self, aging: Option<Duration>) -> Result<HashMap<String, DeviceStatus>> {
-        self.network_stat_handle.get(aging)
-    }
-
-    pub fn os_info(&self) -> Result<OsInfo> {
-        self.os_info_handle.get(None)
-    }
-
-    pub fn rps_info(&self) -> Result<Vec<RpsDetails>> {
-        self.rps_info_handle.get(None)
-    }
-
-    pub fn process_self_info(&self, aging: Option<Duration>) -> Result<Arc<Process>> {
-        self.process_info_self_handle.get(aging)
-    }
-
-    pub fn process_all_stat(&self, aging: Option<Duration>) -> Result<Vec<Arc<Process>>> {
-        self.process_stat_all_handle.get(aging)
-    }
 }
 
 impl Default for System {
@@ -107,17 +37,6 @@ impl Default for System {
             page_size: procfs::page_size(),
             boot_time_sec: procfs::boot_time_secs().unwrap_or(0),
             tick_per_sec: procfs::ticks_per_second(),
-            cpu_info_handle: cpu::handle::info_handle(),
-            disk_stat_handle: disk::handle::stat_handle(),
-            interrupt_info_handle: interrupt::handle::info_handle(),
-            interrupt_stat_handle: interrupt::handle::stat_handle(),
-            memory_info_handle: memory::handle::info_handle(),
-            memory_stat_handle: memory::handle::stat_handle(),
-            network_stat_handle: network::handle::stat_handle(),
-            os_info_handle: os::handle::info_handle(),
-            rps_info_handle: rps::handle::info_handle(),
-            process_info_self_handle: process::handle::stat_self_handle(),
-            process_stat_all_handle: process::handle::stat_all_handle(),
         }
     }
 }

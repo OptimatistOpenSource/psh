@@ -17,6 +17,8 @@ mod mem_info;
 mod memory_module;
 mod raw;
 
+pub use handle::MemoryHandle;
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct MemoryModule {
     pub array_handle: u32,
