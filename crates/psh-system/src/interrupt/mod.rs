@@ -12,7 +12,7 @@
 // You should have received a copy of the GNU Lesser General Public License along with Perf-event-rs. If not,
 // see <https://www.gnu.org/licenses/>.
 
-pub(crate) mod global;
+pub(crate) mod handle;
 mod irq;
 mod raw;
 mod stat;

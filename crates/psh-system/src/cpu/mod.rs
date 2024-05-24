@@ -16,7 +16,7 @@ use std::str::FromStr;
 
 use crate::error::{Error, Result};
 
-pub(crate) mod global;
+pub(crate) mod handle;
 mod raw;
 
 // use Vec<bool> to represent CpuMask but wrap it in a tuple struct to make it a distinct type
