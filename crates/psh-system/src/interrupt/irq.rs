@@ -70,7 +70,7 @@ mod tests {
     #[test]
     fn test_parse_all_irq() {
         let mut irq_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        irq_path.push("../../../test_resources/arch/x86_64/intel/irq");
+        irq_path.push("./test_resources/arch/x86_64/intel/irq");
 
         let result = do_parse_all_irq(irq_path.to_str().unwrap()).unwrap();
         assert_eq!(result.len(), 3);

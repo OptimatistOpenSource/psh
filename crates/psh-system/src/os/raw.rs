@@ -222,7 +222,7 @@ mod test {
             ("xenserver", distro_other!("XenServer", "7.6.0")),
         ];
         for (distro, version) in version_mapping {
-            let path = format!("../../../test_resources/os-releases/{}", distro);
+            let path = format!("./test_resources/os-releases/{}", distro);
             let result = parse_distro_version!(&path).unwrap();
             assert_eq!(result, *version);
         }
