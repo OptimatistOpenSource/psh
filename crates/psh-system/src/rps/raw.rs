@@ -74,7 +74,7 @@ mod tests {
     #[test]
     fn test_parse_rps() {
         let mut rps_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        rps_path.push("../../../test_resources/arch/x86_64/intel/net");
+        rps_path.push("./test_resources/arch/x86_64/intel/net");
         let result = parse_rps_impl(rps_path.to_str().unwrap());
 
         assert_eq!(result.len(), 3);

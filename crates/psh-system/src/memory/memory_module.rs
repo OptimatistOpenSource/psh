@@ -183,11 +183,10 @@ mod test {
 
         // TODO find dmidecode command path
         let dmidecode_exe = "/usr/sbin/dmidecode";
-        let output = Command::new(dmidecode_exe)
-            .arg("-t")
-            .arg("16")
-            .output()
-            .expect("failed to execute dmidecode -t 16");
+        let Ok(output) = Command::new(dmidecode_exe).arg("-t").arg("16").output() else {
+            eprintln!("Failed to execute dmidecode, skip the rest of test.");
+            return;
+        };
 
         let dmidecode_res = String::from_utf8(output.stdout).unwrap();
         let mut num_of_dimms = 0;
@@ -205,11 +204,10 @@ mod test {
             }
         }
 
-        let output = Command::new(dmidecode_exe)
-            .arg("-t")
-            .arg("17")
-            .output()
-            .expect("failed to execute dmidecode -t 17");
+        let Ok(output) = Command::new(dmidecode_exe).arg("-t").arg("17").output() else {
+            eprintln!("Failed to execute dmidecode, skip the rest of test.");
+            return;
+        };
 
         let memory_modules = parse_memory_module(std::str::from_utf8(&output.stdout).unwrap());
         assert_eq!(num_of_dimms, memory_modules.len());
@@ -219,7 +217,7 @@ mod test {
     #[test]
     fn test_dmidecode_memory_amd() {
         let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        d.push("../../../test_resources/arch/x86_64/amd/dmidecode_memory");
+        d.push("./test_resources/arch/x86_64/amd/dmidecode_memory");
         let binding = d.into_os_string();
         let dmidecode_memory_path = binding.to_str().unwrap();
 
@@ -267,7 +265,7 @@ mod test {
     #[test]
     fn test_dmidecode_memory_intel() {
         let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        d.push("../../../test_resources/arch/x86_64/intel/dmidecode_memory");
+        d.push("./test_resources/arch/x86_64/intel/dmidecode_memory");
         let binding = d.into_os_string();
         let dmidecode_memory_path = binding.to_str().unwrap();
 
@@ -315,7 +313,7 @@ mod test {
     #[test]
     fn test_dmidecode_memory_yitian() {
         let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        d.push("../../../test_resources/arch/aarch64/t-head/dmidecode_memory");
+        d.push("./test_resources/arch/aarch64/t-head/dmidecode_memory");
         let binding = d.into_os_string();
         let dmidecode_memory_path = binding.to_str().unwrap();
 

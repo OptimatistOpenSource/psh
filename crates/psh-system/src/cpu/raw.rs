@@ -300,7 +300,7 @@ mod test {
     #[test]
     fn test_parse_cpu_info_yitian() {
         let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        d.push("../../../test_resources/arch/aarch64/t-head/cpuinfo");
+        d.push("./test_resources/arch/aarch64/t-head/cpuinfo");
         let binding = d.into_os_string();
         let cpuinfo_path = binding.to_str().unwrap();
 
@@ -382,7 +382,7 @@ mod test {
     #[test]
     fn test_parse_cpu_info_intel() {
         let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        d.push("../../../test_resources/arch/x86_64/intel/cpuinfo");
+        d.push("./test_resources/arch/x86_64/intel/cpuinfo");
         let binding = d.into_os_string();
         let cpuinfo_path = binding.to_str().unwrap();
 
@@ -537,7 +537,7 @@ mod test {
     #[test]
     fn test_parse_cpu_info_amd() {
         let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        d.push("../../../test_resources/arch/x86_64/amd/cpuinfo");
+        d.push("./test_resources/arch/x86_64/amd/cpuinfo");
         let binding = d.into_os_string();
         let cpuinfo_path = binding.to_str().unwrap();
 
