@@ -54,7 +54,7 @@ fn intersection<'p>(
 fn main() -> Result<(), Box<dyn Error>> {
     let interval = std::time::Duration::from_secs(1);
     let mut pre = process::all(interval.as_millis() as u64)?;
-    loop {
+    for _ in 0..3 {
         std::thread::sleep(interval);
         let post = process::all(interval.as_millis() as u64)?;
 
@@ -81,4 +81,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         println!();
         pre = post;
     }
+
+    Ok(())
 }
