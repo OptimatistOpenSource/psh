@@ -12,18 +12,21 @@
 // You should have received a copy of the GNU Lesser General Public License along with Perf-event-rs. If not,
 // see <https://www.gnu.org/licenses/>.
 
+use std::time::Duration;
+
 use crate::{
     profiling::system::cpu::{
         self, AddressSizes as GuestAddressSizes, Arm64CpuInfo as GuestArm64CpuInfo,
-        CpuInfo as GuestCpuInfo, CpuMask as GuestCpuMask, TlbSize as GuestTlbSize,
-        X64CpuInfo as GuestX64CpuInfo,
+        CpuInfo as GuestCpuInfo, CpuMask as GuestCpuMask, CpuStat as GuestCpuStat,
+        CpuStats as GuestCpuStats, TlbSize as GuestTlbSize, X64CpuInfo as GuestX64CpuInfo,
     },
     SysCtx,
 };
 
 use psh_system::cpu::{
     AddressSizes as HostAddressSizes, Arm64CpuInfo as HostArm64CpuInfo, CPUInfo as HostCpuInfo,
-    CpuMask as HostCpuMask, TlbSize as HostTlbSize, X86_64CpuInfo as HostX86_64CpuInfo,
+    CpuMask as HostCpuMask, CpuStats as HostCpuStats, CpuTime as HostCpuStat,
+    TlbSize as HostTlbSize, X86_64CpuInfo as HostX86_64CpuInfo,
 };
 
 impl From<&HostCpuMask> for GuestCpuMask {
@@ -202,6 +205,58 @@ impl From<HostCpuInfo> for GuestCpuInfo {
     }
 }
 
+impl From<&HostCpuStat> for GuestCpuStat {
+    fn from(value: &HostCpuStat) -> Self {
+        Self {
+            user: value.user_ms(),
+            nice: value.nice_ms(),
+            system: value.system_ms(),
+            idle: value.idle_ms(),
+            iowait: value.iowait_ms(),
+            irq: value.irq_ms(),
+            softirq: value.softirq_ms(),
+            steal: value.steal_ms(),
+            guest: value.guest_ms(),
+            guest_nice: value.guest_nice_ms(),
+        }
+    }
+}
+
+impl From<HostCpuStat> for GuestCpuStat {
+    fn from(value: HostCpuStat) -> Self {
+        Self {
+            user: value.user_ms(),
+            nice: value.nice_ms(),
+            system: value.system_ms(),
+            idle: value.idle_ms(),
+            iowait: value.iowait_ms(),
+            irq: value.irq_ms(),
+            softirq: value.softirq_ms(),
+            steal: value.steal_ms(),
+            guest: value.guest_ms(),
+            guest_nice: value.guest_nice_ms(),
+        }
+    }
+}
+
+impl From<&HostCpuStats> for GuestCpuStats {
+    fn from(value: &HostCpuStats) -> Self {
+        Self {
+            total: (&value.total).into(),
+            per_cpu: value.per_cpu.iter().map(Into::into).collect(),
+        }
+    }
+}
+
+impl From<HostCpuStats> for GuestCpuStats {
+    fn from(value: HostCpuStats) -> Self {
+        Self {
+            total: (&value.total).into(),
+            per_cpu: value.per_cpu.iter().map(Into::into).collect(),
+        }
+    }
+}
+
 impl cpu::Host for SysCtx {
     fn info(&mut self) -> wasmtime::Result<Result<GuestCpuInfo, String>> {
         let cpu = self
@@ -210,5 +265,14 @@ impl cpu::Host for SysCtx {
             .map(Into::into)
             .map_err(|err| err.to_string());
         Ok(cpu)
+    }
+
+    fn stat(&mut self, interval_ms: u64) -> wasmtime::Result<Result<GuestCpuStats, String>> {
+        let stat = self
+            .cpu
+            .stat(Some(Duration::from_millis(interval_ms)))
+            .map(Into::into)
+            .map_err(|err| err.to_string());
+        Ok(stat)
     }
 }
