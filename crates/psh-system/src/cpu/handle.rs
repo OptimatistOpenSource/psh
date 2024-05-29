@@ -12,8 +12,12 @@
 // You should have received a copy of the GNU Lesser General Public License along with Perf-event-rs. If not,
 // see <https://www.gnu.org/licenses/>.
 
-use once_cell::sync::Lazy;
+use std::time::Duration;
 
+use once_cell::sync::Lazy;
+use procfs::CurrentSI;
+
+use super::CpuStats;
 use super::{raw::parse_cpuinfo, CPUInfo};
 use crate::error::Result;
 use crate::utils::Handle;
@@ -21,12 +25,26 @@ use crate::utils::Handle;
 static INFO_GLOBAL: Lazy<Handle<CPUInfo>> =
     Lazy::new(|| Handle::new(|| parse_cpuinfo!().map_err(Into::into)));
 
+static STAT_GLOBAL: Lazy<Handle<CpuStats>> = Lazy::new(|| {
+    Handle::new(|| {
+        procfs::KernelStats::current()
+            .map(Into::into)
+            .map_err(Into::into)
+    })
+});
+
 #[derive(Debug, Clone)]
-pub struct CpuHandle(Handle<CPUInfo>);
+pub struct CpuHandle {
+    info: Handle<CPUInfo>,
+    stat: Handle<CpuStats>,
+}
 
 impl Default for CpuHandle {
     fn default() -> Self {
-        Self(INFO_GLOBAL.clone())
+        Self {
+            info: INFO_GLOBAL.clone(),
+            stat: STAT_GLOBAL.clone(),
+        }
     }
 }
 
@@ -36,6 +54,10 @@ impl CpuHandle {
     }
 
     pub fn info(&self) -> Result<CPUInfo> {
-        self.0.get(None)
+        self.info.get(None)
+    }
+
+    pub fn stat(&self, interval: Option<Duration>) -> Result<CpuStats> {
+        self.stat.get(interval)
     }
 }

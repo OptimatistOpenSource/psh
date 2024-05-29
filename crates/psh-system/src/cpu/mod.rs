@@ -20,6 +20,9 @@ pub(crate) mod handle;
 mod raw;
 
 pub use handle::CpuHandle;
+pub use procfs::CpuTime;
+
+use procfs::KernelStats;
 
 // use Vec<bool> to represent CpuMask but wrap it in a tuple struct to make it a distinct type
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -166,6 +169,30 @@ pub enum CPUInfo {
     X86_64(Vec<X86_64CpuInfo>),
     Arm64(Vec<Arm64CpuInfo>),
     Unsupported(String),
+}
+
+#[derive(Debug, Clone)]
+pub struct CpuStats {
+    pub total: CpuTime,
+    pub per_cpu: Vec<CpuTime>,
+}
+
+impl From<&KernelStats> for CpuStats {
+    fn from(value: &KernelStats) -> Self {
+        Self {
+            total: value.total.clone(),
+            per_cpu: value.cpu_time.clone(),
+        }
+    }
+}
+
+impl From<KernelStats> for CpuStats {
+    fn from(value: KernelStats) -> Self {
+        Self {
+            total: value.total,
+            per_cpu: value.cpu_time,
+        }
+    }
 }
 
 #[cfg(test)]
