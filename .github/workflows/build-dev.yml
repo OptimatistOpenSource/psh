@@ -44,7 +44,7 @@ jobs:
         with:
           profile: minimal
           override: true
-          toolchain: nightly-2023-10-09
+          toolchain: stable
           components: rustfmt, clippy
 
       - name: Show Rust toolchain version
