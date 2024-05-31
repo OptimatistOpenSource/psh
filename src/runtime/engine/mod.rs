@@ -5,7 +5,7 @@ use wasmtime::{
     component::{Component, Linker},
     Engine, Store,
 };
-use wasmtime_wasi::preview2::command::sync::Command;
+use wasmtime_wasi::bindings::sync::Command;
 
 use super::PshState;
 
