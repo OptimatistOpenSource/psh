@@ -1,5 +1,5 @@
 use wasmtime::component::ResourceTable;
-use wasmtime_wasi::preview2::{WasiCtx, WasiView};
+use wasmtime_wasi::{WasiCtx, WasiView};
 
 use host_op_perf::PerfCtx;
 use host_op_system::SysCtx;

@@ -3,10 +3,7 @@ use wasmtime::{
     component::{Linker, ResourceTable},
     Config, Engine, Store,
 };
-use wasmtime_wasi::preview2::{
-    command::{self},
-    StdinStream, StdoutStream, WasiCtxBuilder,
-};
+use wasmtime_wasi::{StdinStream, StdoutStream, WasiCtxBuilder};
 
 use host_op_perf::PerfCtx;
 use host_op_system::SysCtx;
@@ -46,8 +43,8 @@ impl PshEngineBuilder {
         };
         let store = Store::new(&engine, state);
         let mut linker: Linker<PshState> = Linker::new(&engine);
-        command::sync::add_to_linker(&mut linker)
-            .context("Failed to link wasi command::sync module")?;
+        wasmtime_wasi::add_to_linker_sync(&mut linker)
+            .context("Failed to link wasi sync module")?;
         if self.use_perf_op {
             host_op_perf::add_to_linker(&mut linker, |state| &mut state.perf_ctx)
                 .context("Failed to link perf module")?;

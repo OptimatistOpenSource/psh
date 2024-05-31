@@ -32,7 +32,13 @@ wasmtime::component::bindgen!({
         "profiling:perf/counter-group/counter-group"      : CounterGroup,
         "profiling:perf/counter-group/fixed-counter-group": FixedCounterGroup,
         "profiling:perf/counter-group/counter-guard"      : CounterGuard,
-    }
+    },
+    // https://github.com/bytecodealliance/wasmtime/pull/8310
+    // wasmtime have added a config in bindgen! macro to allow user specify
+    // whether they want a function be able to trap(outer wasmtime::Result).
+    // by default the value is false, we use true here to compatible with our
+    // previous implementations.
+    trappable_imports: true,
 });
 
 pub struct PerfCtx {
