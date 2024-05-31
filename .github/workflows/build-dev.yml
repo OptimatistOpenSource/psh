@@ -16,7 +16,7 @@ jobs:
         # we only need to support linux
         os: [ ubuntu-20.04, ubuntu-22.04, ubuntu-latest ]
         # TODO: do we want to support musl?
-        target: [ aarch64-unknown-linux-gnu, x86_64-unknown-linux-gnu ]
+        target: [ x86_64-unknown-linux-gnu ]
         # make sure it runs on latest stable & nightly rust in development build
         toolchain: [ stable, nightly ]
 
