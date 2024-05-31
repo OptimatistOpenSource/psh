@@ -14,7 +14,7 @@ jobs:
       fail-fast: false
       matrix:
         # we only need to support linux
-        os: [ ubuntu-20.04, ubuntu-22.04, ubuntu-latest ]
+        os: [ ubuntu-22.04, ubuntu-latest ]
         # TODO: do we want to support musl?
         target: [ x86_64-unknown-linux-gnu ]
         # make sure it runs on latest stable rust
