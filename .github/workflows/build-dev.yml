@@ -27,12 +27,12 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           submodules: true
 
+
       - name: Setup Rust toolchain
-        uses: actions-rs/toolchain@v1
+        uses: hecrj/setup-rust-action@v2
         with:
-          profile: minimal
-          override: true
-          toolchain: ${{ matrix.toolchain }}
+          rust-version: ${{ matrix.toolchain }}
+          targets: ${{ matrix.target }}
           components: rustfmt, clippy
 
       - name: Show Rust toolchain version
@@ -51,11 +51,6 @@ jobs:
       - name: Setup protobuf
         shell: bash
         run: sudo apt -y install protobuf-compiler
-
-      - name: Add target
-        uses: ./.github/actions/add-target
-        with:
-          target: ${{ matrix.target }}
 
       - name: Setup Rust cache
         uses: Swatinem/rust-cache@v2
