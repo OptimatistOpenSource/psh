@@ -13,24 +13,18 @@ on:
 
 jobs:
   build-dev:
-    name: ${{ matrix.targets.alias }}
-    runs-on: ${{ matrix.targets.os }}
+    name: ${{ matrix.os }}-${{ matrix.target }}-${{ matrix.toolchain }}
+    runs-on: ${{ matrix.os }}
 
     strategy:
       fail-fast: false
       matrix:
-        targets:
-          # aarch64
-          #- { os: macos-11    , target: aarch64-apple-darwin     , alias: aarch64-darwin-macos-11    }
-          #- { os: macos-12    , target: aarch64-apple-darwin     , alias: aarch64-darwin-macos-12    }
-          #- { os: macos-13    , target: aarch64-apple-darwin     , alias: aarch64-darwin-macos-13    }
-          # amd64
-          #- { os: macos-12    , target: x86_64-apple-darwin      , alias: amd64-darwin-macos-unknown }
-          #- { os: ubuntu-20.04, target: x86_64-unknown-linux-gnu , alias: amd64-gnu-ubuntu-20.04     }
-          - { os: ubuntu-22.04, target: x86_64-unknown-linux-gnu , alias: amd64-gnu-ubuntu-22.04     }
-          #- { os: ubuntu-22.04, target: x86_64-unknown-linux-musl, alias: amd64-musl-linux-unknown   }
-          #- { os: windows-2019, target: x86_64-pc-windows-msvc   , alias: amd64-msvc-windows-2019    }
-          #- { os: windows-2022, target: x86_64-pc-windows-msvc   , alias: amd64-msvc-windows-2022    }
+        # we only need to support linux
+        os: [ ubuntu-20.04, ubuntu-22.04, ubuntu-latest ]
+        # TODO: do we want to support musl?
+        target: [ aarch64-unknown-linux-gnu, x86_64-unknown-linux-gnu ]
+        # make sure it runs on latest stable & nightly rust in development build
+        toolchain: [ stable, nightly ]
 
     steps:
       - name: Checkout
@@ -44,7 +38,7 @@ jobs:
         with:
           profile: minimal
           override: true
-          toolchain: stable
+          toolchain: ${{ matrix.toolchain }}
           components: rustfmt, clippy
 
       - name: Show Rust toolchain version
@@ -55,10 +49,10 @@ jobs:
           cargo fmt -- -V
           rustc -V
 
-      - name: Setup musl-tools
-        if: matrix.targets.target == 'x86_64-unknown-linux-musl'
-        shell: bash
-        run: sudo apt -y install musl-tools
+      # - name: Setup musl-tools
+      #   if: matrix.target == 'x86_64-unknown-linux-musl'
+      #   shell: bash
+      #   run: sudo apt -y install musl-tools
 
       - name: Setup protobuf
         shell: bash
@@ -67,12 +61,12 @@ jobs:
       - name: Add target
         uses: ./.github/actions/add-target
         with:
-          target: ${{ matrix.targets.target }}
+          target: ${{ matrix.target }}
 
       - name: Setup Rust cache
         uses: Swatinem/rust-cache@v2
         with:
-          prefix-key: ${{ matrix.targets.alias }}
+          prefix-key: ${{ matrix.os }}-${{ matrix.target }}-${{ matrix.toolchain }}
 
       - name: Generate version
         id: gen-version
@@ -93,13 +87,13 @@ jobs:
       - name: Run build
         uses: ./.github/actions/build
         with:
-          target: ${{ matrix.targets.target }}
+          target: ${{ matrix.target }}
           release: false
 
 #      - name: Generate artifacts name
 #        id: gen-name
 #        shell: bash
-#        run: echo 'NAME=psh-dev-${{ matrix.targets.alias }}' >> $GITHUB_OUTPUT
+#        run: echo 'NAME=psh-dev-${{ matrix.os }}-${{ matrix.target }}-${{ matrix.toolchain }}' >> $GITHUB_OUTPUT
 
       #- name: Generate binary extension
       #  id: gen-ext
@@ -111,5 +105,5 @@ jobs:
       #        uses: actions/upload-artifact@v3
       #        with:
       # name: ${{ steps.gen-name.outputs.NAME }}
-      #path: ./target/${{ matrix.targets.target }}/debug/psh${{ steps.gen-ext.outputs.EXT }}
+      #path: ./target/${{ matrix.target }}/debug/psh${{ steps.gen-ext.outputs.EXT }}
       #if-no-files-found: error
