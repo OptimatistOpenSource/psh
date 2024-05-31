@@ -28,22 +28,16 @@ jobs:
           submodules: true
 
       - name: Setup Rust toolchain
-        uses: actions-rs/toolchain@v1
+        uses: hecrj/setup-rust-action@v2
         with:
-          profile: minimal
-          override: true
-          toolchain: ${{ matrix.toolchain }}
+          rust-version: ${{ matrix.toolchain }}
+          targets: ${{ matrix.target }}
           components: rustfmt, clippy
 
       # - name: Setup musl-tools
       #   if: matrix.target == 'x86_64-unknown-linux-musl'
       #   shell: bash
       #   run: sudo apt -y install musl-tools
-
-      - name: Add target
-        uses: ./.github/actions/add-target
-        with:
-          target: ${{ matrix.target }}
 
       - name: Setup Rust cache
         uses: Swatinem/rust-cache@v2
