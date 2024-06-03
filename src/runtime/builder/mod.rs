@@ -11,7 +11,7 @@ use wasmtime_wasi::preview2::{
 use host_op_perf::PerfCtx;
 use host_op_system::SysCtx;
 
-use super::{Bindings, PshEngine, PshState};
+use super::{PshEngine, PshState};
 
 #[allow(dead_code)]
 pub struct PshEngineBuilder {
@@ -48,8 +48,6 @@ impl PshEngineBuilder {
         let mut linker: Linker<PshState> = Linker::new(&engine);
         command::sync::add_to_linker(&mut linker)
             .context("Failed to link wasi command::sync module")?;
-        Bindings::add_root_to_linker(&mut linker, |state| state)
-            .context("Failed to link psh module")?;
         if self.use_perf_op {
             host_op_perf::add_to_linker(&mut linker, |state| &mut state.perf_ctx)
                 .context("Failed to link perf module")?;

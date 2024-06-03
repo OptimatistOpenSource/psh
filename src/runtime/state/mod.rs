@@ -4,8 +4,6 @@ use wasmtime_wasi::preview2::{WasiCtx, WasiView};
 use host_op_perf::PerfCtx;
 use host_op_system::SysCtx;
 
-use super::BindingsImports;
-
 pub struct PshState {
     #[allow(dead_code)]
     pub(crate) name: String,
@@ -23,11 +21,5 @@ impl WasiView for PshState {
 
     fn ctx(&mut self) -> &mut WasiCtx {
         &mut self.wasi_ctx
-    }
-}
-
-impl BindingsImports for PshState {
-    fn name(&mut self) -> wasmtime::Result<String> {
-        Ok(self.name.clone())
     }
 }
