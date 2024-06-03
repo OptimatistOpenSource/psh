@@ -28,9 +28,9 @@ anyhow = "1.0.86"
 host-op-perf = { workspace = true }
 host-op-system = { workspace = true }
 psh-system = { workspace = true }
-opentelemetry-otlp = { version = "0.15.0", features = ["metrics", "opentelemetry-http", "http-proto", "reqwest", "reqwest-blocking-client"] }
-opentelemetry = { version = "0.22.0", features = ["metrics"] }
-opentelemetry_sdk = { version = "0.22.1", features = ["metrics", "opentelemetry-http", "rt-tokio", "tokio"] }
+opentelemetry-otlp = { version = "0.16.0", features = ["metrics", "opentelemetry-http", "http-proto", "reqwest", "reqwest-blocking-client"] }
+opentelemetry = { version = "0.23.0", features = ["metrics"] }
+opentelemetry_sdk = { version = "0.23.0", features = ["metrics", "opentelemetry-http", "rt-tokio", "tokio"] }
 
 [workspace.dependencies]
 host-op-perf = { path = "crates/op/host-op-perf" }
