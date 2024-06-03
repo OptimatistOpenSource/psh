@@ -11,10 +11,12 @@
 //
 // You should have received a copy of the GNU Lesser General Public License along with Perf-event-rs. If not,
 // see <https://www.gnu.org/licenses/>.
-use std::process::Command;
 
-mod counter;
-mod counter_group;
+use std::{path::Path, process::Command};
+
+use anyhow::Context as _;
+
+use super::{PshEngine, PshEngineBuilder};
 
 // FIXME(Chengdong Li): This function is no longer used in `cargo test` as
 // host-op-perf requires root permission to run test. But there is often no `cargo`
@@ -32,4 +34,71 @@ pub fn compile_component(project_path: &str) {
     let mut cmd = Command::new("cargo");
     cmd.args(["component", "build", "--manifest-path", &toml_path]);
     cmd.output().unwrap();
+}
+
+fn engine() -> anyhow::Result<PshEngine> {
+    PshEngineBuilder::new()
+        .allow_perf_op(true)
+        .allow_system_op(true)
+        .build()
+        .context("Failed to build PshEngine.")
+}
+
+fn test_wasm_component(wasm: &str) {
+    let Ok(mut engine) = engine() else {
+        panic!();
+    };
+    let path = format!("./test_resources/profiling/{wasm}/target/wasm32-wasi/debug/{wasm}.wasm");
+    assert!(Path::new(&path).exists());
+    assert!(engine.run(&path).is_ok());
+}
+
+#[test]
+fn test_get_cpu_info() {
+    test_wasm_component("test-get-cpu-info")
+}
+
+#[test]
+fn test_get_disks() {
+    test_wasm_component("test-get-disks")
+}
+
+#[test]
+fn test_get_interrupts_info() {
+    test_wasm_component("test-get-interrupts-info");
+}
+
+#[test]
+fn test_get_memory_info() {
+    test_wasm_component("test-get-memory-info");
+}
+
+#[test]
+fn test_get_networks() {
+    test_wasm_component("test-get-networks");
+}
+
+#[test]
+fn test_get_processes() {
+    test_wasm_component("test-get-processes");
+}
+
+#[test]
+fn test_get_rps_info() {
+    test_wasm_component("test-get-rps-info");
+}
+
+#[test]
+fn test_get_system_info() {
+    test_wasm_component("test-get-system-info");
+}
+
+#[test]
+fn test_perf_counter() {
+    test_wasm_component("test-perf-counter");
+}
+
+#[test]
+fn test_perf_counter_group() {
+    test_wasm_component("test-perf-counter-group");
 }

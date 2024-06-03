@@ -16,9 +16,6 @@ use wasmtime::component::{Linker, ResourceTable};
 pub mod convert;
 pub mod counting;
 
-#[cfg(test)]
-mod tests;
-
 pub type Counter = perf_event_rs::counting::Counter;
 pub type CounterGroup = perf_event_rs::counting::CounterGroup;
 pub type FixedCounterGroup = perf_event_rs::counting::FixedCounterGroup;

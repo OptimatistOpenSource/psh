@@ -16,6 +16,9 @@ mod builder;
 mod engine;
 mod state;
 
+#[cfg(test)]
+mod tests;
+
 pub use builder::PshEngineBuilder;
 pub use engine::PshEngine;
 pub use state::PshState;
