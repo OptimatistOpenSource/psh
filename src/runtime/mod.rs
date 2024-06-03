@@ -16,11 +16,6 @@ mod builder;
 mod engine;
 mod state;
 
-wasmtime::component::bindgen!({
-    path: "psh-sdk-wit/wit",
-    world: "bindings"
-});
-
 pub use builder::PshEngineBuilder;
 pub use engine::PshEngine;
 pub use state::PshState;
