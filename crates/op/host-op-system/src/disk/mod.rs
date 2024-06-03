@@ -110,12 +110,10 @@ impl From<HostDiskStat> for GuestDiskStat {
 }
 
 impl disk::Host for SysCtx {
-    fn stat(&mut self, interval_ms: u64) -> wasmtime::Result<Result<Vec<GuestDiskStat>, String>> {
-        let disks = self
-            .disk
+    fn stat(&mut self, interval_ms: u64) -> Result<Vec<GuestDiskStat>, String> {
+        self.disk
             .stat(Some(Duration::from_millis(interval_ms)))
             .map(|disks| disks.into_iter().map(Into::into).collect())
-            .map_err(|err| err.to_string());
-        Ok(disks)
+            .map_err(|err| err.to_string())
     }
 }

@@ -48,7 +48,17 @@ wasmtime::component::bindgen!({
     // whether they want a function be able to trap(outer wasmtime::Result).
     // by default the value is false, we use true here to compatible with our
     // previous implementations.
-    trappable_imports: true,
+    trappable_imports: [
+        "[method]process.pid",
+        "[method]process.cmd",
+        "[method]process.exe",
+        "[method]process.environ",
+        "[method]process.cwd",
+        "[method]process.root",
+        "[method]process.user-id",
+        "all",
+        "current",
+    ],
 });
 
 #[allow(dead_code)]
