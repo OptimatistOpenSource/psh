@@ -16,7 +16,8 @@ use crate::PerfCtx;
 use std::path::Path;
 use wasmtime::component::{Component, Instance, Linker, ResourceTable};
 use wasmtime::{Config, Engine, Store};
-use wasmtime_wasi::preview2::{command, WasiCtx, WasiCtxBuilder, WasiView};
+use wasmtime_wasi::bindings::sync::Command;
+use wasmtime_wasi::{WasiCtx, WasiCtxBuilder, WasiView};
 
 pub struct State {
     pub perf_ctx: PerfCtx,
@@ -49,7 +50,7 @@ fn test_counter() {
     );
     let mut linker: Linker<State> = Linker::new(&engine);
     crate::add_to_linker(&mut linker, |t| &mut t.perf_ctx).unwrap();
-    command::sync::add_to_linker(&mut linker).unwrap();
+    wasmtime_wasi::add_to_linker_sync(&mut linker).unwrap();
 
     let path = "../../../test_resources/profiling/test-perf-counter";
     let wasm_path = format!("{}/target/wasm32-wasi/debug/test-perf-counter.wasm", path);
@@ -60,8 +61,7 @@ fn test_counter() {
     );
     let component = Component::from_file(&engine, wasm_path).unwrap();
 
-    let (cmd, _): (_, Instance) =
-        command::sync::Command::instantiate(&mut store, &component, &linker).unwrap();
+    let (cmd, _): (_, Instance) = Command::instantiate(&mut store, &component, &linker).unwrap();
 
     cmd.wasi_cli_run().call_run(&mut store).unwrap().unwrap();
 }
