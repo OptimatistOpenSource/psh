@@ -17,7 +17,7 @@ version = "0.1.0"
 [dependencies]
 libc = "0.2.155"
 clap = { version = "4.5.4", features = ["derive", "wrap_help"] }
-tonic = "0.10"
+tonic = "0.11"
 prost = "0.12"
 tokio = { version = "1.38", features = ["macros", "rt-multi-thread"] }
 nix = "0.20.2"
@@ -38,4 +38,4 @@ host-op-system = { path = "crates/op/host-op-system" }
 psh-system = { path = "crates/psh-system" }
 
 [build-dependencies]
-tonic-build = "0.10"
+tonic-build = "0.11"
