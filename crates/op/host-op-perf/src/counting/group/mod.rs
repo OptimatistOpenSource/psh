@@ -26,14 +26,15 @@ impl HostCounterGroup for PerfCtx {
         process: Process,
         cpu: Cpu,
     ) -> wasmtime::Result<Result<Resource<CounterGroup>, String>> {
-        let mut f = || -> anyhow::Result<_> {
+        let counter_group = {
             let process = Wrap::<RawProcess>::from(&process).into_inner();
             let cpu = Wrap::<RawCpu>::from(&cpu).into_inner();
-            let counter_group = raw::counter_group_new(&process, &cpu)?;
-            let handle = self.table.push(counter_group)?;
-            Ok(handle)
+            raw::counter_group_new(&process, &cpu)
         };
-        Ok(f().map_err(|e| e.to_string()))
+        Ok(match counter_group {
+            Ok(counter_group) => Ok(self.table.push(counter_group)?),
+            Err(err) => Err(err.to_string()),
+        })
     }
 
     fn add_member(
@@ -41,53 +42,49 @@ impl HostCounterGroup for PerfCtx {
         self_: Resource<CounterGroup>,
         cfg: Config,
     ) -> wasmtime::Result<Result<Resource<CounterGuard>, String>> {
-        let mut f = || -> anyhow::Result<_> {
-            let counter_group: &mut CounterGroup = self.table.get_mut(&self_)?;
+        let add_cfg_to_group = |cfg, group| -> anyhow::Result<_> {
             let mut cfg = Wrap::<RawConfig>::try_from(&cfg)?.into_inner();
-            let guard = raw::counter_group_add_member(counter_group, &mut cfg)?;
-            let handle = self.table.push(guard)?;
-            Ok(handle)
+            raw::counter_group_add_member(group, &mut cfg).map_err(Into::into)
         };
-        Ok(f().map_err(|e| e.to_string()))
+        let counter_group: &mut CounterGroup = self.table.get_mut(&self_)?;
+        Ok(match add_cfg_to_group(cfg, counter_group) {
+            Ok(guard) => Ok(self.table.push(guard)?),
+            Err(err) => Err(err.to_string()),
+        })
     }
 
     fn enable(
         &mut self,
         counter_group: Resource<CounterGroup>,
     ) -> wasmtime::Result<Result<Resource<FixedCounterGroup>, String>> {
-        let f = || -> anyhow::Result<_> {
-            let counter_group: CounterGroup = self.table.delete(counter_group)?;
-            let fixed_counter_group = raw::counter_group_enable(counter_group)?;
-            let handle = self.table.push(fixed_counter_group)?;
-            Ok(handle)
-        };
-        Ok(f().map_err(|e| e.to_string()))
+        let counter_group: CounterGroup = self.table.delete(counter_group)?;
+        Ok(match raw::counter_group_enable(counter_group) {
+            Ok(group) => Ok(self.table.push(group)?),
+            Err(err) => Err(err.to_string()),
+        })
     }
 
     fn stat(
         &mut self,
         self_: Resource<CounterGroup>,
     ) -> wasmtime::Result<Result<CounterGroupStat, String>> {
-        let mut f = || -> anyhow::Result<_> {
-            let counter_group: &mut CounterGroup = self.table.get_mut(&self_)?;
-            let stat = raw::counter_group_stat(counter_group)?;
-            let stat = Wrap::<CounterGroupStat>::from(&stat).into_inner();
-            Ok(stat)
-        };
-        Ok(f().map_err(|e| e.to_string()))
+        let counter_group: &mut CounterGroup = self.table.get_mut(&self_)?;
+        let stat = || -> Result<_, String> {
+            let stat = raw::counter_group_stat(counter_group).map_err(|err| err.to_string())?;
+            Ok(Wrap::<CounterGroupStat>::from(&stat).into_inner())
+        }();
+        Ok(stat)
     }
 
     fn into_fixed(
         &mut self,
         counter_group: Resource<CounterGroup>,
     ) -> wasmtime::Result<Result<Resource<FixedCounterGroup>, String>> {
-        let f = || -> anyhow::Result<_> {
-            let counter_group: CounterGroup = self.table.delete(counter_group)?;
-            let fixed_counter_group = raw::counter_group_into_fixed(counter_group)?;
-            let handle = self.table.push(fixed_counter_group)?;
-            Ok(handle)
-        };
-        Ok(f().map_err(|e| e.to_string()))
+        let counter_group: CounterGroup = self.table.delete(counter_group)?;
+        Ok(match raw::counter_group_into_fixed(counter_group) {
+            Ok(group) => Ok(self.table.push(group)?),
+            Err(err) => Err(err.to_string()),
+        })
     }
 
     fn drop(&mut self, rep: Resource<CounterGroup>) -> wasmtime::Result<()> {
@@ -101,49 +98,37 @@ impl HostFixedCounterGroup for PerfCtx {
         &mut self,
         self_: Resource<FixedCounterGroup>,
     ) -> wasmtime::Result<Result<(), String>> {
-        let f = || -> anyhow::Result<_> {
-            let fixed_counter_group: &FixedCounterGroup = self.table.get(&self_)?;
-            raw::fixed_counter_group_enable(fixed_counter_group)?;
-            Ok(())
-        };
-        Ok(f().map_err(|e| e.to_string()))
+        let fixed_counter_group: &FixedCounterGroup = self.table.get(&self_)?;
+        Ok(raw::fixed_counter_group_enable(fixed_counter_group).map_err(|err| err.to_string()))
     }
 
     fn disable(
         &mut self,
         self_: Resource<FixedCounterGroup>,
     ) -> wasmtime::Result<Result<(), String>> {
-        let f = || -> anyhow::Result<_> {
-            let fixed_counter_group: &FixedCounterGroup = self.table.get(&self_)?;
-            raw::fixed_counter_group_disable(fixed_counter_group)?;
-            Ok(())
-        };
-        Ok(f().map_err(|e| e.to_string()))
+        let fixed_counter_group: &FixedCounterGroup = self.table.get(&self_)?;
+        Ok(raw::fixed_counter_group_disable(fixed_counter_group).map_err(|err| err.to_string()))
     }
 
     fn reset(
         &mut self,
         self_: Resource<FixedCounterGroup>,
     ) -> wasmtime::Result<Result<(), String>> {
-        let f = || -> anyhow::Result<_> {
-            let fixed_counter_group: &FixedCounterGroup = self.table.get(&self_)?;
-            raw::fixed_counter_group_reset(fixed_counter_group)?;
-            Ok(())
-        };
-        Ok(f().map_err(|e| e.to_string()))
+        let fixed_counter_group: &FixedCounterGroup = self.table.get(&self_)?;
+        Ok(raw::fixed_counter_group_reset(fixed_counter_group).map_err(|err| err.to_string()))
     }
 
     fn stat(
         &mut self,
         self_: Resource<FixedCounterGroup>,
     ) -> wasmtime::Result<Result<CounterGroupStat, String>> {
-        let mut f = || -> anyhow::Result<_> {
-            let fixed_counter_group: &mut FixedCounterGroup = self.table.get_mut(&self_)?;
-            let stat = raw::fixed_counter_group_stat(fixed_counter_group)?;
-            let stat = Wrap::<CounterGroupStat>::from(&stat).into_inner();
-            Ok(stat)
-        };
-        Ok(f().map_err(|e| e.to_string()))
+        let fixed_counter_group: &mut FixedCounterGroup = self.table.get_mut(&self_)?;
+        let stat = || -> Result<_, String> {
+            let stat = raw::fixed_counter_group_stat(fixed_counter_group)
+                .map_err(|err| err.to_string())?;
+            Ok(Wrap::<CounterGroupStat>::from(&stat).into_inner())
+        }();
+        Ok(stat)
     }
 
     fn drop(&mut self, rep: Resource<FixedCounterGroup>) -> wasmtime::Result<()> {
@@ -162,13 +147,12 @@ impl HostCounterGuard for PerfCtx {
         &mut self,
         self_: Resource<CounterGuard>,
     ) -> wasmtime::Result<Result<CounterStat, String>> {
-        let mut f = || -> anyhow::Result<_> {
-            let counter_guard: &mut CounterGuard = self.table.get_mut(&self_)?;
-            let stat = raw::counter_guard_stat(counter_guard)?;
-            let stat = Wrap::<CounterStat>::from(&stat).into_inner();
-            Ok(stat)
-        };
-        Ok(f().map_err(|e| e.to_string()))
+        let counter_guard: &mut CounterGuard = self.table.get_mut(&self_)?;
+        let stat = || -> Result<_, String> {
+            let stat = raw::counter_guard_stat(counter_guard).map_err(|err| err.to_string())?;
+            Ok(Wrap::<CounterStat>::from(&stat).into_inner())
+        }();
+        Ok(stat)
     }
     fn drop(&mut self, rep: Resource<CounterGuard>) -> wasmtime::Result<()> {
         self.table.delete(rep)?;

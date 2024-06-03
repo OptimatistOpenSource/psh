@@ -27,52 +27,42 @@ impl HostCounter for PerfCtx {
         cpu: Cpu,
         cfg: Config,
     ) -> wasmtime::Result<Result<Resource<Counter>, String>> {
-        let mut f = || -> anyhow::Result<_> {
+        let create_counter = || -> Result<_, String> {
             let process = Wrap::<RawProcess>::from(&process).into_inner();
             let cpu = Wrap::<RawCpu>::from(&cpu).into_inner();
-            let mut cfg = Wrap::<RawConfig>::try_from(&cfg)?.into_inner();
-            let counter = raw::counter_new(&process, &cpu, &mut cfg)?;
-            let handle = self.table.push(counter)?;
-            Ok(handle)
+            let mut cfg = Wrap::<RawConfig>::try_from(&cfg)
+                .map_err(|err| err.to_string())?
+                .into_inner();
+            raw::counter_new(&process, &cpu, &mut cfg).map_err(|err| err.to_string())
         };
-        Ok(f().map_err(|e| e.to_string()))
+        Ok(match create_counter() {
+            Ok(counter) => Ok(self.table.push(counter)?),
+            Err(err) => Err(err),
+        })
     }
 
     fn enable(&mut self, self_: Resource<Counter>) -> wasmtime::Result<Result<(), String>> {
-        let f = || -> anyhow::Result<_> {
-            let counter: &Counter = self.table.get(&self_)?;
-            raw::counter_enable(counter)?;
-            Ok(())
-        };
-        Ok(f().map_err(|e| e.to_string()))
+        let counter: &Counter = self.table.get(&self_)?;
+        Ok(raw::counter_enable(counter).map_err(|err| err.to_string()))
     }
 
     fn disable(&mut self, self_: Resource<Counter>) -> wasmtime::Result<Result<(), String>> {
-        let f = || -> anyhow::Result<_> {
-            let counter: &Counter = self.table.get(&self_)?;
-            raw::counter_disable(counter)?;
-            Ok(())
-        };
-        Ok(f().map_err(|e| e.to_string()))
+        let counter: &Counter = self.table.get(&self_)?;
+        Ok(raw::counter_disable(counter).map_err(|err| err.to_string()))
     }
 
     fn reset(&mut self, self_: Resource<Counter>) -> wasmtime::Result<Result<(), String>> {
-        let f = || -> anyhow::Result<_> {
-            let counter: &Counter = self.table.get(&self_)?;
-            raw::counter_reset(counter)?;
-            Ok(())
-        };
-        Ok(f().map_err(|e| e.to_string()))
+        let counter: &Counter = self.table.get(&self_)?;
+        Ok(raw::counter_reset(counter).map_err(|err| err.to_string()))
     }
 
     fn stat(&mut self, self_: Resource<Counter>) -> wasmtime::Result<Result<CounterStat, String>> {
-        let mut f = || -> anyhow::Result<_> {
-            let counter: &mut Counter = self.table.get_mut(&self_)?;
-            let stat = raw::counter_stat(counter)?;
-            let stat = Wrap::<CounterStat>::from(&stat).into_inner();
-            Ok(stat)
-        };
-        Ok(f().map_err(|e| e.to_string()))
+        let counter: &mut Counter = self.table.get_mut(&self_)?;
+        let stat = || -> Result<_, String> {
+            let stat = raw::counter_stat(counter).map_err(|err| err.to_string())?;
+            Ok(Wrap::<CounterStat>::from(&stat).into_inner())
+        }();
+        Ok(stat)
     }
 
     fn drop(&mut self, rep: Resource<Counter>) -> wasmtime::Result<()> {
