@@ -19,7 +19,7 @@ use wasmtime::{
     component::{Component, Instance, Linker, ResourceTable},
     Config, Engine, Store,
 };
-use wasmtime_wasi::preview2::{command, WasiCtx, WasiCtxBuilder, WasiView};
+use wasmtime_wasi::{bindings::sync::Command, WasiCtx, WasiCtxBuilder, WasiView};
 
 pub struct State {
     pub sys_ctx: SysCtx,
@@ -52,7 +52,7 @@ macro_rules! wasi_component_run {
         );
         let mut linker: Linker<State> = Linker::new(&engine);
         host_op_system::add_to_linker(&mut linker, |t| &mut t.sys_ctx).unwrap();
-        command::sync::add_to_linker(&mut linker).unwrap();
+        wasmtime_wasi::add_to_linker_sync(&mut linker).unwrap();
 
         let path = format!("../../../test_resources/profiling/{}", $test);
         let wasm_path = format!("{}/target/wasm32-wasi/debug/{}.wasm", path, $test);
@@ -64,7 +64,7 @@ macro_rules! wasi_component_run {
         let component = Component::from_file(&engine, wasm_path).unwrap();
 
         let (cmd, _): (_, Instance) =
-            command::sync::Command::instantiate(&mut store, &component, &linker).unwrap();
+            Command::instantiate(&mut store, &component, &linker).unwrap();
 
         cmd.wasi_cli_run().call_run(&mut store).unwrap().unwrap();
     };
