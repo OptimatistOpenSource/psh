@@ -258,21 +258,17 @@ impl From<HostCpuStats> for GuestCpuStats {
 }
 
 impl cpu::Host for SysCtx {
-    fn info(&mut self) -> wasmtime::Result<Result<GuestCpuInfo, String>> {
-        let cpu = self
-            .cpu
+    fn info(&mut self) -> Result<GuestCpuInfo, String> {
+        self.cpu
             .info()
             .map(Into::into)
-            .map_err(|err| err.to_string());
-        Ok(cpu)
+            .map_err(|err| err.to_string())
     }
 
-    fn stat(&mut self, interval_ms: u64) -> wasmtime::Result<Result<GuestCpuStats, String>> {
-        let stat = self
-            .cpu
+    fn stat(&mut self, interval_ms: u64) -> Result<GuestCpuStats, String> {
+        self.cpu
             .stat(Some(Duration::from_millis(interval_ms)))
             .map(Into::into)
-            .map_err(|err| err.to_string());
-        Ok(stat)
+            .map_err(|err| err.to_string())
     }
 }

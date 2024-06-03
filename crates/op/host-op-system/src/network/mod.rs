@@ -70,16 +70,10 @@ impl From<DeviceStatus> for GuestNetworkStat {
 }
 
 impl network::Host for SysCtx {
-    fn stat(
-        &mut self,
-        interval_ms: u64,
-    ) -> wasmtime::Result<Result<Vec<GuestNetworkStat>, String>> {
-        let networks = self
-            .network
+    fn stat(&mut self, interval_ms: u64) -> Result<Vec<GuestNetworkStat>, String> {
+        self.network
             .stat(Some(Duration::from_millis(interval_ms)))
             .map(|nets| nets.into_values().map(Into::into).collect())
-            .map_err(|err| err.to_string());
-
-        Ok(networks)
+            .map_err(|err| err.to_string())
     }
 }
