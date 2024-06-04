@@ -7,7 +7,7 @@ edition = "2021"
 
 [workspace]
 members = [
-  "crates/op/*", "crates/psh-system",
+  "crates/op/*", "crates/psh-system", "crates/ebpf"
 ]
 exclude = ["test_resources/profiling"]
 
