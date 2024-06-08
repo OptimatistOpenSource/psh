@@ -27,13 +27,14 @@ use clap::Parser;
 use args::Args;
 use runtime::PshEngineBuilder;
 
-fn main() -> anyhow::Result<()> {
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
     let component_envs: Vec<(String, String)> = std::env::vars().collect();
     let mut component_args: Vec<String> = vec![args.psh_wasm_component.clone()];
     component_args.extend(args.extra_args);
 
-    let th = std::thread::spawn(|| tokio::runtime::Runtime::new()?.block_on(otlp::otlp_tasks()));
+    otlp::otlp_tasks().await?;
 
     let mut engine = PshEngineBuilder::new()
         .wasi_inherit_stdio()
@@ -44,9 +45,7 @@ fn main() -> anyhow::Result<()> {
         .build()
         .context("Failed to build PshEngine.")?;
 
-    engine.run(&args.psh_wasm_component)?;
-
-    let _ = th.join();
+    engine.run(&args.psh_wasm_component).await?;
 
     Ok(())
 }

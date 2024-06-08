@@ -23,6 +23,7 @@ impl PshEngineBuilder {
     pub fn new() -> Self {
         let mut engine_config = Config::new();
         engine_config.wasm_component_model(true);
+        engine_config.async_support(true);
         Self {
             wasi_ctx_builder: WasiCtxBuilder::new(),
             engine_config,
@@ -43,7 +44,7 @@ impl PshEngineBuilder {
         };
         let store = Store::new(&engine, state);
         let mut linker: Linker<PshState> = Linker::new(&engine);
-        wasmtime_wasi::add_to_linker_sync(&mut linker)
+        wasmtime_wasi::add_to_linker_async(&mut linker)
             .context("Failed to link wasi sync module")?;
         if self.use_perf_op {
             host_op_perf::add_to_linker(&mut linker, |state| &mut state.perf_ctx)

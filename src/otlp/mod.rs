@@ -462,7 +462,5 @@ pub async fn otlp_tasks() -> anyhow::Result<()> {
     let _ = otlp_networks(meter.clone(), interval)?;
     let _ = otlp_disks(meter.clone(), interval)?;
     let _ = otlp_interrupt(meter.clone(), interval)?;
-    loop {
-        tokio::time::sleep(interval).await;
-    }
+    Ok(())
 }
