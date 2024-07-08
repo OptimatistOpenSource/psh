@@ -21,13 +21,21 @@ mod security;
 mod services;
 mod utils;
 
+use std::process::exit;
+
 use anyhow::Context;
 use clap::Parser;
 
 use args::Args;
 use runtime::PshEngineBuilder;
 
+use utils::check_root_privilege;
+
 fn main() -> anyhow::Result<()> {
+    if !check_root_privilege() {
+        println!("Insufficient privileges. Please run psh with root permissions.");
+        exit(1);
+    }
     let args = Args::parse();
     let component_envs: Vec<(String, String)> = std::env::vars().collect();
     let mut component_args: Vec<String> = vec![args.psh_wasm_component.clone()];
