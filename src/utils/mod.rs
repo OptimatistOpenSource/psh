@@ -18,8 +18,7 @@ use std::{
 
 use nix::unistd::geteuid;
 
-#[allow(dead_code)]
-fn check_root_privilege() -> bool {
+pub fn check_root_privilege() -> bool {
     let euid = geteuid();
     euid.is_root()
 }
