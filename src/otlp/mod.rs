@@ -1,3 +1,5 @@
+pub mod config;
+
 use std::{borrow::Cow, time::Duration};
 
 use anyhow::Result;
@@ -17,14 +19,7 @@ use psh_system::{
     disk::DiskHandle, interrupt::InterruptHandle, memory::MemoryHandle, network::NetworkHandle,
 };
 
-pub fn meter_provider() -> Result<SdkMeterProvider> {
-    let export_config = ExportConfig {
-        // TODO: allow config
-        endpoint: "http://localhost:4317".to_string(),
-        timeout: Duration::from_secs(3),
-        protocol: opentelemetry_otlp::Protocol::Grpc,
-    };
-
+pub fn meter_provider(export_config: ExportConfig) -> Result<SdkMeterProvider> {
     let otlp_exporter = opentelemetry_otlp::new_exporter()
         .tonic()
         .with_export_config(export_config);
@@ -454,8 +449,8 @@ pub fn otlp_interrupt(meter: Meter, interval: Duration) -> anyhow::Result<Observ
     Ok(gauge)
 }
 
-pub async fn otlp_tasks() -> anyhow::Result<()> {
-    let provider = meter_provider()?;
+pub async fn otlp_tasks(export_config: ExportConfig) -> anyhow::Result<()> {
+    let provider = meter_provider(export_config)?;
     let meter = provider.meter("SystemProfile");
     let interval = Duration::from_secs(1);
     let _ = otlp_memories(meter.clone(), interval)?;

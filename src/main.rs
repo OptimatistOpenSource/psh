@@ -27,21 +27,41 @@ use anyhow::Context;
 use clap::Parser;
 
 use args::Args;
+use opentelemetry_otlp::ExportConfig;
 use runtime::PshEngineBuilder;
 
 use utils::check_root_privilege;
 
+use otlp::config::OtlpConfig;
+
 fn main() -> anyhow::Result<()> {
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::WARN)
+        .init();
+
     if !check_root_privilege() {
-        println!("Insufficient privileges. Please run psh with root permissions.");
+        tracing::error!("Insufficient privileges. Please run psh with root permissions.");
         exit(1);
     }
+
     let args = Args::parse();
     let component_envs: Vec<(String, String)> = std::env::vars().collect();
     let mut component_args: Vec<String> = vec![args.psh_wasm_component.clone()];
     component_args.extend(args.extra_args);
 
-    let th = std::thread::spawn(|| tokio::runtime::Runtime::new()?.block_on(otlp::otlp_tasks()));
+    let otlp_conf = OtlpConfig::read_config(OtlpConfig::DEFAULT_PATH).unwrap_or_else(|e| {
+        tracing::warn!("Error: {e}, use default OpenTelemetry config.");
+        OtlpConfig::default()
+    });
+    let mut otlp_th = None;
+
+    if otlp_conf.enable() {
+        let export_conf: ExportConfig = otlp_conf.into();
+        let th = std::thread::spawn(|| {
+            tokio::runtime::Runtime::new()?.block_on(otlp::otlp_tasks(export_conf))
+        });
+        otlp_th = Some(th);
+    }
 
     let mut engine = PshEngineBuilder::new()
         .wasi_inherit_stdio()
@@ -54,7 +74,9 @@ fn main() -> anyhow::Result<()> {
 
     engine.run(&args.psh_wasm_component)?;
 
-    let _ = th.join();
+    if let Some(th) = otlp_th {
+        let _ = th.join();
+    }
 
     Ok(())
 }
