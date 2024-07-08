@@ -13,7 +13,7 @@ It protects both the performance acquisition and computation algorithms�
 
 ## Overview
 
-Performance Savior Home (PSH) is a cutting-edge performance monitoring and analytics solution designed for cloud services.  It securely harvests software and hardware performance metrics while your cloud applications are in operation, safeguarding both the intricate performance tuning algorithms of engineers and the sensitive corporate data of its adopters.  
+Performance Savior Home (PSH) is a cutting-edge performance monitoring and analytics solution designed for cloud services.  It securely harvests software and hardware performance metrics while your cloud applications are in operation, safeguarding both the intricate performance tuning algorithms of engineers and the sensitive corporate data of its adopters.
 
 PSH achieves this through a dual-layered architecture leveraging WebAssembly (WASM) at the top and an array of robust operators at its foundation.
 
@@ -29,6 +29,19 @@ PSH's vision is to reduce the duplication of construction within the enterprise 
 * **Highly Scalable Architecture**: PSH is designed for effortless scalability, allowing users to easily extend both the algorithms executed within the WASM environment and the range of performance events captured by operators. This flexibility ensures that as technology stacks evolve or new monitoring requirements arise, PSH can be adapted swiftly to meet those needs, future-proofing your performance monitoring strategy.
 * **Minimal Performance Overhead**: Preliminary testing indicates that PSH's data collection incurs a negligible operational overhead, with current measurements suggesting an impact of merely around 3%. This ensures that while comprehensive monitoring is in place, the system's primary functions remain unaffected, preserving optimal performance and responsiveness.
 
+## OpenTelemetry Config
+
+Default config located `/etc/psh/otlp.toml`.
+
+```toml
+enable = true
+endpoint = "http://localhost:4317"
+protocol = "Grpc" # or "HttpJson", "HttpBinary", the field case insensitive
+
+[timeout]
+secs = 3
+nanos = 0
+```
 
 ## Contribution Guide
 
@@ -53,7 +66,7 @@ The development of the Performance Savior Home (PSH) project can be attributed t
 
 <p float="left">
   <img src="https://alidocs.oss-cn-zhangjiakou.aliyuncs.com/res/AJdl643eJ4d9qke1/img/15b0f764-17be-42ff-bd26-3b647e89679a.png" width="100" />
-  <img src="https://avatars.githubusercontent.com/u/165106263" width="100" /> 
+  <img src="https://avatars.githubusercontent.com/u/165106263" width="100" />
 </p>
 
 ## License
