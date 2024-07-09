@@ -3,3 +3,4 @@
 .vscode
 **/bindings.rs
 **/imports.rs
+wasm/

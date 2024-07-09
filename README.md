@@ -29,9 +29,9 @@ PSH's vision is to reduce the duplication of construction within the enterprise 
 * **Highly Scalable Architecture**: PSH is designed for effortless scalability, allowing users to easily extend both the algorithms executed within the WASM environment and the range of performance events captured by operators. This flexibility ensures that as technology stacks evolve or new monitoring requirements arise, PSH can be adapted swiftly to meet those needs, future-proofing your performance monitoring strategy.
 * **Minimal Performance Overhead**: Preliminary testing indicates that PSH's data collection incurs a negligible operational overhead, with current measurements suggesting an impact of merely around 3%. This ensures that while comprehensive monitoring is in place, the system's primary functions remain unaffected, preserving optimal performance and responsiveness.
 
-## OpenTelemetry Config
+## Config
 
-Default config located `/etc/psh/otlp.toml`.
+OpenTelemetry default config located `/etc/psh/otlp.toml`.
 
 ```toml
 enable = true
@@ -41,6 +41,12 @@ protocol = "Grpc" # or "HttpJson", "HttpBinary", the field case insensitive
 [timeout]
 secs = 3
 nanos = 0
+```
+
+When psh running as daemon, the config located `/etc/psh/config.toml`.
+
+```toml
+component_args = ["path/to/test-get-os.wasm"]
 ```
 
 ## Contribution Guide
