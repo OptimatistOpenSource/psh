@@ -22,6 +22,16 @@ pub struct Args {
     #[arg(value_name = "PATH")]
     pub psh_wasm_component: String,
 
+    #[arg(short, long)]
+    daemon: bool,
+
     #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
     pub extra_args: Vec<String>,
+}
+
+impl Args {
+    /// whether run as daemon
+    pub fn daemon(&self) -> bool {
+        self.daemon
+    }
 }

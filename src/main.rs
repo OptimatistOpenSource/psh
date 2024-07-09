@@ -13,6 +13,7 @@
 // see <https://www.gnu.org/licenses/>.
 
 mod args;
+mod config;
 mod infra;
 mod otlp;
 mod resources;
@@ -27,12 +28,11 @@ use anyhow::Context;
 use clap::Parser;
 
 use args::Args;
+use config::PshConfig;
 use opentelemetry_otlp::ExportConfig;
-use runtime::PshEngineBuilder;
-
-use utils::check_root_privilege;
-
 use otlp::config::OtlpConfig;
+use runtime::PshEngineBuilder;
+use utils::check_root_privilege;
 
 fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
@@ -45,9 +45,24 @@ fn main() -> anyhow::Result<()> {
     }
 
     let args = Args::parse();
+
+    // when running as a daemon, it ignores the other arguments from the cli
+    let component_args = if args.daemon() {
+        let psh_config = PshConfig::read_config(PshConfig::DEFAULT_PATH).unwrap_or_else(|e| {
+            tracing::warn!("Error: {e}, use default Psh config.");
+            PshConfig::default()
+        });
+        if !psh_config.check_vaild() {
+            tracing::error!("The configuration must specify WASM path.");
+            exit(1);
+        }
+        psh_config.into_component_args()
+    } else {
+        let mut component_args: Vec<String> = vec![args.psh_wasm_component];
+        component_args.extend(args.extra_args);
+        component_args
+    };
     let component_envs: Vec<(String, String)> = std::env::vars().collect();
-    let mut component_args: Vec<String> = vec![args.psh_wasm_component.clone()];
-    component_args.extend(args.extra_args);
 
     let otlp_conf = OtlpConfig::read_config(OtlpConfig::DEFAULT_PATH).unwrap_or_else(|e| {
         tracing::warn!("Error: {e}, use default OpenTelemetry config.");
@@ -72,7 +87,7 @@ fn main() -> anyhow::Result<()> {
         .build()
         .context("Failed to build PshEngine.")?;
 
-    engine.run(&args.psh_wasm_component)?;
+    engine.run(&component_args[0])?;
 
     if let Some(th) = otlp_th {
         let _ = th.join();

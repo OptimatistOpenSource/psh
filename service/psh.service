@@ -1,0 +1,10 @@
+[Unit]
+Description=Performance Savior Home (PSH) collects software and hardware performance data when the cloud service is running.
+
+[Service]
+Type=simple
+ExecStart=/home/saying/optimatist/psh-fork/target/release/psh -d
+Restart=on-abnormal
+
+[Install]
+WantedBy=multi-user.target
