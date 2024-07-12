@@ -12,6 +12,9 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
+use std::mem;
+use std::process::exit;
+
 use clap::Parser;
 
 #[derive(Parser, Debug)]
@@ -20,18 +23,30 @@ pub struct Args {
     /// Path to PSH wasm component
     #[arg(short, long)]
     #[arg(value_name = "PATH")]
-    pub psh_wasm_component: String,
-
-    #[arg(short, long)]
-    daemon: bool,
+    pub psh_wasm_component: Option<String>,
 
     #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
     pub extra_args: Vec<String>,
+
+    #[arg(short, long)]
+    daemon: bool,
 }
 
 impl Args {
     /// whether run as daemon
     pub fn daemon(&self) -> bool {
         self.daemon
+    }
+
+    pub fn get_component_args(&mut self) -> Vec<String> {
+        if self.psh_wasm_component.is_none() {
+            eprintln!("The cli must specify WASM path.");
+            exit(1);
+        }
+        let mut component_args = Vec::with_capacity(1 + self.extra_args.len());
+        component_args.push( self.psh_wasm_component.take().unwrap());
+        component_args.extend(mem::take(&mut self.extra_args));
+
+        component_args
     }
 }

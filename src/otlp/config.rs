@@ -1,11 +1,5 @@
-use std::{
-    fs::{create_dir_all, File},
-    io::prelude::{Read, Write},
-    path::Path,
-    time::Duration,
-};
+use std::time::Duration;
 
-use anyhow::{Context, Result};
 use opentelemetry_otlp::{ExportConfig, Protocol};
 use serde::{Deserialize, Serialize};
 
@@ -31,8 +25,6 @@ impl Default for OtlpConfig {
 }
 
 impl OtlpConfig {
-    pub const DEFAULT_PATH: &'static str = "/etc/psh/otlp.toml";
-
     pub fn new(enable: bool, endpoint: String, timeout: Duration, protocol: String) -> Self {
         Self {
             enable,
@@ -40,39 +32,6 @@ impl OtlpConfig {
             timeout,
             protocol,
         }
-    }
-
-    pub fn read_config<P: AsRef<Path>>(path: P) -> Result<Self> {
-        let path = path.as_ref();
-        if !path.exists() {
-            Self::default().generate_config(Self::DEFAULT_PATH, false)?;
-        }
-        let mut config_str = String::new();
-        let mut config_file = File::open(path).context("The config not exists.")?;
-        config_file.read_to_string(&mut config_str)?;
-
-        let otlp_conf: OtlpConfig = toml::from_str(&config_str)?;
-        Ok(otlp_conf)
-    }
-
-    /// When force set to true, it will forcefully overwrite the config file.
-    pub fn generate_config<P: AsRef<Path>>(&self, path: P, force: bool) -> Result<()> {
-        let path = path.as_ref();
-        if !force && path.exists() {
-            return Ok(());
-        }
-        create_dir_all(path.parent().expect("no parent directory"))?;
-
-        let s = toml::to_string(self)?;
-
-        let mut f = File::options()
-            .create(true)
-            .truncate(true)
-            .write(true)
-            .open(path)?;
-
-        f.write_all(s.as_bytes())?;
-        Ok(())
     }
 
     pub fn enable(&self) -> bool {
@@ -216,30 +175,5 @@ nanos = 0
             protocol: Protocol::HttpJson,
         };
         test_it(CONF_STR_SECS_NANO, &cf, &export_config);
-    }
-
-    #[test]
-    fn generate_config_work() {
-        let cf = OtlpConfig::new(
-            true,
-            "http://localhost:4317".to_owned(),
-            Duration::from_secs(3),
-            "Grpc".to_owned(),
-        );
-        cf.generate_config(OtlpConfig::DEFAULT_PATH, false).unwrap();
-
-        let cf = OtlpConfig::read_config(OtlpConfig::DEFAULT_PATH).unwrap();
-        assert!(cf.enable);
-
-        let export_config = ExportConfig {
-            endpoint: "http://localhost:4317".to_owned(),
-            timeout: Duration::from_secs(3),
-            protocol: Protocol::Grpc,
-        };
-        let test_export_conf: ExportConfig = cf.into();
-
-        assert_eq!(export_config.endpoint, test_export_conf.endpoint);
-        assert_eq!(export_config.timeout, test_export_conf.timeout);
-        assert_eq!(export_config.protocol, test_export_conf.protocol);
     }
 }

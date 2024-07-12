@@ -33,8 +33,6 @@ opentelemetry = { version = "0.23.0", features = ["metrics"] }
 opentelemetry_sdk = { version = "0.23.0", features = ["metrics", "opentelemetry-http", "rt-tokio", "tokio"] }
 toml = { version = "^0.8" }
 serde = { version = "^1" }
-tracing = { version = "^0.1" }
-tracing-subscriber = { version = "^0.3" }
 
 [workspace.dependencies]
 host-op-perf = { path = "crates/op/host-op-perf" }

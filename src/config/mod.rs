@@ -13,33 +13,36 @@
 // see <https://www.gnu.org/licenses/>.
 use std::fs::{create_dir_all, File};
 use std::io::{Read, Write};
+use std::mem;
 use std::path::Path;
+use std::process::exit;
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
+use crate::otlp::config::OtlpConfig;
+
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(Default)]
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
+#[derive(PartialEq, Eq)]
 #[derive(Serialize, Deserialize)]
 pub struct PshConfig {
+    component_path: String,
     component_args: Vec<String>,
+    otlp_conf: OtlpConfig,
 }
 
 impl PshConfig {
     pub const DEFAULT_PATH: &'static str = "/etc/psh/config.toml";
 
     #[allow(dead_code)]
-    pub fn new(component_path: Vec<String>) -> Self {
+    pub fn new(component_path: String, component_args: Vec<String>, otlp_conf: OtlpConfig) -> Self {
         Self {
-            component_args: component_path,
+            component_path,
+            component_args,
+            otlp_conf,
         }
-    }
-
-    /// The configuration must specify WASM path.
-    pub fn check_vaild(&self) -> bool {
-        !self.component_args.is_empty()
     }
 
     pub fn read_config<P: AsRef<Path>>(path: P) -> Result<Self> {
@@ -51,14 +54,14 @@ impl PshConfig {
         let mut config_file = File::open(path).context("The config not exists.")?;
         config_file.read_to_string(&mut config_str)?;
 
-        let otlp_conf: Self = toml::from_str(&config_str)?;
-        Ok(otlp_conf)
+        let conf: Self = toml::from_str(&config_str)?;
+        Ok(conf)
     }
 
     /// When force set to true, it will forcefully overwrite the config file.
-    pub fn generate_config<P: AsRef<Path>>(&self, path: P, force: bool) -> Result<()> {
+    pub fn generate_config<P: AsRef<Path>>(&self, path: P, overwrite: bool) -> Result<()> {
         let path = path.as_ref();
-        if !force && path.exists() {
+        if !overwrite && path.exists() {
             return Ok(());
         }
         create_dir_all(path.parent().expect("no parent directory"))?;
@@ -75,8 +78,20 @@ impl PshConfig {
         Ok(())
     }
 
-    pub fn into_component_args(mut self) -> Vec<String> {
-        std::mem::take(&mut self.component_args)
+    pub fn get_component_args(&mut self) -> Vec<String> {
+        if self.component_path.is_empty() {
+            eprintln!("The config `component_path` must specify WASM path.");
+            exit(1);
+        }
+        let mut component_args = Vec::with_capacity(1 + self.component_args.len());
+        component_args.push(mem::take(&mut self.component_path));
+        component_args.extend(mem::take(&mut self.component_args));
+
+        component_args
+    }
+
+    pub fn otlp_conf(&self) -> &OtlpConfig {
+        &self.otlp_conf
     }
 }
 
@@ -84,20 +99,44 @@ impl PshConfig {
 mod tests {
     use super::*;
 
-    const CONFIG_STR: &str = "component_args = [\"cpu.wasm\", \"1\", \"2\", \"3\"]\n";
+    const CONFIG_STR: &str = r#"component_path = "cpu.wasm"
+component_args = ["1", "2", "3"]
+
+[otlp_conf]
+enable = true
+endpoint = "http://localhost:4317"
+protocol = "Grpc"
+
+[otlp_conf.timeout]
+secs = 3
+nanos = 0
+"#;
+
+    const TEST_CONF_PATH: &str = "./target/config.toml";
 
     #[test]
-    fn cf_str_convert_work() {
-        let cf = PshConfig::new(vec![
+    fn conf_str_convert_work() {
+        let cf = PshConfig::new(
             "cpu.wasm".to_owned(),
-            "1".to_owned(),
-            "2".to_owned(),
-            "3".to_owned(),
-        ]);
+            vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
+            OtlpConfig::default(),
+        );
         let s = toml::to_string(&cf).unwrap();
         assert_eq!(s, CONFIG_STR);
 
         let str_to_cf: PshConfig = toml::from_str(CONFIG_STR).unwrap();
         assert_eq!(cf, str_to_cf);
+    }
+
+    #[test]
+    fn generate_config_work() {
+        let cf = PshConfig::new(
+            "cpu.wasm".to_owned(),
+            vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
+            OtlpConfig::default(),
+        );
+        cf.generate_config(TEST_CONF_PATH, true).unwrap();
+        let conf = PshConfig::read_config(TEST_CONF_PATH).unwrap();
+        assert_eq!(conf, cf);
     }
 }
