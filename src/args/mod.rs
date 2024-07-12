@@ -44,7 +44,7 @@ impl Args {
             exit(1);
         }
         let mut component_args = Vec::with_capacity(1 + self.extra_args.len());
-        component_args.push( self.psh_wasm_component.take().unwrap());
+        component_args.push(self.psh_wasm_component.take().unwrap());
         component_args.extend(mem::take(&mut self.extra_args));
 
         component_args
