@@ -31,22 +31,20 @@ PSH's vision is to reduce the duplication of construction within the enterprise 
 
 ## Config
 
-OpenTelemetry default config located `/etc/psh/otlp.toml`.
+Psh default config located `/etc/psh/config.toml`.
 
 ```toml
+component_path = "path/to/component.wasm"
+component_args = ["arg1", "arg2", "arg3"]
+
+[otlp_conf]
 enable = true
 endpoint = "http://localhost:4317"
 protocol = "Grpc" # or "HttpJson", "HttpBinary", the field case insensitive
 
-[timeout]
+[otlp_conf.timeout]
 secs = 3
 nanos = 0
-```
-
-When psh running as daemon, the config located `/etc/psh/config.toml`.
-
-```toml
-component_args = ["path/to/test-get-os.wasm"]
 ```
 
 ## Contribution Guide

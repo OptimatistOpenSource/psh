@@ -30,44 +30,30 @@ use clap::Parser;
 use args::Args;
 use config::PshConfig;
 use opentelemetry_otlp::ExportConfig;
-use otlp::config::OtlpConfig;
 use runtime::PshEngineBuilder;
 use utils::check_root_privilege;
 
 fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::WARN)
-        .init();
-
     if !check_root_privilege() {
-        tracing::error!("Insufficient privileges. Please run psh with root permissions.");
+        eprintln!("Insufficient privileges. Please run psh with root permissions.");
         exit(1);
     }
 
-    let args = Args::parse();
+    let mut args = Args::parse();
+    let mut psh_config = PshConfig::read_config(PshConfig::DEFAULT_PATH).unwrap_or_else(|e| {
+        eprintln!("Error: {e}, use default Psh config.");
+        PshConfig::default()
+    });
 
     // when running as a daemon, it ignores the other arguments from the cli
     let component_args = if args.daemon() {
-        let psh_config = PshConfig::read_config(PshConfig::DEFAULT_PATH).unwrap_or_else(|e| {
-            tracing::warn!("Error: {e}, use default Psh config.");
-            PshConfig::default()
-        });
-        if !psh_config.check_vaild() {
-            tracing::error!("The configuration must specify WASM path.");
-            exit(1);
-        }
-        psh_config.into_component_args()
+        psh_config.get_component_args()
     } else {
-        let mut component_args: Vec<String> = vec![args.psh_wasm_component];
-        component_args.extend(args.extra_args);
-        component_args
+        args.get_component_args()
     };
     let component_envs: Vec<(String, String)> = std::env::vars().collect();
 
-    let otlp_conf = OtlpConfig::read_config(OtlpConfig::DEFAULT_PATH).unwrap_or_else(|e| {
-        tracing::warn!("Error: {e}, use default OpenTelemetry config.");
-        OtlpConfig::default()
-    });
+    let otlp_conf = psh_config.otlp_conf();
     let mut otlp_th = None;
 
     if otlp_conf.enable() {
