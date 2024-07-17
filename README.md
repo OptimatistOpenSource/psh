@@ -35,8 +35,8 @@ Psh default config located `/etc/psh/config.toml`.
 
 ```toml
 [component]
-component_path = "path/to/component.wasm"
-component_args = ["arg1", "arg2", "arg3"]
+path = "path/to/component.wasm"
+args = ["arg1", "arg2", "arg3"]
 
 [otlp]
 enable = true

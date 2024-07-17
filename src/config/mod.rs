@@ -32,29 +32,29 @@ pub struct PshConfig {
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct ComponentConfig {
-    component_path: String,
-    component_args: Vec<String>,
+    path: String,
+    args: Vec<String>,
 }
 
 impl ComponentConfig {
     #![allow(dead_code)]
-    pub fn new(component_path: String, component_args: Vec<String>) -> Self {
+    pub fn new(path: String, args: Vec<String>) -> Self {
         Self {
-            component_path,
-            component_args,
+            path,
+            args,
         }
     }
 
     pub fn get_component_args(&mut self) -> Vec<String> {
-        if self.component_path.is_empty() {
-            tracing::error!("The config `component_path` must specify WASM path.");
+        if self.path.is_empty() {
+            tracing::error!("The config `component.path` must specify WASM path.");
             exit(1);
         }
-        let mut component_args = Vec::with_capacity(1 + self.component_args.len());
-        component_args.push(mem::take(&mut self.component_path));
-        component_args.extend(mem::take(&mut self.component_args));
+        let mut args = Vec::with_capacity(1 + self.args.len());
+        args.push(mem::take(&mut self.path));
+        args.extend(mem::take(&mut self.args));
 
-        component_args
+        args
     }
 }
 
@@ -116,8 +116,8 @@ mod tests {
     use super::*;
 
     const CONFIG_STR: &str = r#"[component]
-component_path = "cpu.wasm"
-component_args = ["1", "2", "3"]
+path = "cpu.wasm"
+args = ["1", "2", "3"]
 
 [otlp]
 enable = true
