@@ -34,15 +34,16 @@ PSH's vision is to reduce the duplication of construction within the enterprise 
 Psh default config located `/etc/psh/config.toml`.
 
 ```toml
+[component]
 component_path = "path/to/component.wasm"
 component_args = ["arg1", "arg2", "arg3"]
 
-[otlp_conf]
+[otlp]
 enable = true
 endpoint = "http://localhost:4317"
 protocol = "Grpc" # or "HttpJson", "HttpBinary", the field case insensitive
 
-[otlp_conf.timeout]
+[otlp.timeout]
 secs = 3
 nanos = 0
 ```
