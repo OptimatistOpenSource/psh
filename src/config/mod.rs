@@ -28,19 +28,51 @@ use crate::otlp::config::OtlpConfig;
 #[derive(PartialEq, Eq)]
 #[derive(Serialize, Deserialize)]
 pub struct PshConfig {
+    #[serde(rename = "component")]
+    component_conf: ComponentConfig,
+    #[serde(rename = "otlp")]
+    otlp_conf: OtlpConfig,
+}
+
+#[derive(Clone)]
+#[derive(Debug)]
+#[derive(Default)]
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Serialize, Deserialize)]
+pub struct ComponentConfig {
     component_path: String,
     component_args: Vec<String>,
-    otlp_conf: OtlpConfig,
+}
+
+impl ComponentConfig {
+    #![allow(dead_code)]
+    pub fn new(component_path: String, component_args: Vec<String>) -> Self {
+        Self {
+            component_path,
+            component_args,
+        }
+    }
+
+    pub fn get_component_args(&mut self) -> Vec<String> {
+        if self.component_path.is_empty() {
+            eprintln!("The config `component_path` must specify WASM path.");
+            exit(1);
+        }
+        let mut component_args = Vec::with_capacity(1 + self.component_args.len());
+        component_args.push(mem::take(&mut self.component_path));
+        component_args.extend(mem::take(&mut self.component_args));
+
+        component_args
+    }
 }
 
 impl PshConfig {
     pub const DEFAULT_PATH: &'static str = "/etc/psh/config.toml";
 
     #[allow(dead_code)]
-    pub fn new(component_path: String, component_args: Vec<String>, otlp_conf: OtlpConfig) -> Self {
+    pub fn new(component_conf: ComponentConfig, otlp_conf: OtlpConfig) -> Self {
         Self {
-            component_path,
-            component_args,
+            component_conf,
             otlp_conf,
         }
     }
@@ -58,7 +90,7 @@ impl PshConfig {
         Ok(conf)
     }
 
-    /// When force set to true, it will forcefully overwrite the config file.
+    /// When overwrite set to true, it will overwrite the config file.
     pub fn generate_config<P: AsRef<Path>>(&self, path: P, overwrite: bool) -> Result<()> {
         let path = path.as_ref();
         if !overwrite && path.exists() {
@@ -78,20 +110,12 @@ impl PshConfig {
         Ok(())
     }
 
-    pub fn get_component_args(&mut self) -> Vec<String> {
-        if self.component_path.is_empty() {
-            eprintln!("The config `component_path` must specify WASM path.");
-            exit(1);
-        }
-        let mut component_args = Vec::with_capacity(1 + self.component_args.len());
-        component_args.push(mem::take(&mut self.component_path));
-        component_args.extend(mem::take(&mut self.component_args));
-
-        component_args
-    }
-
     pub fn otlp_conf(&self) -> &OtlpConfig {
         &self.otlp_conf
+    }
+
+    pub fn get_component_args(&mut self) -> Vec<String> {
+        self.component_conf.get_component_args()
     }
 }
 
@@ -99,15 +123,16 @@ impl PshConfig {
 mod tests {
     use super::*;
 
-    const CONFIG_STR: &str = r#"component_path = "cpu.wasm"
+    const CONFIG_STR: &str = r#"[component]
+component_path = "cpu.wasm"
 component_args = ["1", "2", "3"]
 
-[otlp_conf]
+[otlp]
 enable = true
 endpoint = "http://localhost:4317"
 protocol = "Grpc"
 
-[otlp_conf.timeout]
+[otlp.timeout]
 secs = 3
 nanos = 0
 "#;
@@ -117,8 +142,10 @@ nanos = 0
     #[test]
     fn conf_str_convert_work() {
         let cf = PshConfig::new(
-            "cpu.wasm".to_owned(),
-            vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
+            ComponentConfig::new(
+                "cpu.wasm".to_owned(),
+                vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
+            ),
             OtlpConfig::default(),
         );
         let s = toml::to_string(&cf).unwrap();
@@ -131,8 +158,10 @@ nanos = 0
     #[test]
     fn generate_config_work() {
         let cf = PshConfig::new(
-            "cpu.wasm".to_owned(),
-            vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
+            ComponentConfig::new(
+                "cpu.wasm".to_owned(),
+                vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
+            ),
             OtlpConfig::default(),
         );
         cf.generate_config(TEST_CONF_PATH, true).unwrap();
