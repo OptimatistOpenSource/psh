@@ -22,11 +22,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::otlp::config::OtlpConfig;
 
-#[derive(Clone)]
-#[derive(Debug)]
-#[derive(Default)]
-#[derive(PartialEq, Eq)]
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PshConfig {
     #[serde(rename = "component")]
     component_conf: ComponentConfig,
@@ -34,11 +30,7 @@ pub struct PshConfig {
     otlp_conf: OtlpConfig,
 }
 
-#[derive(Clone)]
-#[derive(Debug)]
-#[derive(Default)]
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct ComponentConfig {
     component_path: String,
     component_args: Vec<String>,
@@ -55,7 +47,7 @@ impl ComponentConfig {
 
     pub fn get_component_args(&mut self) -> Vec<String> {
         if self.component_path.is_empty() {
-            eprintln!("The config `component_path` must specify WASM path.");
+            tracing::error!("The config `component_path` must specify WASM path.");
             exit(1);
         }
         let mut component_args = Vec::with_capacity(1 + self.component_args.len());

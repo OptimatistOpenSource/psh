@@ -22,6 +22,7 @@ mod security;
 mod services;
 mod utils;
 
+use std::io;
 use std::process::exit;
 
 use anyhow::Context;
@@ -34,14 +35,19 @@ use runtime::PshEngineBuilder;
 use utils::check_root_privilege;
 
 fn main() -> anyhow::Result<()> {
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::WARN)
+        .with_writer(io::stderr)
+        .init();
+
     if !check_root_privilege() {
-        eprintln!("Insufficient privileges. Please run psh with root permissions.");
+        tracing::error!("Insufficient privileges. Please run psh with root permissions.");
         exit(1);
     }
 
     let mut args = Args::parse();
     let mut psh_config = PshConfig::read_config(PshConfig::DEFAULT_PATH).unwrap_or_else(|e| {
-        eprintln!("Error: {e}, use default Psh config.");
+        tracing::warn!("Error: {e}, use default Psh config.");
         PshConfig::default()
     });
 

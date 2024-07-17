@@ -3,9 +3,7 @@ use std::time::Duration;
 use opentelemetry_otlp::{ExportConfig, Protocol};
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug)]
-#[derive(PartialEq, Eq)]
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct OtlpConfig {
     enable: bool,
     endpoint: String,
