@@ -39,10 +39,7 @@ pub struct ComponentConfig {
 impl ComponentConfig {
     #![allow(dead_code)]
     pub fn new(path: String, args: Vec<String>) -> Self {
-        Self {
-            path,
-            args,
-        }
+        Self { path, args }
     }
 
     pub fn get_component_args(&mut self) -> Vec<String> {
