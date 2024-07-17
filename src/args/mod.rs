@@ -40,7 +40,7 @@ impl Args {
 
     pub fn get_component_args(&mut self) -> Vec<String> {
         if self.psh_wasm_component.is_none() {
-            eprintln!("The cli must specify WASM path.");
+            tracing::error!("The cli must specify WASM path.");
             exit(1);
         }
         let mut component_args = Vec::with_capacity(1 + self.extra_args.len());
