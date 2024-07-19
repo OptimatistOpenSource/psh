@@ -1,136 +1,108 @@
 use std::{
-    borrow::{Borrow, BorrowMut},
-    cell::{Cell, RefCell},
+    collections::HashMap,
     ffi::CString,
     fs::File,
     os::fd::{AsFd, AsRawFd},
-    rc::Rc,
-    sync::{Arc, Mutex},
+    ptr,
+    sync::Mutex,
+    time::Duration,
 };
 
 use errno::errno;
-use libbpf_rs::{Link, Map, Object, ObjectBuilder, PerfBufferBuilder};
-use libc::{if_nameindex, if_nametoindex};
+use lazy_static::lazy_static;
+use libbpf_rs::{libbpf_sys, AsRawLibbpf, Link, Map, Object, ObjectBuilder, PerfBufferBuilder};
+use libc::if_nametoindex;
 use profiling::ebpf::ebpf::{self, Key, MapFlags, Value};
 use state::BpfCtx;
-use wasmtime::{component::Linker, Func, InstancePre, Table};
+use wasmtime::{component::Linker, AsContextMut};
 
-//pub mod attach;
-//pub mod close;
-//pub mod fd_by_name;
-//pub mod load;
-//pub mod map_operate;
-pub mod poll;
-mod state;
-//mod utils;
-//pub mod wrapper_poll;
+pub mod state;
 
-// pub(crate) const EINVAL: i32 = 22;
-// pub(crate) const ENOENT: i32 = 2;
-
-// #[macro_export]
-// macro_rules! ensure_program_mut_by_state {
-//     ($state: expr, $program: expr) => {
-//         match $state.object_map.get_mut(&$program) {
-//             Some(v) => v,
-//             None => {
-//                 log::debug!("Invalid program: {}", $program);
-//                 return -1;
-//             }
-//         }
-//     };
-// }
-
-// #[macro_export]
-// macro_rules! ensure_program_by_state {
-//     ($state: expr, $program: expr) => {
-//         match $state.object_map.get(&$program) {
-//             Some(v) => v,
-//             None => {
-//                 log::debug!("Invalid program: {}", $program);
-//                 return -1;
-//             }
-//         }
-//     };
-// }
-
-// #[macro_export]
-// macro_rules! ensure_program_mut_by_caller {
-//     ($caller: expr, $program: expr) => {{
-//         use $crate::ensure_program_mut_by_state;
-//         ensure_program_mut_by_state!($caller.data_mut(), $program)
-//     }};
-// }
-
-// #[macro_export]
-// macro_rules! ensure_program_by_caller {
-//     ($caller: expr, $program: expr) => {{
-//         use $crate::ensure_program_by_state;
-//         ensure_program_by_state!($caller.data_mut(), $program)
-//     }};
-// }
-
-// #[macro_export]
-// macro_rules! ensure_c_str {
-//     ($caller: expr, $var_name: expr) => {{
-//         use $crate::utils::CallerUtils;
-//         match $caller.read_zero_terminated_str($var_name as usize) {
-//             Ok(v) => v.to_string(),
-//             Err(err) => {
-//                 log::debug!("Failed to read `{}`: {}", stringify!($var_name), err);
-//                 return -1;
-//             }
-//         }
-//     }};
-// }
-// /// The pointer type in 32bit wasm
-// pub type WasmPointer = u32;
-// /// The handle to a bpf object
-// pub type BpfObjectType = u64;
-// /// The string type in wasm, is also a pointer
-// pub type WasmString = u32;
-
-// #[macro_export]
-// macro_rules! ensure_enough_memory {
-//     ($caller: expr, $pointer:expr, $size: expr, $return_val: expr) => {{
-//         use $crate::utils::CallerUtils;
-//         let mut buf = vec![0u8];
-//         match $caller
-//             .get_memory()
-//             .expect("Expected exported memory!")
-//             .read(
-//                 &mut $caller,
-//                 $pointer as usize + $size as usize - 1,
-//                 &mut buf,
-//             ) {
-//             Ok(_) => {}
-//             Err(err) => {
-//                 debug!("Invalid pointer for {}: {}", stringify!($pointer), err);
-//                 return $return_val;
-//             }
-//         }
-//     }};
-// }
-
-struct WrapperObject(Object);
+pub struct ObjectWrapper(Object);
 /// Here we explicitly unsafe impl Send trait for ObjectWrapper is because
 /// there is a !Send `NonNull<T>` type field inside `libpbf_rs::Object`. But wasmtime
 /// ResourceTable.push() method asks for Send + 'static types.
-unsafe impl Send for WrapperObject {}
+unsafe impl Send for ObjectWrapper {}
 
-pub struct WrapperMap(libbpf_rs::Map);
-/// ditto
-unsafe impl Send for WrapperMap {}
+/// N.B. It's not allowed to put lifetime reference within an object into `ResourceTable`
+/// We have to make compromise by using global `HashMap` to save resource handle.
+///
+/// https://bytecodealliance.zulipchat.com/#narrow/stream/217126-wasmtime/topic/ResourceTable.20with.20lifetime.20field.2E/near/449884467
+///
+/// An `Invalid argument` error maybe returned to the wasm component if it uses `Map` and `PerfBuffer`
+/// resources after dropping `Bpf`.
+
+#[derive(PartialEq, Eq, Clone, Hash)]
+pub struct MapKey(String);
+
+pub struct MapWrapper {
+    /// save the raw pointer that points to a `libbpf_rs::Map` inside `libbpf_rs::Object`
+    /// eliminated original lifetime of `libbpf_rs::Map` reference.
+    map: *const Map,
+}
+
+/// Explicitly unsafe impl `Send` and `Sync` traits for `MapWrapper` as
+/// we will put `MapWrapper` to a `HashMap` that auto implemented `Send` and `Sync` traits for `K` and `V`.
+///
+/// https://doc.rust-lang.org/std/collections/struct.HashMap.html#impl-Send-for-HashMap%3CK,+V,+S%3E
+///
+/// It is safe to do this because our `MapWrapper` won't share with other threads or be accessed concurrently.
+unsafe impl Send for MapWrapper {}
+unsafe impl Sync for MapWrapper {}
+
+#[derive(PartialEq, Eq, Clone, Hash)]
+pub struct PerfBufferKey(u64);
+
+struct PerfBufferWrapper<'a>(libbpf_rs::PerfBuffer<'a>);
+
+// ditto
+unsafe impl<'a> Sync for PerfBufferWrapper<'a> {}
+
+pub struct MapKeyIter {
+    fd: i32,
+    prev: Option<Vec<u8>>,
+    next: Vec<u8>,
+}
+
+impl MapKeyIter {
+    fn new(fd: i32, key_size: u32) -> Self {
+        Self {
+            fd,
+            prev: None,
+            next: vec![0; key_size as usize],
+        }
+    }
+}
+
+impl Iterator for MapKeyIter {
+    type Item = Vec<u8>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let prev = self.prev.as_ref().map_or(ptr::null(), |p| p.as_ptr());
+        let ret = unsafe {
+            libbpf_sys::bpf_map_get_next_key(self.fd, prev as _, self.next.as_mut_ptr() as _)
+        };
+        if ret != 0 {
+            None
+        } else {
+            self.prev = Some(self.next.clone());
+            Some(self.next.clone())
+        }
+    }
+}
 
 pub struct Bpf {
-    //pub object: Arc<Mutex<WrapperObject>>,
-    pub object: WrapperObject,
-    /// The poller; It will be set when the first time to call the sampling function
-    //pub poll_buffer: Option<PollBuffer>,
+    pub object: ObjectWrapper,
     /// Files that are opened by bpf programs.
     pub opened_files: Vec<File>,
     /// Links that are returned after attach.
     pub opened_links: Vec<Link>,
+}
+
+lazy_static! {
+    static ref BPF_MAP_HASHMAP: Mutex<HashMap<MapKey, MapWrapper>> = Mutex::new(HashMap::new());
+    static ref BPF_PERF_BUFFER_HASHMAP: Mutex<HashMap<PerfBufferKey, PerfBufferWrapper<'static>>> =
+        Mutex::new(HashMap::new());
 }
 
 wasmtime::component::bindgen!({
@@ -138,9 +110,10 @@ wasmtime::component::bindgen!({
     world: "imports",
     with: {
         "profiling:ebpf/ebpf/bpf" : Bpf,
-        "profiling:ebpf/ebpf/map" : WrapperMap,
-        "profiling:ebpf/ebpf/map-key-iter" : libbpf_rs::MapKeyIter,
-        "profiling:ebpf/ebpf/perf-buffer": libbpf_rs::PerfBuffer,
+        "profiling:ebpf/ebpf/map" : MapKey,
+        "profiling:ebpf/ebpf/map-key-iter" : MapKeyIter,
+        "profiling:ebpf/ebpf/perf-buffer": PerfBufferKey,
+        // TODO (Chengdong Li), Add more resources if we have. `ring-buffer`?
     },
     // https://github.com/bytecodealliance/wasmtime/pull/8310
     // wasmtime have added a config in bindgen! macro to allow user specify
@@ -150,7 +123,7 @@ wasmtime::component::bindgen!({
     trappable_imports: true,
 });
 
-impl<'a, 'store, State> ebpf::HostBpf for BpfCtx<'a, 'store, State> {
+impl<State> ebpf::HostBpf for BpfCtx<State> {
     fn load_object(
         &mut self,
         obj_buf: wasmtime::component::__internal::Vec<u8>,
@@ -161,8 +134,7 @@ impl<'a, 'store, State> ebpf::HostBpf for BpfCtx<'a, 'store, State> {
         match ObjectBuilder::default().open_memory(&obj_buf) {
             Ok(oo) => match oo.load() {
                 Ok(object) => Ok(Ok(self.table.push(Bpf {
-                    object: WrapperObject(object),
-                    //poll_buffer: None,
+                    object: ObjectWrapper(object),
                     opened_files: Vec::new(),
                     opened_links: Vec::new(),
                 })?)),
@@ -179,12 +151,12 @@ impl<'a, 'store, State> ebpf::HostBpf for BpfCtx<'a, 'store, State> {
         target: wasmtime::component::__internal::String,
         pfd: i32,
     ) -> Result<Result<(), wasmtime::component::__internal::String>, wasmtime::Error> {
-        let bpf: &Bpf = self.table.get(&self_)?;
-        let mut object = bpf.object.0;
+        let bpf: &mut Bpf = self.table.get_mut(&self_)?;
+        let object = &mut bpf.object.0;
 
-        match object.prog(&name) {
+        match object.prog_mut(&name) {
             Some(prog) => {
-                if target.len() > 0 {
+                if !target.is_empty() {
                     match prog.section() {
                         "sockops" => match std::fs::OpenOptions::new().read(true).open(target) {
                             Ok(cgroup_file) => {
@@ -237,28 +209,29 @@ impl<'a, 'store, State> ebpf::HostBpf for BpfCtx<'a, 'store, State> {
         self_: wasmtime::component::Resource<Bpf>,
         name: wasmtime::component::__internal::String,
     ) -> Result<
-        Result<wasmtime::component::Resource<WrapperMap>, wasmtime::component::__internal::String>,
+        Result<wasmtime::component::Resource<MapKey>, wasmtime::component::__internal::String>,
         wasmtime::Error,
     > {
-        // let module = self.instance.unwrap().get_module(self.store, name).unwrap();
-
-        // let table = module.get_export("__indirect_function_table").unwrap();
-        // let table = table.table().unwrap();
-
-        // let indirect_func_table: Table =  table.into();
-        // let func = indirect_func_table.get(&mut store, index).unwrap().as_func().unwrap().unwrap();
-
-
-
-        let bpf: &Bpf = self.table.get(&self_)?;
-        let mut object = bpf.object.0;
+        let table = &mut self.table;
+        let bpf: &mut Bpf = table.get_mut(&self_)?;
+        let object = &bpf.object.0;
         match object.map(&name) {
-            Some(map) => Ok(Ok(self.table.push(WrapperMap(*map))?)),
+            Some(map) => {
+                let key = MapKey(name);
+                let value = MapWrapper {
+                    map: map as *const Map,
+                };
+                BPF_MAP_HASHMAP.lock().unwrap().insert(key.clone(), value);
+                Ok(Ok(table.push(key)?))
+            }
             None => Ok(Err(format!("Invalid map name: {}", name).to_string())),
         }
     }
 
     fn drop(&mut self, rep: wasmtime::component::Resource<Bpf>) -> wasmtime::Result<()> {
+        // clean global `HashMap`s to avoid use after free.
+        BPF_PERF_BUFFER_HASHMAP.lock().unwrap().clear();
+        BPF_MAP_HASHMAP.lock().unwrap().clear();
         self.table.delete(rep)?;
         Ok(())
     }
@@ -282,14 +255,22 @@ impl TryFrom<MapFlags> for libbpf_rs::MapFlags {
     }
 }
 
-impl<'a, 'store, State> ebpf::HostMap for BpfCtx<'a, 'store, State> {
+impl<State> ebpf::HostMap for BpfCtx<State> {
     /// return iterable map keys.
     fn keys(
         &mut self,
-        self_: wasmtime::component::Resource<WrapperMap>,
-    ) -> Result<wasmtime::component::Resource<libbpf_rs::MapKeyIter<'_>>, wasmtime::Error> {
-        let map: &WrapperMap = self.table.get(&self_)?;
-        Ok(self.table.push(map.0.keys())?)
+        self_: wasmtime::component::Resource<MapKey>,
+    ) -> Result<Result<wasmtime::component::Resource<MapKeyIter>, String>, wasmtime::Error> {
+        let map_wrapper: &MapKey = self.table.get(&self_)?;
+
+        match BPF_MAP_HASHMAP.lock().unwrap().get(map_wrapper) {
+            Some(wrapper) => {
+                let map = unsafe { &*wrapper.map };
+                let keys = MapKeyIter::new(map.as_fd().as_raw_fd(), map.key_size());
+                Ok(Ok(self.table.push(keys)?))
+            }
+            None => Ok(Err("Invalid argument".to_string())),
+        }
     }
 
     /// The BPF_MAP_LOOKUP_ELEM command looks up an element with a
@@ -298,19 +279,23 @@ impl<'a, 'store, State> ebpf::HostMap for BpfCtx<'a, 'store, State> {
     /// An error message is returned if no element is found.
     fn lookup_elem(
         &mut self,
-        self_: wasmtime::component::Resource<WrapperMap>,
+        self_: wasmtime::component::Resource<MapKey>,
         key: Key,
         flags: MapFlags,
     ) -> Result<Result<Option<Value>, wasmtime::component::__internal::String>, wasmtime::Error>
     {
-        let map: &WrapperMap = self.table.get(&self_)?;
-
-        let flags = match libbpf_rs::MapFlags::try_from(flags) {
-            Ok(flags) => flags,
-            Err(e) => return Ok(Err(e.to_string())),
-        };
-
-        Ok(map.0.lookup(&key, flags).map_err(|e| e.to_string()))
+        let map_wrapper: &MapKey = self.table.get(&self_)?;
+        match BPF_MAP_HASHMAP.lock().unwrap().get(map_wrapper) {
+            Some(wrapper) => {
+                let flags = match libbpf_rs::MapFlags::try_from(flags) {
+                    Ok(flags) => flags,
+                    Err(e) => return Ok(Err(e.to_string())),
+                };
+                let map = unsafe { &*wrapper.map };
+                Ok(map.lookup(&key, flags).map_err(|e| e.to_string()))
+            }
+            None => Ok(Err("Invalid argument".to_string())),
+        }
     }
 
     /// The BPF_MAP_UPDATE_ELEM command creates or updates an
@@ -319,19 +304,24 @@ impl<'a, 'store, State> ebpf::HostMap for BpfCtx<'a, 'store, State> {
     /// If the element is not found, an error message is returned.
     fn update_elem(
         &mut self,
-        self_: wasmtime::component::Resource<WrapperMap>,
+        self_: wasmtime::component::Resource<MapKey>,
         key: Key,
         value: Value,
         flags: MapFlags,
     ) -> Result<Result<(), wasmtime::component::__internal::String>, wasmtime::Error> {
-        let map: &WrapperMap = self.table.get(&self_)?;
+        let map_wrapper: &MapKey = self.table.get(&self_)?;
 
-        let flags = match libbpf_rs::MapFlags::try_from(flags) {
-            Ok(flags) => flags,
-            Err(e) => return Ok(Err(e.to_string())),
-        };
-
-        Ok(map.0.update(&key, &value, flags).map_err(|e| e.to_string()))
+        match BPF_MAP_HASHMAP.lock().unwrap().get(map_wrapper) {
+            Some(wrapper) => {
+                let flags = match libbpf_rs::MapFlags::try_from(flags) {
+                    Ok(flags) => flags,
+                    Err(e) => return Ok(Err(e.to_string())),
+                };
+                let map = unsafe { &*wrapper.map };
+                Ok(map.update(&key, &value, flags).map_err(|e| e.to_string()))
+            }
+            None => Ok(Err("Invalid argument".to_string())),
+        }
     }
 
     /// The BPF_MAP_DELETE_ELEM command deletes the element whose
@@ -340,107 +330,224 @@ impl<'a, 'store, State> ebpf::HostMap for BpfCtx<'a, 'store, State> {
     /// If the element is not found, an error message is returned.
     fn delete_elem(
         &mut self,
-        self_: wasmtime::component::Resource<WrapperMap>,
+        self_: wasmtime::component::Resource<MapKey>,
         key: Key,
     ) -> Result<Result<(), wasmtime::component::__internal::String>, wasmtime::Error> {
-        let map: &WrapperMap = self.table.get(&self_)?;
-        Ok(map.0.delete(&key).map_err(|e| e.to_string()))
+        let map_wrapper: &MapKey = self.table.get(&self_)?;
+        match BPF_MAP_HASHMAP.lock().unwrap().get(map_wrapper) {
+            Some(wrapper) => {
+                let map = unsafe { &*wrapper.map };
+                Ok(map.delete(&key).map_err(|e| e.to_string()))
+            }
+            None => Ok(Err("Invalid argument".to_string())),
+        }
     }
 
-    fn drop(&mut self, rep: wasmtime::component::Resource<WrapperMap>) -> wasmtime::Result<()> {
+    fn drop(&mut self, rep: wasmtime::component::Resource<MapKey>) -> wasmtime::Result<()> {
+        let map_wrapper: &MapKey = self.table.get(&rep)?;
+        BPF_MAP_HASHMAP.lock().unwrap().remove(map_wrapper);
         self.table.delete(rep)?;
         Ok(())
     }
 }
 
-impl<'a, 'store, State> ebpf::HostMapKeyIter for BpfCtx<'a, 'store, State> {
+impl<State> ebpf::HostMapKeyIter for BpfCtx<State> {
     fn next(
         &mut self,
-        self_: wasmtime::component::Resource<libbpf_rs::MapKeyIter>,
+        self_: wasmtime::component::Resource<MapKeyIter>,
     ) -> Result<Result<Option<Vec<u8>>, ()>, wasmtime::Error> {
-        let map_key_iter: &libbpf_rs::MapKeyIter = self.table.get(&self_)?;
+        let map_key_iter: &mut MapKeyIter = self.table.get_mut(&self_)?;
         Ok(Ok(map_key_iter.next()))
     }
 
-    fn drop(
-        &mut self,
-        rep: wasmtime::component::Resource<libbpf_rs::MapKeyIter>,
-    ) -> wasmtime::Result<()> {
+    fn drop(&mut self, rep: wasmtime::component::Resource<MapKeyIter>) -> wasmtime::Result<()> {
         self.table.delete(rep)?;
         Ok(())
     }
 }
 
-impl<'a, 'store, State> ebpf::HostPerfBuffer for BpfCtx<'a, 'store, State> {
+impl<State: 'static> ebpf::HostPerfBuffer for BpfCtx<State> {
     fn new(
         &mut self,
-        map: wasmtime::component::Resource<WrapperMap>,
+        map_key: wasmtime::component::Resource<MapKey>,
         pages: u64,
         sample_cb_name: std::string::String,
         lost_cb_name: std::string::String,
-    ) -> Result<Result<wasmtime::component::Resource<libbpf_rs::PerfBuffer>, ()>, wasmtime::Error>
-    {
-        let map: &WrapperMap = self.table.get(&map)?;
+    ) -> Result<Result<wasmtime::component::Resource<PerfBufferKey>, String>, wasmtime::Error> {
+        let map_wrapper: &MapKey = self.table.get(&map_key)?;
+        let map = match BPF_MAP_HASHMAP.lock().unwrap().get(map_wrapper) {
+            Some(wrapper) => unsafe { &*wrapper.map },
+            None => return Ok(Err("Invalid argument (map)".to_string())),
+        };
 
-        let instance = match self.instance {
-            Some(instance) => instance,
-            None => return Ok(Err(()))
+        static INTERNAL_ERROR: &str =
+            "Internal error: calling this method before context initialization";
+        if self.instance.is_null() || self.store.is_null() {
+            return Ok(Err(INTERNAL_ERROR.to_string()));
+        }
+
+        let instance = unsafe { &*self.instance };
+
+        // N.B. unsafely duplicate store mutable reference here, as we can
+        // make sure that `sample_cb` and `lost_cb` will not be called concurrently.
+        let (store_dup, store_dup2) = unsafe {
+            let s = self.store;
+            (&mut *s, &mut *s)
         };
-        let store = match self.store {
-            Some(store) => store,
-            None => return Ok(Err(()))
-        };
-        
-        let sample_cb = match instance.get_func(store, &sample_cb_name) {
+
+        let sample_cb = match instance.get_func(store_dup2.as_context_mut(), &sample_cb_name) {
             Some(func) => {
-                let typed_func = match func.typed::<(i32, &[u8]), ()>(store) {
-                   Ok(typed_func) => typed_func,
-                   Err(_) => return Ok(Err(()))
+                let typed_func = match func.typed::<(i32, &[u8]), ()>(store_dup2.as_context_mut()) {
+                    Ok(typed_func) => typed_func,
+                    Err(_) => return Ok(Err(format!("{sample_cb_name} signature mismatch"))),
                 };
 
-                let store2 = store
-                
-                let callback = |cpu: i32, data: &[u8]| {
-                    typed_func.call(store, (cpu, data));
-                };
-                callback
-            },
-            None => return Ok(Err(()))
+                move |cpu: i32, data: &[u8]| {
+                    let _ = typed_func.call(store_dup2.as_context_mut(), (cpu, data));
+                }
+            }
+            None => return Ok(Err(format!("{sample_cb_name} is not found"))),
         };
 
-        let perf_buffer = if lost_cb_name.len() != 0 {
-            let lost_cb = match instance.get_func(store, &lost_cb_name) {
+        let perf_buffer = if !lost_cb_name.is_empty() {
+            let lost_cb = match instance.get_func(store_dup.as_context_mut(), &lost_cb_name) {
                 Some(func) => {
-                    let lost_func_typed = match func.typed::<(i32, u64), ()>(store) {
-                        Ok(typed_func) => typed_func,
-                        Err(_) => return Ok(Err(()))
-                    };
+                    let lost_func_typed =
+                        match func.typed::<(i32, u64), ()>(store_dup.as_context_mut()) {
+                            Ok(typed_func) => typed_func,
+                            Err(_) => return Ok(Err(format!("{lost_cb_name} signature mismatch"))),
+                        };
                     lost_func_typed
-                },
-                None => return Ok(Err(()))
+                }
+                None => return Ok(Err(format!("{lost_cb_name} is not found"))),
             };
-            PerfBufferBuilder::new(&map.0)
-                .pages(pages as usize)
+
+            PerfBufferBuilder::new(map)
                 .sample_cb(sample_cb)
-                .lost_cb(move |cpu: i32, count: u64| {lost_cb.call(store, (cpu, count));})
+                .lost_cb(move |cpu: i32, count: u64| {
+                    let _ = lost_cb.call(store_dup.as_context_mut(), (cpu, count));
+                })
+                .pages(pages as usize)
                 .build()?
         } else {
-            PerfBufferBuilder::new(&map.0)
+            PerfBufferBuilder::new(map)
                 .pages(pages as usize)
                 .sample_cb(sample_cb)
-                .lost_cb(move |cpu: i32, count: u64| {})
+                .lost_cb(move |_cpu: i32, _count: u64| {})
                 .build()?
         };
-        
-        Ok(Ok(self.table.push(perf_buffer)?))
+
+        let key = PerfBufferKey(perf_buffer.as_libbpf_object().as_ptr() as u64);
+
+        BPF_PERF_BUFFER_HASHMAP
+            .lock()
+            .unwrap()
+            .insert(key.clone(), PerfBufferWrapper(perf_buffer));
+
+        Ok(Ok(self.table.push(key)?))
+    }
+
+    fn epoll_fd(
+        &mut self,
+        self_: wasmtime::component::Resource<PerfBufferKey>,
+    ) -> wasmtime::Result<i32> {
+        let perf_buffer_key: &PerfBufferKey = self.table.get(&self_)?;
+
+        match BPF_PERF_BUFFER_HASHMAP.lock().unwrap().get(perf_buffer_key) {
+            Some(perf_buffer) => Ok(perf_buffer.0.epoll_fd()),
+            None => Ok(-1),
+        }
+    }
+
+    fn poll(
+        &mut self,
+        self_: wasmtime::component::Resource<PerfBufferKey>,
+        timeout_ms: u64,
+    ) -> wasmtime::Result<Result<(), String>> {
+        let timeout = Duration::from_millis(timeout_ms);
+        let perf_buffer_key: &PerfBufferKey = self.table.get(&self_)?;
+
+        match BPF_PERF_BUFFER_HASHMAP.lock().unwrap().get(perf_buffer_key) {
+            Some(perf_buffer) => Ok(perf_buffer.0.poll(timeout).map_err(|e| e.to_string())),
+            None => Ok(Err("Invalid Param".to_string())),
+        }
+    }
+
+    fn consume(
+        &mut self,
+        self_: wasmtime::component::Resource<PerfBufferKey>,
+    ) -> wasmtime::Result<Result<(), String>> {
+        let perf_buffer_key: &PerfBufferKey = self.table.get(&self_)?;
+
+        match BPF_PERF_BUFFER_HASHMAP.lock().unwrap().get(perf_buffer_key) {
+            Some(perf_buffer) => Ok(perf_buffer.0.consume().map_err(|e| e.to_string())),
+            None => Ok(Err("Invalid Param".to_string())),
+        }
+    }
+
+    fn consume_buffer(
+        &mut self,
+        self_: wasmtime::component::Resource<PerfBufferKey>,
+        buf_idx: u64,
+    ) -> wasmtime::Result<Result<(), String>> {
+        let perf_buffer_key: &PerfBufferKey = self.table.get(&self_)?;
+
+        match BPF_PERF_BUFFER_HASHMAP.lock().unwrap().get(perf_buffer_key) {
+            Some(perf_buffer) => Ok(perf_buffer
+                .0
+                .consume_buffer(buf_idx as usize)
+                .map_err(|e| e.to_string())),
+            None => Ok(Err("Invalid Param".to_string())),
+        }
+    }
+
+    fn buffer_cnt(
+        &mut self,
+        self_: wasmtime::component::Resource<PerfBufferKey>,
+    ) -> wasmtime::Result<Result<u64, String>> {
+        let perf_buffer_key: &PerfBufferKey = self.table.get(&self_)?;
+
+        match BPF_PERF_BUFFER_HASHMAP.lock().unwrap().get(perf_buffer_key) {
+            Some(perf_buffer) => Ok(Ok(perf_buffer.0.buffer_cnt() as u64)),
+            None => Ok(Err("Invalid Param".to_string())),
+        }
+    }
+
+    fn buffer_fd(
+        &mut self,
+        self_: wasmtime::component::Resource<PerfBufferKey>,
+        buf_idx: u64,
+    ) -> wasmtime::Result<Result<i32, String>> {
+        let perf_buffer_key: &PerfBufferKey = self.table.get(&self_)?;
+
+        match BPF_PERF_BUFFER_HASHMAP.lock().unwrap().get(perf_buffer_key) {
+            Some(perf_buffer) => {
+                let res = perf_buffer
+                    .0
+                    .buffer_fd(buf_idx as usize)
+                    .map_err(|e| e.to_string());
+                Ok(res)
+            }
+            None => Ok(Err("Invalid Param".to_string())),
+        }
+    }
+
+    fn drop(&mut self, rep: wasmtime::component::Resource<PerfBufferKey>) -> wasmtime::Result<()> {
+        let perf_buffer_key: &PerfBufferKey = self.table.get(&rep)?;
+        BPF_PERF_BUFFER_HASHMAP
+            .lock()
+            .unwrap()
+            .remove(perf_buffer_key);
+        self.table.delete(rep)?;
+        Ok(())
     }
 }
 
-impl<'a, 'store, State> ebpf::Host for BpfCtx<'a, 'store, State> {}
+impl<State: 'static> ebpf::Host for BpfCtx<State> {}
 
-pub fn add_to_linker<'a, 'store, T: 'store>(
+pub fn add_to_linker<T: 'static>(
     l: &mut Linker<T>,
-    f: impl (Fn(&mut T) -> &mut BpfCtx<'a, 'store, T>) + Copy + Send + Sync + 'static,
+    f: impl (Fn(&mut T) -> &mut BpfCtx<T>) + Copy + Send + Sync + 'static,
 ) -> anyhow::Result<()> {
     crate::Imports::add_to_linker(l, f)
 }
