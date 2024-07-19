@@ -19,8 +19,11 @@ impl PshEngine {
     pub fn run(&mut self, path: impl AsRef<Path>) -> anyhow::Result<()> {
         let component =
             Component::from_file(&self.engine, path).context("Failed to read component file!")?;
-        let (cmd, _inst) = Command::instantiate(&mut self.store, &component, &self.linker)
+        let (cmd, inst) = Command::instantiate(&mut self.store, &component, &self.linker)
             .context("Failed to instantiate Wasi Command!")?;
+
+        self.store.data_mut().ebpf_ctx.set_instance(&inst);
+
         cmd.wasi_cli_run()
             .call_run(&mut self.store)
             .context("Failed to run component")?
