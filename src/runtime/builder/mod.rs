@@ -1,4 +1,5 @@
 use anyhow::Context;
+use host_op_ebpf::state::BpfCtx;
 use wasmtime::{
     component::{Linker, ResourceTable},
     Config, Engine, Store,
@@ -16,6 +17,7 @@ pub struct PshEngineBuilder {
     engine_config: Config,
     use_perf_op: bool,
     use_system_op: bool,
+    use_ebpf_op: bool,
 }
 
 #[allow(dead_code)]
@@ -28,6 +30,7 @@ impl PshEngineBuilder {
             engine_config,
             use_perf_op: false,
             use_system_op: false,
+            use_ebpf_op: false,
         }
     }
 
@@ -40,9 +43,11 @@ impl PshEngineBuilder {
             wasi_ctx,
             perf_ctx: PerfCtx::new(),
             sys_ctx: SysCtx::default(),
+            ebpf_ctx: BpfCtx::new(),
         };
         let store = Store::new(&engine, state);
         let mut linker: Linker<PshState> = Linker::new(&engine);
+
         wasmtime_wasi::add_to_linker_sync(&mut linker)
             .context("Failed to link wasi sync module")?;
         if self.use_perf_op {
@@ -53,6 +58,12 @@ impl PshEngineBuilder {
             host_op_system::add_to_linker(&mut linker, |state| &mut state.sys_ctx)
                 .context("Failed to link system module")?;
         }
+
+        if self.use_ebpf_op {
+            host_op_ebpf::add_to_linker(&mut linker, |state| &mut state.ebpf_ctx)
+                .context("Failed to link ebpf module")?;
+        }
+
         Ok(PshEngine {
             engine,
             store,
@@ -141,6 +152,11 @@ impl PshEngineBuilder {
 
     pub fn allow_system_op(mut self, enable: bool) -> Self {
         self.use_system_op = enable;
+        self
+    }
+
+    pub fn allow_ebpf_op(mut self, enable: bool) -> Self {
+        self.use_ebpf_op = enable;
         self
     }
 }

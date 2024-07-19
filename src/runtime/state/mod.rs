@@ -1,6 +1,7 @@
 use wasmtime::component::ResourceTable;
 use wasmtime_wasi::{WasiCtx, WasiView};
 
+use host_op_ebpf::state::BpfCtx;
 use host_op_perf::PerfCtx;
 use host_op_system::SysCtx;
 
@@ -11,6 +12,7 @@ pub struct PshState {
     pub(crate) wasi_ctx: WasiCtx,
     pub(crate) perf_ctx: PerfCtx,
     pub(crate) sys_ctx: SysCtx,
+    pub(crate) ebpf_ctx: BpfCtx<PshState>,
     // TODO: add more context for modules
 }
 
