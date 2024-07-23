@@ -20,6 +20,7 @@ use std::process::exit;
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
+use crate::daemon::DaemonConfig;
 use crate::otlp::config::OtlpConfig;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -28,6 +29,7 @@ pub struct PshConfig {
     component_conf: ComponentConfig,
     #[serde(rename = "otlp")]
     otlp_conf: OtlpConfig,
+    daemon: DaemonConfig,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -59,10 +61,15 @@ impl PshConfig {
     pub const DEFAULT_PATH: &'static str = "/etc/psh/config.toml";
 
     #[allow(dead_code)]
-    pub fn new(component_conf: ComponentConfig, otlp_conf: OtlpConfig) -> Self {
+    pub fn new(
+        component_conf: ComponentConfig,
+        otlp_conf: OtlpConfig,
+        daemon: DaemonConfig,
+    ) -> Self {
         Self {
             component_conf,
             otlp_conf,
+            daemon,
         }
     }
 
@@ -106,6 +113,10 @@ impl PshConfig {
     pub fn get_component_args(&mut self) -> Vec<String> {
         self.component_conf.get_component_args()
     }
+
+    pub fn daemon(&self) -> &DaemonConfig {
+        &self.daemon
+    }
 }
 
 #[cfg(test)]
@@ -124,6 +135,12 @@ protocol = "Grpc"
 [otlp.timeout]
 secs = 3
 nanos = 0
+
+[daemon]
+pid_file = "/tmp/psh.pid"
+stdout_file = "/tmp/psh.stdout"
+stderr_file = "/tmp/psh.stderr"
+working_directory = "/"
 "#;
 
     const TEST_CONF_PATH: &str = "./target/config.toml";
@@ -136,6 +153,7 @@ nanos = 0
                 vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
             ),
             OtlpConfig::default(),
+            DaemonConfig::default(),
         );
         let s = toml::to_string(&cf).unwrap();
         assert_eq!(s, CONFIG_STR);
@@ -152,6 +170,7 @@ nanos = 0
                 vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
             ),
             OtlpConfig::default(),
+            DaemonConfig::default(),
         );
         cf.generate_config(TEST_CONF_PATH, true).unwrap();
         let conf = PshConfig::read_config(TEST_CONF_PATH).unwrap();

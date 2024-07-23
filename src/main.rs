@@ -14,6 +14,7 @@
 
 mod args;
 mod config;
+mod daemon;
 mod infra;
 mod log;
 mod otlp;
@@ -49,13 +50,17 @@ fn main() -> anyhow::Result<()> {
         PshConfig::default()
     });
 
-    // when running as a daemon, it ignores the other arguments from the cli
-    let component_args = if args.daemon() {
+    // When running as a daemon, it ignores all other cli arguments
+    let component_args = if args.systemd() || args.daemon() {
         psh_config.get_component_args()
     } else {
         args.get_component_args()
     };
     let component_envs: Vec<(String, String)> = std::env::vars().collect();
+
+    if args.daemon() {
+        daemon::Daemon::new(psh_config.daemon().clone()).daemon()?;
+    }
 
     let otlp_conf = psh_config.otlp_conf();
     let mut otlp_th = None;
