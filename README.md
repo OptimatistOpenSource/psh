@@ -46,6 +46,12 @@ protocol = "Grpc" # or "HttpJson", "HttpBinary", the field case insensitive
 [otlp.timeout]
 secs = 3
 nanos = 0
+
+[daemon] # when run as SysV daemon
+pid_file = "/tmp/psh.pid"
+stdout_file = "/tmp/psh.stdout"
+stderr_file = "/tmp/psh.stderr"
+working_directory = "/"
 ```
 
 ## Contribution Guide

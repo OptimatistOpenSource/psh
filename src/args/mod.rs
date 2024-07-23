@@ -28,12 +28,23 @@ pub struct Args {
     #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
     pub extra_args: Vec<String>,
 
+    /// When running as a systemd daemon, it ignores all other command-line arguments
+    /// except `--daemon`.
+    #[arg(short, long)]
+    systemd: bool,
+
+    /// When running as a SysV daemon, it ignores all other command-line arguments
     #[arg(short, long)]
     daemon: bool,
 }
 
 impl Args {
-    /// whether run as daemon
+    /// whether run as systemd daemon
+    pub fn systemd(&self) -> bool {
+        self.systemd
+    }
+
+    /// whether run as SysV daemon
     pub fn daemon(&self) -> bool {
         self.daemon
     }
