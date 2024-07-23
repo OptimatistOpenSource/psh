@@ -15,6 +15,7 @@
 mod args;
 mod config;
 mod infra;
+mod log;
 mod otlp;
 mod resources;
 mod runtime;
@@ -22,7 +23,6 @@ mod security;
 mod services;
 mod utils;
 
-use std::io;
 use std::process::exit;
 
 use anyhow::Context;
@@ -30,15 +30,13 @@ use clap::Parser;
 
 use args::Args;
 use config::PshConfig;
+use log::log_init;
 use opentelemetry_otlp::ExportConfig;
 use runtime::PshEngineBuilder;
 use utils::check_root_privilege;
 
 fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::WARN)
-        .with_writer(io::stderr)
-        .init();
+    log_init();
 
     if !check_root_privilege() {
         tracing::error!("Insufficient privileges. Please run psh with root permissions.");
