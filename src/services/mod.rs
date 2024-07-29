@@ -17,3 +17,4 @@ pub mod pb {
 }
 pub mod host_info;
 pub mod rpc;
+pub mod config;
