@@ -11,17 +11,20 @@
 //
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
-use std::fs::{create_dir_all, File};
-use std::io::{Read, Write};
-use std::mem;
-use std::path::Path;
-use std::process::exit;
+use std::{
+    fs::{create_dir_all, File},
+    io::{Read, Write},
+    mem,
+    path::Path,
+    process::exit,
+};
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
-use crate::daemon::DaemonConfig;
-use crate::otlp::config::OtlpConfig;
+use crate::{
+    daemon::DaemonConfig, otlp::config::OtlpConfig, services::config::RpcConfig,
+};
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PshConfig {
@@ -30,6 +33,7 @@ pub struct PshConfig {
     #[serde(rename = "otlp")]
     otlp_conf: OtlpConfig,
     daemon: DaemonConfig,
+    rpc: RpcConfig,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -65,11 +69,13 @@ impl PshConfig {
         component_conf: ComponentConfig,
         otlp_conf: OtlpConfig,
         daemon: DaemonConfig,
+        rpc: RpcConfig,
     ) -> Self {
         Self {
             component_conf,
             otlp_conf,
             daemon,
+            rpc,
         }
     }
 
@@ -117,11 +123,20 @@ impl PshConfig {
     pub fn daemon(&self) -> &DaemonConfig {
         &self.daemon
     }
+
+    pub fn rpc(&self) -> &RpcConfig {
+        &self.rpc
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::{
+        config::{ComponentConfig, PshConfig},
+        daemon::DaemonConfig,
+        otlp::config::OtlpConfig,
+        services::config::RpcConfig,
+    };
 
     const CONFIG_STR: &str = r#"[component]
 path = "cpu.wasm"
@@ -141,6 +156,10 @@ pid_file = "/tmp/psh.pid"
 stdout_file = "/tmp/psh.stdout"
 stderr_file = "/tmp/psh.stderr"
 working_directory = "/"
+
+[rpc]
+addr = "www.optimatist.com"
+token = ""
 "#;
 
     const TEST_CONF_PATH: &str = "./target/config.toml";
@@ -154,6 +173,7 @@ working_directory = "/"
             ),
             OtlpConfig::default(),
             DaemonConfig::default(),
+            RpcConfig::default(),
         );
         let s = toml::to_string(&cf).unwrap();
         assert_eq!(s, CONFIG_STR);
@@ -171,6 +191,7 @@ working_directory = "/"
             ),
             OtlpConfig::default(),
             DaemonConfig::default(),
+            RpcConfig::default(),
         );
         cf.generate_config(TEST_CONF_PATH, true).unwrap();
         let conf = PshConfig::read_config(TEST_CONF_PATH).unwrap();
