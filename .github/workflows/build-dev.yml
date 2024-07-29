@@ -35,6 +35,9 @@ jobs:
           targets: ${{ matrix.target }}
           components: rustfmt, clippy
 
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v3
+
       - name: Show Rust toolchain version
         shell: bash
         run: |
