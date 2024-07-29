@@ -15,5 +15,6 @@
 pub mod pb {
     tonic::include_proto!("psh");
 }
+pub mod config;
 pub mod host_info;
 pub mod rpc;

@@ -24,12 +24,11 @@ mod security;
 mod services;
 mod utils;
 
-use std::process::exit;
+use std::{process::exit, sync::Arc};
 
 use anyhow::Context;
-use clap::Parser;
-
 use args::Args;
+use clap::Parser;
 use config::PshConfig;
 use log::log_init;
 use opentelemetry_otlp::ExportConfig;
@@ -65,12 +64,27 @@ fn main() -> anyhow::Result<()> {
     let otlp_conf = psh_config.otlp_conf();
     let mut otlp_th = None;
 
+    let runtime = Arc::new(tokio::runtime::Runtime::new()?);
+
+    let rpc = psh_config.rpc();
+    let addr = rpc.addr().to_owned();
+    let token = rpc.token().to_owned();
+    runtime.spawn(async move {
+        match services::rpc::RpcClient::new(&addr).await {
+            Ok(mut lx) => {
+                if let Err(e) = lx.send_info(token).await {
+                    tracing::error!("send info: {}", e)
+                };
+            }
+            Err(e) => tracing::error!("connect: {}", e),
+        }
+    });
+
     if otlp_conf.enable() {
+        let rt = Arc::clone(&runtime);
         let export_conf: ExportConfig = otlp_conf.into();
-        let th = std::thread::spawn(|| {
-            tokio::runtime::Runtime::new()?.block_on(otlp::otlp_tasks(export_conf))
-        });
-        otlp_th = Some(th);
+        let hd = std::thread::spawn(move || rt.block_on(otlp::otlp_tasks(export_conf)));
+        otlp_th = Some(hd);
     }
 
     let mut engine = PshEngineBuilder::new()
