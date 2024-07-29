@@ -22,9 +22,7 @@ use std::{
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    daemon::DaemonConfig, otlp::config::OtlpConfig, services::config::LuoxiaoConfig,
-};
+use crate::{daemon::DaemonConfig, otlp::config::OtlpConfig, services::config::LuoxiaoConfig};
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PshConfig {
