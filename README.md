@@ -52,6 +52,10 @@ pid_file = "/tmp/psh.pid"
 stdout_file = "/tmp/psh.stdout"
 stderr_file = "/tmp/psh.stderr"
 working_directory = "/"
+
+[rpc]
+addr = ""
+token = ""
 ```
 
 ## Contribution Guide
