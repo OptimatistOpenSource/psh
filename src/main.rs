@@ -24,9 +24,10 @@ mod security;
 mod services;
 mod utils;
 
-use std::{process::exit, sync::Arc};
+use std::process::exit;
+use std::result::Result::Ok;
 
-use anyhow::Context;
+use anyhow::{Context, Error};
 use args::Args;
 use clap::Parser;
 use config::PshConfig;
@@ -48,6 +49,8 @@ fn main() -> anyhow::Result<()> {
         tracing::warn!("{e}, use default Psh config.");
         PshConfig::default()
     });
+    let rpc_conf = psh_config.rpc();
+    let otlp_conf = psh_config.otlp_conf();
 
     // When running as a daemon, it ignores all other cli arguments
     let component_args = if args.systemd() || args.daemon() {
@@ -61,31 +64,29 @@ fn main() -> anyhow::Result<()> {
         daemon::Daemon::new(psh_config.daemon().clone()).daemon()?;
     }
 
-    let otlp_conf = psh_config.otlp_conf();
-    let mut otlp_th = None;
+    let hd = std::thread::spawn(move || {
+        let rt = tokio::runtime::Runtime::new()?;
 
-    let runtime = Arc::new(tokio::runtime::Runtime::new()?);
+        let addr = rpc_conf.addr().to_owned();
+        let token = rpc_conf.token().to_owned();
+        rt.spawn(async move {
+            match services::rpc::RpcClient::new(&addr).await {
+                Ok(mut lx) => {
+                    if let Err(e) = lx.send_info(token).await {
+                        tracing::error!("send info: {}", e)
+                    };
+                }
+                Err(e) => tracing::error!("connect: {}", e),
+            };
+        });
 
-    let rpc = psh_config.rpc();
-    let addr = rpc.addr().to_owned();
-    let token = rpc.token().to_owned();
-    runtime.spawn(async move {
-        match services::rpc::RpcClient::new(&addr).await {
-            Ok(mut lx) => {
-                if let Err(e) = lx.send_info(token).await {
-                    tracing::error!("send info: {}", e)
-                };
-            }
-            Err(e) => tracing::error!("connect: {}", e),
+        if otlp_conf.enable() {
+            let export_conf: ExportConfig = otlp_conf.into();
+            rt.block_on(otlp::otlp_tasks(export_conf))?;
         }
-    });
 
-    if otlp_conf.enable() {
-        let rt = Arc::clone(&runtime);
-        let export_conf: ExportConfig = otlp_conf.into();
-        let hd = std::thread::spawn(move || rt.block_on(otlp::otlp_tasks(export_conf)));
-        otlp_th = Some(hd);
-    }
+        Ok::<(), Error>(())
+    });
 
     let mut engine = PshEngineBuilder::new()
         .wasi_inherit_stdio()
@@ -98,9 +99,7 @@ fn main() -> anyhow::Result<()> {
 
     engine.run(&component_args[0])?;
 
-    if let Some(th) = otlp_th {
-        let _ = th.join();
-    }
+    let _ = hd.join();
 
     Ok(())
 }
