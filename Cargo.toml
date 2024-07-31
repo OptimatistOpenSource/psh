@@ -18,7 +18,7 @@ clap = { version = "4.5.4", features = ["derive", "wrap_help"] }
 tonic = "0.12"
 prost = "0.13"
 tokio = { version = "1.38", features = ["macros", "rt-multi-thread"] }
-nix = { version = "0.29.0", features = ["user"] }
+nix = { version = "0.29.0", features = ["user", "hostname"] }
 wasmtime = "21.0.1"
 wasmtime-wasi = "21.0.1"
 wit-bindgen = "0.26.0"
@@ -46,7 +46,6 @@ tracing = { version = "^0.1" }
 tracing-subscriber = { version = "^0.3", features = ["env-filter"] }
 daemonize = { version = "0.5.0" }
 local-ip-address = { version = "^0.6" }
-sysinfo = { version = "0.30.13" }
 
 [workspace.dependencies]
 host-op-perf = { path = "crates/op/host-op-perf" }

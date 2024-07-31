@@ -1,6 +1,7 @@
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
-use sysinfo::System;
+use psh_system::cpu::CpuHandle;
+use psh_system::os::OsHandle;
 
 use super::pb::{host_info_request, HostInfoRequest};
 use crate::infra::option::WrapOption;
@@ -77,16 +78,34 @@ impl RawInfo {
             Ok(IpAddr::V6(v6)) => v6.wrap_some(),
             _ => None, // `local_ip_address::local_ipv6()` get v6
         };
+        let hostname = nix::unistd::gethostname()
+            .ok()
+            .map(|v| v.to_string_lossy().to_string());
 
-        Self {
+        let mut raw_info = Self {
             ipv4,
             ipv6,
-            os: System::name(),
-            hostname: System::host_name(),
+            os: None,
+            hostname,
             token,
-            arch: System::cpu_arch(),
-            kernel_version: System::kernel_version(),
+            arch: None,
+            kernel_version: None,
+        };
+
+        let cpu_hd = CpuHandle::new();
+        if let Ok(cpu) = cpu_hd.info() {
+            raw_info.arch = cpu.to_string().wrap_some();
         }
+
+        let os_hd = OsHandle::new();
+        if let Ok(info) = os_hd.info() {
+            raw_info.os = info.distro.distro.to_string().wrap_some();
+            raw_info.kernel_version = info.kernel.to_string().wrap_some();
+
+            return raw_info;
+        }
+
+        raw_info
     }
 }
 
