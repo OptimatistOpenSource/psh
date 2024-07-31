@@ -12,6 +12,7 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
+use std::fmt::Display;
 use std::str::FromStr;
 
 use crate::error::{Error, Result};
@@ -169,6 +170,16 @@ pub enum CPUInfo {
     X86_64(Vec<X86_64CpuInfo>),
     Arm64(Vec<Arm64CpuInfo>),
     Unsupported(String),
+}
+
+impl Display for CPUInfo {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            CPUInfo::X86_64(_) => f.write_str("X86_64"),
+            CPUInfo::Arm64(_) => f.write_str("arm64"),
+            CPUInfo::Unsupported(s) => f.write_str(s),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
