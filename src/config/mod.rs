@@ -110,8 +110,8 @@ impl PshConfig {
         Ok(())
     }
 
-    pub fn otlp_conf(&self) -> &OtlpConfig {
-        &self.otlp_conf
+    pub fn otlp_conf(&mut self) -> OtlpConfig {
+        mem::take(&mut self.otlp_conf)
     }
 
     pub fn get_component_args(&mut self) -> Vec<String> {
@@ -122,8 +122,8 @@ impl PshConfig {
         &self.daemon
     }
 
-    pub fn rpc(&self) -> &RpcConfig {
-        &self.rpc
+    pub fn rpc(&mut self) -> RpcConfig {
+        mem::take(&mut self.rpc)
     }
 }
 
