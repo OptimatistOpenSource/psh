@@ -197,9 +197,8 @@ mod test {
                 let key = parts[0];
                 let value = parts[1];
 
-                match key {
-                    "Number Of Devices" => num_of_dimms = value.parse().unwrap_or(0),
-                    _ => {}
+                if key == "Number Of Devices" {
+                    num_of_dimms = value.parse().unwrap_or(0)
                 }
             }
         }
@@ -223,7 +222,7 @@ mod test {
 
         let num_of_dimms = 4;
         let contents = fs::read_to_string(dmidecode_memory_path).unwrap();
-        let memory_modules = parse_memory_module(&contents.as_str());
+        let memory_modules = parse_memory_module(&contents);
         assert_eq!(num_of_dimms, memory_modules.len());
         let dimm0 = MemoryModule {
             array_handle: 19,
@@ -271,7 +270,7 @@ mod test {
 
         let num_of_dimms = 1;
         let contents = fs::read_to_string(dmidecode_memory_path).unwrap();
-        let memory_modules = parse_memory_module(&contents.as_str());
+        let memory_modules = parse_memory_module(&contents);
         assert_eq!(num_of_dimms, memory_modules.len());
         let dimm0 = MemoryModule {
             array_handle: 4096,
@@ -319,7 +318,7 @@ mod test {
 
         let num_of_dimms = 16;
         let contents = fs::read_to_string(dmidecode_memory_path).unwrap();
-        let memory_modules = parse_memory_module(&contents.as_str());
+        let memory_modules = parse_memory_module(&contents);
         assert_eq!(num_of_dimms, memory_modules.len());
 
         let dimm0 = MemoryModule {

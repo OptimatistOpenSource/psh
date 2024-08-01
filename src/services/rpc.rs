@@ -47,7 +47,6 @@ impl RpcClient {
 mod rpc_tests {
     use std::future::Future;
 
-    use sysinfo::System;
     use tokio::sync::oneshot;
     use tonic::{transport::Server, Request, Response, Status};
 
@@ -171,10 +170,10 @@ mod rpc_tests {
         let info_req = HostInfoRequest {
             token: "token".to_owned(),
             ip_addr: host_info_request::IpAddr::Ipv4(0xFF00FF00).wrap_some(),
-            os: System::name(),
-            hostname: "MTS-MILA".to_owned().wrap_some(),
-            architecture: System::cpu_arch(),
-            kernel_version: System::kernel_version(),
+            os: "Linux".to_owned().wrap_some(),
+            hostname: "Host".to_owned().wrap_some(),
+            architecture: "x86_64".to_owned().wrap_some(),
+            kernel_version: "6.10.2".to_owned().wrap_some(),
         };
 
         let heartbeat = test_send_info(client, info_req);
