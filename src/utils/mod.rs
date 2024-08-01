@@ -47,7 +47,7 @@ mod tests {
     fn test_check_root_privilege() {
         use super::check_root_privilege;
         // Test when the user has root privilege
-        assert_eq!(check_root_privilege(), true);
+        assert!(check_root_privilege());
 
         // Test when the user does not have root privilege
         // You can modify this test case to simulate a non-root user

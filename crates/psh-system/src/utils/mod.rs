@@ -75,7 +75,7 @@ where
     {
         let now = Instant::now();
         let Ok(mut guard) = self.0.lock() else {
-            return Err(Error::SyncError);
+            return Err(Error::Sync);
         };
         let is_outdated = match interval {
             Some(interval) => (now - guard.timestamp) * 10 > interval,
