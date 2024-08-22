@@ -96,18 +96,8 @@ mod rpc_tests {
             &self,
             request: tonic::Request<HostInfoRequest>,
         ) -> std::result::Result<tonic::Response<HostInfoResponse>, tonic::Status> {
-            let req = request.into_inner();
-            if let Some(ip) = req.ip_addr {
-                match ip {
-                    host_info_request::IpAddr::Ipv4(v4) => {
-                        let v4 = std::net::Ipv4Addr::from_bits(v4);
-                        println!("{}", v4);
-                    }
-                    host_info_request::IpAddr::Ipv6(_v6) => {
-                        println!("v6");
-                    }
-                }
-            }
+            let addr = request.remote_addr().unwrap();
+            dbg!(addr.ip());
             let resp = HostInfoResponse {
                 errno: 0,
                 message: "ok".to_owned().wrap_some(),
@@ -169,7 +159,6 @@ mod rpc_tests {
         let client = PshServiceClient::connect(format!("http://{}", ADDR_INFO));
         let info_req = HostInfoRequest {
             token: "token".to_owned(),
-            ip_addr: host_info_request::IpAddr::Ipv4(0xFF00FF00).wrap_some(),
             os: "Linux".to_owned().wrap_some(),
             hostname: "Host".to_owned().wrap_some(),
             architecture: "x86_64".to_owned().wrap_some(),
