@@ -13,44 +13,71 @@ exclude = ["test_resources/profiling"]
 version = "0.1.0"
 
 [dependencies]
-libc = "0.2.155"
-clap = { version = "4.5.4", features = ["derive", "wrap_help"] }
-tonic = "0.12"
-prost = "0.13"
-tokio = { version = "1.38", features = ["macros", "rt-multi-thread"] }
-nix = { version = "0.29.0", features = ["user", "hostname"] }
-wasmtime = "21.0.1"
-wasmtime-wasi = "21.0.1"
-wit-bindgen = "0.26.0"
-anyhow = "1.0.86"
+libc = { workspace = true }
+clap = { workspace = true, features = ["derive", "wrap_help"] }
+tonic = { workspace = true }
+prost = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+nix = { workspace = true, features = ["user", "hostname"] }
+wasmtime = { workspace = true }
+wasmtime-wasi = { workspace = true }
+wit-bindgen = { workspace = true }
+anyhow = { workspace = true }
 host-op-perf = { workspace = true }
 host-op-system = { workspace = true }
 psh-system = { workspace = true }
-opentelemetry-otlp = { version = "0.25.0", features = [
+opentelemetry-otlp = { workspace = true, features = [
   "metrics",
   "opentelemetry-http",
   "http-proto",
   "reqwest",
   "reqwest-blocking-client",
 ] }
-opentelemetry = { version = "0.25.0", features = ["metrics"] }
-opentelemetry_sdk = { version = "0.25.0", features = [
+opentelemetry = { workspace = true, features = ["metrics"] }
+opentelemetry_sdk = { workspace = true, features = [
   "metrics",
   "opentelemetry-http",
   "rt-tokio",
   "tokio",
 ] }
-toml = { version = "^0.8" }
-serde = { version = "^1" }
-tracing = { version = "^0.1" }
-tracing-subscriber = { version = "^0.3", features = ["env-filter"] }
-daemonize = { version = "0.5.0" }
-local-ip-address = { version = "^0.6" }
+toml = { workspace = true }
+serde = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
+daemonize = { workspace = true }
+local-ip-address = { workspace = true }
+
+[build-dependencies]
+tonic-build = { workspace = true }
 
 [workspace.dependencies]
 host-op-perf = { path = "crates/op/host-op-perf" }
 host-op-system = { path = "crates/op/host-op-system" }
 psh-system = { path = "crates/psh-system" }
-
-[build-dependencies]
+perf-event-rs = { git = "https://github.com/OptimatistOpenSource/perf-event-rs.git" }
+tokio = "^1"
+libc = "^0.2"
+nix = "^0.29"
+clap = "^4"
+opentelemetry-otlp = "^0.25"
+opentelemetry = "^0.25"
+opentelemetry_sdk = "^0.25"
+tonic = "^0.12"
 tonic-build = "0.12"
+prost = "^0.13"
+wasmtime = "^21"
+wasmtime-wasi = "^21"
+anyhow = "^1"
+thiserror = "^1"
+wit-bindgen = "^0.26"
+daemonize = "^0.5"
+tracing = "^0.1"
+tracing-subscriber = "^0.3"
+toml = "^0.8"
+serde = "^1"
+once_cell = "^1"
+procfs = "^0.16"
+uname = "^0.1"
+which = "^6"
+num_cpus = "^1"
+local-ip-address = "^0.6"
