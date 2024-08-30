@@ -41,7 +41,7 @@ impl From<RawInfo> for HostInfoRequest {
             token: value.token,
             architecture: value.arch,
             kernel_version: value.kernel_version,
-            local_ipv4_addr: value.ipv4.map(|v| v.to_bits()),
+            local_ipv4_addr: value.ipv4.map(|v| v.to_bits().to_be()),
             local_ipv6_addr: value.ipv6.map(|v| v.into()),
             instance_id: value.instance_id,
         }
@@ -56,7 +56,7 @@ impl From<&RawInfo> for HostInfoRequest {
             token: value.token.clone(),
             architecture: value.arch.clone(),
             kernel_version: value.kernel_version.clone(),
-            local_ipv4_addr: value.ipv4.map(|v| v.to_bits()),
+            local_ipv4_addr: value.ipv4.map(|v| v.to_bits().to_be()),
             local_ipv6_addr: value.ipv6.map(|v| v.into()),
             instance_id: value.instance_id.clone(),
         }
