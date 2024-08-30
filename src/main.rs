@@ -26,6 +26,7 @@ mod utils;
 
 use std::process::exit;
 use std::result::Result::Ok;
+use std::time::Duration;
 
 use anyhow::{Context, Error};
 use args::Args;
@@ -70,11 +71,16 @@ fn main() -> anyhow::Result<()> {
         let addr = rpc_conf.addr().to_owned();
         let token = rpc_conf.token().to_owned();
         rt.spawn(async move {
-            match services::rpc::RpcClient::new(&addr).await {
-                Ok(mut lx) => {
-                    if let Err(e) = lx.send_info(token).await {
+            match services::rpc::RpcClient::new(&addr, token).await {
+                Ok(mut cl) => {
+                    if let Err(e) = cl.send_info().await {
                         tracing::error!("send info: {}", e)
                     };
+                    loop {
+                        cl.heartbeat().await;
+                        // TODO: make time configurable
+                        tokio::time::sleep(Duration::from_secs(1)).await;
+                    }
                 }
                 Err(e) => tracing::error!("connect: {}", e),
             };

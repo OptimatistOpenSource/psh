@@ -21,39 +21,60 @@ use crate::services::{
 #[derive(Clone, Debug)]
 pub struct RpcClient {
     client: PshServiceClient<tonic::transport::Channel>,
+    raw_info: RawInfo,
 }
 
 impl RpcClient {
-    pub async fn new(addr: &str) -> Result<Self> {
+    pub async fn new(addr: &str, token: String) -> Result<Self> {
         let client: PshServiceClient<tonic::transport::Channel> =
             PshServiceClient::connect(format!("https://{}", addr)).await?;
-        Ok(Self { client })
+        let raw_info = RawInfo::new(token);
+        Ok(Self { client, raw_info })
     }
 
-    pub async fn send_info(&mut self, token: String) -> Result<()> {
-        let info: HostInfoRequest = RawInfo::new(token).into();
+    pub async fn send_info(&mut self) -> Result<()> {
+        let info_req: HostInfoRequest = (&self.raw_info).into();
 
-        let resp = self.client.send_host_info(info).await?;
+        let resp = self.client.send_host_info(info_req).await?;
 
         let resp = resp.get_ref();
+        if let Some(id) = &resp.instance_id {
+            self.raw_info.set_instance_id(id.clone());
+        };
 
         tracing::info!("{:?}", resp.message);
 
         Ok(())
     }
+
+    pub async fn heartbeat(&mut self) {
+        let heartbeat = self.raw_info.to_heartbeat();
+        let heartbeat_req: HostInfoRequest = heartbeat.into();
+
+        match self.client.send_host_info(heartbeat_req).await {
+            Ok(resp) => {
+                let resp = resp.into_inner();
+                if let Some(id) = resp.instance_id {
+                    self.raw_info.set_instance_id(id);
+                }
+            }
+            Err(e) => tracing::error!("Heartbeat: {e}"),
+        }
+    }
 }
 
 #[cfg(test)]
 mod rpc_tests {
-    use std::future::Future;
+    use std::{future::Future, net::Ipv4Addr};
 
     use tokio::sync::oneshot;
-    use tonic::{transport::Server, Request, Response, Status};
+    use tonic::transport::Server;
 
     use self::psh_service_client::PshServiceClient;
     use crate::{
         infra::{option::WrapOption, result::WrapResult},
         services::{
+            host_info::RawInfo,
             pb::{
                 psh_service_server::{PshService, PshServiceServer},
                 *,
@@ -71,8 +92,8 @@ mod rpc_tests {
     #[ignore]
     #[tokio::test]
     async fn test_send() -> anyhow::Result<()> {
-        let mut lx = RpcClient::new(ADDR_RPC).await?;
-        lx.send_info("psh token".to_owned()).await?;
+        let mut cl = RpcClient::new(ADDR_RPC, "psh token".to_owned()).await?;
+        cl.send_info().await?;
 
         Ok(())
     }
@@ -83,15 +104,6 @@ mod rpc_tests {
 
     #[tonic::async_trait]
     impl PshService for MyPshService {
-        async fn heartbeat(&self, request: Request<()>) -> Result<Response<PshResponse>, Status> {
-            println!("host: {}", request.remote_addr().unwrap());
-            let resp = PshResponse {
-                resp: "beep".to_string(),
-            };
-
-            Ok(Response::new(resp))
-        }
-
         async fn send_host_info(
             &self,
             request: tonic::Request<HostInfoRequest>,
@@ -99,8 +111,9 @@ mod rpc_tests {
             let addr = request.remote_addr().unwrap();
             dbg!(addr.ip());
             let resp = HostInfoResponse {
-                errno: 0,
+                errno: None,
                 message: "ok".to_owned().wrap_some(),
+                instance_id: None,
             };
             tonic::Response::new(resp).wrap_ok()
         }
@@ -132,9 +145,10 @@ mod rpc_tests {
     type ClientChannelResult =
         Result<PshServiceClient<tonic::transport::Channel>, tonic::transport::Error>;
     async fn test_heartbeat(client: impl Future<Output = ClientChannelResult>) {
-        let resp = client.await.unwrap().heartbeat(()).await.unwrap();
+        let info: HostInfoRequest = RawInfo::new("token".to_owned()).into();
+        let resp = client.await.unwrap().send_host_info(info).await.unwrap();
 
-        assert_eq!(resp.get_ref().resp, "beep");
+        assert!(resp.get_ref().errno.is_none())
     }
 
     async fn test_send_info(
@@ -163,6 +177,9 @@ mod rpc_tests {
             hostname: "Host".to_owned().wrap_some(),
             architecture: "x86_64".to_owned().wrap_some(),
             kernel_version: "6.10.2".to_owned().wrap_some(),
+            local_ipv4_addr: Some(Ipv4Addr::new(127, 0, 0, 1).to_bits()),
+            local_ipv6_addr: None,
+            instance_id: None,
         };
 
         let heartbeat = test_send_info(client, info_req);
