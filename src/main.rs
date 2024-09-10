@@ -77,7 +77,9 @@ fn main() -> anyhow::Result<()> {
                         tracing::error!("send info: {}", e)
                     };
                     loop {
-                        cl.heartbeat().await;
+                        if let Err(e) = cl.heartbeat().await {
+                            tracing::error!("heartbeat: {}", e)
+                        };
                         // TODO: make time configurable
                         tokio::time::sleep(Duration::from_secs(1)).await;
                     }

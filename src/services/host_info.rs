@@ -38,7 +38,6 @@ impl From<RawInfo> for HostInfoRequest {
         Self {
             os: value.os,
             hostname: value.hostname,
-            token: value.token,
             architecture: value.arch,
             kernel_version: value.kernel_version,
             local_ipv4_addr: value.ipv4.map(|v| v.to_bits().to_be()),
@@ -53,7 +52,6 @@ impl From<&RawInfo> for HostInfoRequest {
         Self {
             os: value.os.clone(),
             hostname: value.hostname.clone(),
-            token: value.token.clone(),
             architecture: value.arch.clone(),
             kernel_version: value.kernel_version.clone(),
             local_ipv4_addr: value.ipv4.map(|v| v.to_bits().to_be()),
@@ -71,14 +69,13 @@ pub struct RawInfo {
     arch: Option<String>,
     kernel_version: Option<String>,
     hostname: Option<String>,
-    token: String,
     instance_id: Option<String>,
 }
 
 impl RawInfo {
     const INSTANCE_ID_FILE: &'static str = "/etc/psh/instance.id";
 
-    pub fn new(token: String) -> Self {
+    pub fn new() -> Self {
         let hostname = nix::unistd::gethostname()
             .ok()
             .map(|v| v.to_string_lossy().to_string());
@@ -98,7 +95,6 @@ impl RawInfo {
             ipv6,
             os: None,
             hostname,
-            token,
             arch: None,
             kernel_version: None,
             instance_id,
@@ -140,7 +136,6 @@ impl RawInfo {
             arch: None,
             kernel_version: None,
             hostname: None,
-            token: self.token.clone(),
             instance_id: self.instance_id.clone(),
         }
     }
@@ -160,10 +155,9 @@ mod tests {
 
     #[test]
     fn test_get_info() {
-        let info = RawInfo::new("token".to_owned());
+        let info = RawInfo::new();
         let info: HostInfoRequest = info.into();
         dbg!(&info);
-        assert_eq!(info.token, "token");
     }
 
     #[test]
