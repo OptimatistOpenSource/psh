@@ -12,6 +12,7 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 use anyhow::Result;
+use tonic::Request;
 
 use crate::services::{
     host_info::RawInfo,
@@ -20,6 +21,7 @@ use crate::services::{
 
 #[derive(Clone, Debug)]
 pub struct RpcClient {
+    token: String,
     client: PshServiceClient<tonic::transport::Channel>,
     raw_info: RawInfo,
 }
@@ -28,38 +30,55 @@ impl RpcClient {
     pub async fn new(addr: &str, token: String) -> Result<Self> {
         let client: PshServiceClient<tonic::transport::Channel> =
             PshServiceClient::connect(format!("https://{}", addr)).await?;
-        let raw_info = RawInfo::new(token);
-        Ok(Self { client, raw_info })
+        let raw_info = RawInfo::new();
+        Ok(Self {
+            token,
+            client,
+            raw_info,
+        })
     }
 
     pub async fn send_info(&mut self) -> Result<()> {
-        let info_req: HostInfoRequest = (&self.raw_info).into();
+        let req: Request<HostInfoRequest> = {
+            let req: HostInfoRequest = (&self.raw_info).into();
+            let mut req = Request::new(req);
+            req.metadata_mut()
+                .insert("authorization", format!("Bearer {}", self.token).parse()?);
+            req
+        };
 
-        let resp = self.client.send_host_info(info_req).await?;
+        let resp = self.client.send_host_info(req).await?;
 
         let resp = resp.get_ref();
         if let Some(id) = &resp.instance_id {
             self.raw_info.set_instance_id(id.clone());
         };
 
-        tracing::info!("{:?}", resp.message);
+        tracing::trace!("{:?}", resp);
 
         Ok(())
     }
 
-    pub async fn heartbeat(&mut self) {
-        let heartbeat = self.raw_info.to_heartbeat();
-        let heartbeat_req: HostInfoRequest = heartbeat.into();
+    pub async fn heartbeat(&mut self) -> Result<()> {
+        let req: Request<HostInfoRequest> = {
+            let raw_info = self.raw_info.to_heartbeat();
+            let req: HostInfoRequest = raw_info.into();
+            let mut req = Request::new(req);
+            req.metadata_mut()
+                .insert("authorization", format!("Bearer {}", self.token).parse()?);
+            req
+        };
 
-        match self.client.send_host_info(heartbeat_req).await {
-            Ok(resp) => {
-                let resp = resp.into_inner();
-                if let Some(id) = resp.instance_id {
-                    self.raw_info.set_instance_id(id);
-                }
-            }
-            Err(e) => tracing::error!("Heartbeat: {e}"),
+        let resp = self.client.send_host_info(req).await?;
+
+        let resp = resp.into_inner();
+        if let Some(id) = &resp.instance_id {
+            self.raw_info.set_instance_id(id.clone());
         }
+
+        tracing::trace!("{:?}", resp);
+
+        Ok(())
     }
 }
 
@@ -145,7 +164,7 @@ mod rpc_tests {
     type ClientChannelResult =
         Result<PshServiceClient<tonic::transport::Channel>, tonic::transport::Error>;
     async fn test_heartbeat(client: impl Future<Output = ClientChannelResult>) {
-        let info: HostInfoRequest = RawInfo::new("token".to_owned()).into();
+        let info: HostInfoRequest = RawInfo::new().into();
         let resp = client.await.unwrap().send_host_info(info).await.unwrap();
 
         assert!(resp.get_ref().errno.is_none())
@@ -172,7 +191,6 @@ mod rpc_tests {
         let server = server_setup(rx, ADDR_INFO);
         let client = PshServiceClient::connect(format!("http://{}", ADDR_INFO));
         let info_req = HostInfoRequest {
-            token: "token".to_owned(),
             os: "Linux".to_owned().wrap_some(),
             hostname: "Host".to_owned().wrap_some(),
             architecture: "x86_64".to_owned().wrap_some(),
