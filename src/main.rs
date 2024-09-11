@@ -26,7 +26,6 @@ mod utils;
 
 use std::process::exit;
 use std::result::Result::Ok;
-use std::time::Duration;
 
 use anyhow::{Context, Error};
 use args::Args;
@@ -68,20 +67,11 @@ fn main() -> anyhow::Result<()> {
     let hd = std::thread::spawn(move || {
         let rt = tokio::runtime::Runtime::new()?;
 
-        let addr = rpc_conf.addr().to_owned();
-        let token = rpc_conf.token().to_owned();
         rt.spawn(async move {
-            match services::rpc::RpcClient::new(&addr, token).await {
+            match services::rpc::RpcClient::new(rpc_conf).await {
                 Ok(mut cl) => {
-                    if let Err(e) = cl.send_info().await {
-                        tracing::error!("send info: {}", e)
-                    };
-                    loop {
-                        if let Err(e) = cl.heartbeat().await {
-                            tracing::error!("heartbeat: {}", e)
-                        };
-                        // TODO: make time configurable
-                        tokio::time::sleep(Duration::from_secs(1)).await;
+                    if let Err(e) = cl.rpc_tasks().await {
+                        tracing::error!("rpc: {}", e)
                     }
                 }
                 Err(e) => tracing::error!("connect: {}", e),

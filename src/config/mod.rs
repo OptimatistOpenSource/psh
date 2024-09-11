@@ -156,8 +156,9 @@ stderr_file = "/tmp/psh.stderr"
 working_directory = "/"
 
 [rpc]
-addr = "www.optimatist.com"
+addr = ""
 token = ""
+duration = 1
 "#;
 
     const TEST_CONF_PATH: &str = "./target/config.toml";
