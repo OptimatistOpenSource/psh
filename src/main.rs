@@ -68,14 +68,16 @@ fn main() -> anyhow::Result<()> {
         let rt = tokio::runtime::Runtime::new()?;
 
         rt.spawn(async move {
-            match services::rpc::RpcClient::new(rpc_conf).await {
-                Ok(mut cl) => {
-                    if let Err(e) = cl.rpc_tasks().await {
-                        tracing::error!("rpc: {}", e)
+            if rpc_conf.enable {
+                match services::rpc::RpcClient::new(rpc_conf).await {
+                    Ok(mut cl) => {
+                        if let Err(e) = cl.rpc_tasks().await {
+                            tracing::error!("rpc: {}", e)
+                        }
                     }
-                }
-                Err(e) => tracing::error!("connect: {}", e),
-            };
+                    Err(e) => tracing::error!("connect: {}", e),
+                };
+            }
         });
 
         if otlp_conf.enable() {

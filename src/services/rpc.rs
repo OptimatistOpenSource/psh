@@ -129,6 +129,7 @@ mod rpc_tests {
     #[tokio::test]
     async fn test_send() -> anyhow::Result<()> {
         let config = RpcConfig {
+            enable: true,
             addr: ADDR_RPC.to_owned(),
             token: "psh token".to_owned(),
             duration: 1,

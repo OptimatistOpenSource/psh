@@ -156,6 +156,7 @@ stderr_file = "/tmp/psh.stderr"
 working_directory = "/"
 
 [rpc]
+enable = true
 addr = ""
 token = ""
 duration = 1
