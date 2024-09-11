@@ -26,6 +26,7 @@ mod utils;
 
 use std::process::exit;
 use std::result::Result::Ok;
+use std::thread::JoinHandle;
 
 use anyhow::{Context, Error};
 use args::Args;
@@ -35,6 +36,9 @@ use log::log_init;
 use opentelemetry_otlp::ExportConfig;
 use runtime::PshEngineBuilder;
 use utils::check_root_privilege;
+
+use otlp::config::OtlpConfig;
+use services::{config::RpcConfig, rpc::RpcClient};
 
 fn main() -> anyhow::Result<()> {
     log_init();
@@ -64,29 +68,7 @@ fn main() -> anyhow::Result<()> {
         daemon::Daemon::new(psh_config.daemon().clone()).daemon()?;
     }
 
-    let hd = std::thread::spawn(move || {
-        let rt = tokio::runtime::Runtime::new()?;
-
-        rt.spawn(async move {
-            if rpc_conf.enable {
-                match services::rpc::RpcClient::new(rpc_conf).await {
-                    Ok(mut cl) => {
-                        if let Err(e) = cl.rpc_tasks().await {
-                            tracing::error!("rpc: {}", e)
-                        }
-                    }
-                    Err(e) => tracing::error!("connect: {}", e),
-                };
-            }
-        });
-
-        if otlp_conf.enable() {
-            let export_conf: ExportConfig = otlp_conf.into();
-            rt.block_on(otlp::otlp_tasks(export_conf))?;
-        }
-
-        Ok::<(), Error>(())
-    });
+    let async_handle = async_tasks(rpc_conf, otlp_conf);
 
     let mut engine = PshEngineBuilder::new()
         .wasi_inherit_stdio()
@@ -99,7 +81,37 @@ fn main() -> anyhow::Result<()> {
 
     engine.run(&component_args[0])?;
 
-    let _ = hd.join();
+    let _ = async_handle.join();
 
     Ok(())
+}
+
+fn async_tasks(rpc_conf: RpcConfig, otlp_conf: OtlpConfig) -> JoinHandle<anyhow::Result<()>> {
+    std::thread::spawn(move || {
+        let rt = tokio::runtime::Runtime::new()?;
+        rt.block_on(async {
+            let rpc_task = async move {
+                if rpc_conf.enable {
+                    let mut client = RpcClient::new(rpc_conf).await?;
+                    client.rpc_tasks().await?;
+                }
+                Ok::<(), Error>(())
+            };
+
+            let otlp_task = async {
+                if otlp_conf.enable() {
+                    let export_conf: ExportConfig = otlp_conf.into();
+                    otlp::otlp_tasks(export_conf).await?;
+                }
+                Ok::<(), Error>(())
+            };
+
+            if let Err(e) = tokio::try_join!(rpc_task, otlp_task) {
+                tracing::error!("Some async tasks failed:\n{e}");
+            }
+            Ok::<(), Error>(())
+        })?;
+
+        Ok::<(), Error>(())
+    })
 }
