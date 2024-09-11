@@ -24,11 +24,9 @@ mod security;
 mod services;
 mod utils;
 
-use std::process::exit;
-use std::result::Result::Ok;
-use std::thread::JoinHandle;
+use std::{process::exit, result::Result::Ok, thread::JoinHandle};
 
-use anyhow::{Context, Error};
+use anyhow::{Context, Error, Result};
 use args::Args;
 use clap::Parser;
 use config::PshConfig;
@@ -40,7 +38,7 @@ use utils::check_root_privilege;
 use otlp::config::OtlpConfig;
 use services::{config::RpcConfig, rpc::RpcClient};
 
-fn main() -> anyhow::Result<()> {
+fn main() -> Result<()> {
     log_init();
 
     if !check_root_privilege() {
@@ -86,7 +84,7 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn async_tasks(rpc_conf: RpcConfig, otlp_conf: OtlpConfig) -> JoinHandle<anyhow::Result<()>> {
+fn async_tasks(rpc_conf: RpcConfig, otlp_conf: OtlpConfig) -> JoinHandle<Result<()>> {
     std::thread::spawn(move || {
         let rt = tokio::runtime::Runtime::new()?;
         rt.block_on(async {
