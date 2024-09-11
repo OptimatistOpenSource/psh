@@ -34,7 +34,7 @@ pub struct RpcClient {
 impl RpcClient {
     pub async fn new(config: RpcConfig) -> Result<Self> {
         let client: PshServiceClient<tonic::transport::Channel> =
-            PshServiceClient::connect(format!("https://{}", config.addr)).await?;
+            PshServiceClient::connect(config.addr).await?;
         let raw_info = RawInfo::new();
         Ok(Self {
             duration: Duration::from_secs(config.duration),
