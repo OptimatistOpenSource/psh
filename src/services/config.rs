@@ -1,17 +1,20 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RpcConfig {
-    addr: String,
-    token: String,
+    pub enable: bool,
+    pub addr: String,
+    pub token: String,
+    pub duration: u64,
 }
 
-impl RpcConfig {
-    pub fn addr(&self) -> &str {
-        &self.addr
-    }
-
-    pub fn token(&self) -> &str {
-        &self.token
+impl Default for RpcConfig {
+    fn default() -> Self {
+        Self {
+            enable: true,
+            addr: String::new(),
+            token: String::new(),
+            duration: 1,
+        }
     }
 }

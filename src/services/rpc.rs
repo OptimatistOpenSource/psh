@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 // Copyright (c) 2023-2024 Optimatist Technology Co., Ltd. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -19,20 +21,24 @@ use crate::services::{
     pb::{psh_service_client::PshServiceClient, HostInfoRequest},
 };
 
+use super::config::RpcConfig;
+
 #[derive(Clone, Debug)]
 pub struct RpcClient {
     token: String,
     client: PshServiceClient<tonic::transport::Channel>,
     raw_info: RawInfo,
+    duration: Duration,
 }
 
 impl RpcClient {
-    pub async fn new(addr: &str, token: String) -> Result<Self> {
+    pub async fn new(config: RpcConfig) -> Result<Self> {
         let client: PshServiceClient<tonic::transport::Channel> =
-            PshServiceClient::connect(format!("https://{}", addr)).await?;
+            PshServiceClient::connect(config.addr).await?;
         let raw_info = RawInfo::new();
         Ok(Self {
-            token,
+            duration: Duration::from_secs(config.duration),
+            token: config.token,
             client,
             raw_info,
         })
@@ -80,6 +86,16 @@ impl RpcClient {
 
         Ok(())
     }
+
+    pub async fn rpc_tasks(&mut self) -> Result<()> {
+        self.send_info().await?;
+        loop {
+            if let Err(e) = self.heartbeat().await {
+                tracing::error!("heartbeat: {e}");
+            }
+            tokio::time::sleep(self.duration).await;
+        }
+    }
 }
 
 #[cfg(test)]
@@ -93,6 +109,7 @@ mod rpc_tests {
     use crate::{
         infra::{option::WrapOption, result::WrapResult},
         services::{
+            config::RpcConfig,
             host_info::RawInfo,
             pb::{
                 psh_service_server::{PshService, PshServiceServer},
@@ -111,7 +128,13 @@ mod rpc_tests {
     #[ignore]
     #[tokio::test]
     async fn test_send() -> anyhow::Result<()> {
-        let mut cl = RpcClient::new(ADDR_RPC, "psh token".to_owned()).await?;
+        let config = RpcConfig {
+            enable: true,
+            addr: ADDR_RPC.to_owned(),
+            token: "psh token".to_owned(),
+            duration: 1,
+        };
+        let mut cl = RpcClient::new(config).await?;
         cl.send_info().await?;
 
         Ok(())
