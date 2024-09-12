@@ -26,12 +26,19 @@ use crate::{daemon::DaemonConfig, otlp::config::OtlpConfig, services::config::Rp
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PshConfig {
+    #[serde(rename = "auth")]
+    auth: AuthConfig,
     #[serde(rename = "component")]
     component_conf: ComponentConfig,
     #[serde(rename = "otlp")]
     otlp_conf: OtlpConfig,
     daemon: DaemonConfig,
     rpc: RpcConfig,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct AuthConfig {
+    token: String,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -68,12 +75,14 @@ impl PshConfig {
         otlp_conf: OtlpConfig,
         daemon: DaemonConfig,
         rpc: RpcConfig,
+        auth: AuthConfig,
     ) -> Self {
         Self {
             component_conf,
             otlp_conf,
             daemon,
             rpc,
+            auth,
         }
     }
 
@@ -125,18 +134,25 @@ impl PshConfig {
     pub fn rpc(&mut self) -> RpcConfig {
         mem::take(&mut self.rpc)
     }
+
+    pub fn take_token(&mut self) -> String {
+        mem::take(&mut self.auth.token)
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::{
-        config::{ComponentConfig, PshConfig},
+        config::{AuthConfig, ComponentConfig, PshConfig},
         daemon::DaemonConfig,
         otlp::config::OtlpConfig,
         services::config::RpcConfig,
     };
 
-    const CONFIG_STR: &str = r#"[component]
+    const CONFIG_STR: &str = r#"[auth]
+token = ""
+
+[component]
 path = "cpu.wasm"
 args = ["1", "2", "3"]
 
@@ -158,7 +174,6 @@ working_directory = "/"
 [rpc]
 enable = true
 addr = ""
-token = ""
 duration = 1
 "#;
 
@@ -174,6 +189,7 @@ duration = 1
             OtlpConfig::default(),
             DaemonConfig::default(),
             RpcConfig::default(),
+            AuthConfig::default(),
         );
         let s = toml::to_string(&cf).unwrap();
         assert_eq!(s, CONFIG_STR);
@@ -192,6 +208,7 @@ duration = 1
             OtlpConfig::default(),
             DaemonConfig::default(),
             RpcConfig::default(),
+            AuthConfig::default(),
         );
         cf.generate_config(TEST_CONF_PATH, true).unwrap();
         let conf = PshConfig::read_config(TEST_CONF_PATH).unwrap();
