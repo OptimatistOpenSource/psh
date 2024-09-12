@@ -32,13 +32,13 @@ pub struct RpcClient {
 }
 
 impl RpcClient {
-    pub async fn new(config: RpcConfig) -> Result<Self> {
+    pub async fn new(config: RpcConfig, token: String) -> Result<Self> {
         let client: PshServiceClient<tonic::transport::Channel> =
             PshServiceClient::connect(config.addr).await?;
         let raw_info = RawInfo::new();
         Ok(Self {
             duration: Duration::from_secs(config.duration),
-            token: config.token,
+            token,
             client,
             raw_info,
         })
@@ -131,10 +131,9 @@ mod rpc_tests {
         let config = RpcConfig {
             enable: true,
             addr: ADDR_RPC.to_owned(),
-            token: "psh token".to_owned(),
             duration: 1,
         };
-        let mut cl = RpcClient::new(config).await?;
+        let mut cl = RpcClient::new(config, "psh token".to_owned()).await?;
         cl.send_info().await?;
 
         Ok(())

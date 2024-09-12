@@ -66,7 +66,7 @@ fn main() -> Result<()> {
         daemon::Daemon::new(psh_config.daemon().clone()).daemon()?;
     }
 
-    let async_handle = async_tasks(rpc_conf, otlp_conf);
+    let async_handle = async_tasks(rpc_conf, otlp_conf, psh_config.take_token());
 
     let mut engine = PshEngineBuilder::new()
         .wasi_inherit_stdio()
@@ -84,13 +84,18 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn async_tasks(rpc_conf: RpcConfig, otlp_conf: OtlpConfig) -> JoinHandle<Result<()>> {
+fn async_tasks(
+    rpc_conf: RpcConfig,
+    otlp_conf: OtlpConfig,
+    token: String,
+) -> JoinHandle<Result<()>> {
     std::thread::spawn(move || {
         let rt = tokio::runtime::Runtime::new()?;
         rt.block_on(async {
+            let token_ = token.clone();
             let rpc_task = async move {
                 if rpc_conf.enable {
-                    let mut client = RpcClient::new(rpc_conf).await?;
+                    let mut client = RpcClient::new(rpc_conf, token_).await?;
                     client.rpc_tasks().await?;
                 }
                 Ok::<(), Error>(())
