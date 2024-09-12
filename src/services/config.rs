@@ -4,7 +4,6 @@ use serde::{Deserialize, Serialize};
 pub struct RpcConfig {
     pub enable: bool,
     pub addr: String,
-    pub token: String,
     pub duration: u64,
 }
 
@@ -13,7 +12,6 @@ impl Default for RpcConfig {
         Self {
             enable: true,
             addr: String::new(),
-            token: String::new(),
             duration: 1,
         }
     }

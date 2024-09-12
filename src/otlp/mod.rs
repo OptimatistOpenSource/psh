@@ -18,10 +18,14 @@ use opentelemetry_sdk::{
 use psh_system::{
     disk::DiskHandle, interrupt::InterruptHandle, memory::MemoryHandle, network::NetworkHandle,
 };
+use tonic::metadata::MetadataMap;
 
-pub fn meter_provider(export_config: ExportConfig) -> Result<SdkMeterProvider> {
+pub fn meter_provider(export_config: ExportConfig, token: String) -> Result<SdkMeterProvider> {
+    let mut meta = MetadataMap::new();
+    meta.insert("authorization", format!("Bearer {}", token).parse()?);
     let otlp_exporter = opentelemetry_otlp::new_exporter()
         .tonic()
+        .with_metadata(meta)
         .with_export_config(export_config);
 
     opentelemetry_otlp::new_pipeline()
@@ -449,8 +453,8 @@ pub fn otlp_interrupt(meter: Meter, interval: Duration) -> anyhow::Result<Observ
     Ok(gauge)
 }
 
-pub async fn otlp_tasks(export_config: ExportConfig) -> anyhow::Result<()> {
-    let provider = meter_provider(export_config)?;
+pub async fn otlp_tasks(export_config: ExportConfig, token: String) -> anyhow::Result<()> {
+    let provider = meter_provider(export_config, token)?;
     let meter = provider.meter("SystemProfile");
     let interval = Duration::from_secs(1);
     let _ = otlp_memories(meter.clone(), interval)?;
