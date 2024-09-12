@@ -104,7 +104,7 @@ fn async_tasks(
             let otlp_task = async {
                 if otlp_conf.enable() {
                     let export_conf: ExportConfig = otlp_conf.into();
-                    otlp::otlp_tasks(export_conf).await?;
+                    otlp::otlp_tasks(export_conf, token).await?;
                 }
                 Ok::<(), Error>(())
             };
