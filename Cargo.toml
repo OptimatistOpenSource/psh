@@ -14,7 +14,7 @@ version = "0.1.0"
 
 [dependencies]
 clap = { workspace = true, features = ["derive", "wrap_help"] }
-tonic = { workspace = true }
+tonic = { workspace = true, features = ["tls-roots"] }
 prost = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 nix = { workspace = true, features = ["user", "hostname"] }
@@ -26,6 +26,7 @@ host-op-system = { workspace = true }
 psh-system = { workspace = true }
 opentelemetry-otlp = { workspace = true, features = [
   "metrics",
+  "tls-roots",
   "opentelemetry-http",
   "http-proto",
   "reqwest",

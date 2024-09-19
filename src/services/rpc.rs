@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 // Copyright (c) 2023-2024 Optimatist Technology Co., Ltd. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -14,7 +12,11 @@ use std::time::Duration;
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 use anyhow::Result;
-use tonic::Request;
+use std::time::Duration;
+use tonic::{
+    transport::{Channel, ClientTlsConfig, Endpoint},
+    Request,
+};
 
 use crate::services::{
     host_info::RawInfo,
@@ -26,15 +28,16 @@ use super::config::RpcConfig;
 #[derive(Clone, Debug)]
 pub struct RpcClient {
     token: String,
-    client: PshServiceClient<tonic::transport::Channel>,
+    client: PshServiceClient<Channel>,
     raw_info: RawInfo,
     duration: Duration,
 }
 
 impl RpcClient {
     pub async fn new(config: RpcConfig, token: String) -> Result<Self> {
-        let client: PshServiceClient<tonic::transport::Channel> =
-            PshServiceClient::connect(config.addr).await?;
+        let ep = Endpoint::from_shared(config.addr)?
+            .tls_config(ClientTlsConfig::new().with_native_roots())?;
+        let client: PshServiceClient<Channel> = PshServiceClient::connect(ep).await?;
         let raw_info = RawInfo::new();
         Ok(Self {
             duration: Duration::from_secs(config.duration),
@@ -103,7 +106,7 @@ mod rpc_tests {
     use std::{future::Future, net::Ipv4Addr};
 
     use tokio::sync::oneshot;
-    use tonic::transport::Server;
+    use tonic::transport::{Channel, Error, Server};
 
     use self::psh_service_client::PshServiceClient;
     use crate::{
@@ -183,8 +186,7 @@ mod rpc_tests {
         Ok(())
     }
 
-    type ClientChannelResult =
-        Result<PshServiceClient<tonic::transport::Channel>, tonic::transport::Error>;
+    type ClientChannelResult = Result<PshServiceClient<Channel>, Error>;
     async fn test_heartbeat(client: impl Future<Output = ClientChannelResult>) {
         let info: HostInfoRequest = RawInfo::new().into();
         let resp = client.await.unwrap().send_host_info(info).await.unwrap();
