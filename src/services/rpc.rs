@@ -13,7 +13,10 @@
 // see <https://www.gnu.org/licenses/>.
 use anyhow::Result;
 use std::time::Duration;
-use tonic::{transport::Channel, Request};
+use tonic::{
+    transport::{Channel, ClientTlsConfig, Endpoint},
+    Request,
+};
 
 use crate::services::{
     host_info::RawInfo,
@@ -32,7 +35,9 @@ pub struct RpcClient {
 
 impl RpcClient {
     pub async fn new(config: RpcConfig, token: String) -> Result<Self> {
-        let client: PshServiceClient<Channel> = PshServiceClient::connect(config.addr).await?;
+        let ep = Endpoint::from_shared(config.addr)?
+            .tls_config(ClientTlsConfig::new().with_native_roots())?;
+        let client: PshServiceClient<Channel> = PshServiceClient::connect(ep).await?;
         let raw_info = RawInfo::new();
         Ok(Self {
             duration: Duration::from_secs(config.duration),
