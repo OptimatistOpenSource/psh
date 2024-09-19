@@ -37,5 +37,4 @@ build = "build/main.rs"
 wasmtime = { workspace = true }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
-wasmtime-wasi = { workspace = true }
 perf-event-rs = { workspace = true }
