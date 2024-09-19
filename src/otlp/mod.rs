@@ -18,13 +18,14 @@ use opentelemetry_sdk::{
 use psh_system::{
     disk::DiskHandle, interrupt::InterruptHandle, memory::MemoryHandle, network::NetworkHandle,
 };
-use tonic::metadata::MetadataMap;
+use tonic::{metadata::MetadataMap, transport::ClientTlsConfig};
 
 pub fn meter_provider(export_config: ExportConfig, token: String) -> Result<SdkMeterProvider> {
     let mut meta = MetadataMap::new();
     meta.insert("authorization", format!("Bearer {}", token).parse()?);
     let otlp_exporter = opentelemetry_otlp::new_exporter()
         .tonic()
+        .with_tls_config(ClientTlsConfig::new().with_native_roots())
         .with_metadata(meta)
         .with_export_config(export_config);
 

@@ -26,6 +26,7 @@ host-op-system = { workspace = true }
 psh-system = { workspace = true }
 opentelemetry-otlp = { workspace = true, features = [
   "metrics",
+  "tls-roots",
   "opentelemetry-http",
   "http-proto",
   "reqwest",
