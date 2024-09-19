@@ -34,8 +34,7 @@ build = "build/main.rs"
 "linux-3.12" = []
 
 [dependencies]
-wasmtime = "21.0.1"
-thiserror = "1.0.61"
-anyhow = "1.0.86"
-wasmtime-wasi = "21.0.1"
-perf-event-rs = { git = "https://github.com/OptimatistOpenSource/perf-event-rs.git" }
+wasmtime = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+perf-event-rs = { workspace = true }
