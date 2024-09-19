@@ -52,7 +52,7 @@ tonic-build = { workspace = true }
 host-op-perf = { path = "crates/op/host-op-perf" }
 host-op-system = { path = "crates/op/host-op-system" }
 psh-system = { path = "crates/psh-system" }
-perf-event-rs = { git = "https://github.com/OptimatistOpenSource/perf-event-rs.git" }
+perf-event-rs = { git = "https://github.com/OptimatistOpenSource/perf-event-rs.git", rev = "423ca26f53b27193d2321028dae5fd362a9673e9" }
 tokio = "^1"
 libc = "^0.2"
 nix = "^0.29"
