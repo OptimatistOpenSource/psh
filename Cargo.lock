@@ -1079,7 +1079,7 @@ dependencies = [
 
 [[package]]
 name = "host-op-perf"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "anyhow",
  "perf-event-rs",
@@ -1089,7 +1089,7 @@ dependencies = [
 
 [[package]]
 name = "host-op-system"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "anyhow",
  "psh-system",
@@ -1914,7 +1914,7 @@ dependencies = [
 
 [[package]]
 name = "psh"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -1941,7 +1941,7 @@ dependencies = [
 
 [[package]]
 name = "psh-system"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "anyhow",
  "num_cpus",
