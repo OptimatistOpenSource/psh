@@ -1,6 +1,7 @@
 **/target
 .idea
 .vscode
+.direnv
 **/bindings.rs
 **/imports.rs
 wasm/
