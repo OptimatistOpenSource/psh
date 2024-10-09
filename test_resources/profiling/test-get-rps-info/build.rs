@@ -29,7 +29,7 @@ fn main() {
     let output = cmd
         .output()
         .unwrap_or_else(|it| panic!("Failed to generate imports: \n{}", it));
-    if output.stderr.is_empty().not() {
+    if output.status.success().not() {
         panic!(
             "Failed to generate imports: \n{}",
             String::from_utf8(output.stderr).unwrap()
