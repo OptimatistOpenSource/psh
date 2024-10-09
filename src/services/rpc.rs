@@ -112,35 +112,16 @@ mod rpc_tests {
     use crate::{
         infra::{option::WrapOption, result::WrapResult},
         services::{
-            config::RpcConfig,
             host_info::RawInfo,
             pb::{
                 psh_service_server::{PshService, PshServiceServer},
                 *,
             },
-            rpc::RpcClient,
         },
     };
 
     static ADDR: &str = "[::1]:50051";
     static ADDR_INFO: &str = "[::1]:50052";
-
-    #[allow(dead_code)]
-    const ADDR_RPC: &str = "[::1]:7878";
-
-    #[ignore]
-    #[tokio::test]
-    async fn test_send() -> anyhow::Result<()> {
-        let config = RpcConfig {
-            enable: true,
-            addr: ADDR_RPC.to_owned(),
-            duration: 1,
-        };
-        let mut cl = RpcClient::new(config, "psh token".to_owned()).await?;
-        cl.send_info().await?;
-
-        Ok(())
-    }
 
     // For testing purpose, implement a simple heartbeat RPC at server side.
     #[derive(Debug, Default)]
