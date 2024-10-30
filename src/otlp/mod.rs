@@ -45,7 +45,7 @@ pub async fn otlp_tasks(
     let meter = provider.meter("SystemProfile");
     let interval = Duration::from_secs(1);
     let _ = gauges::memory::start(instance_id.clone(), meter.clone(), interval)?;
-    let _ = gauges::network::start(meter.clone(), interval)?;
+    let _ = gauges::network::start(instance_id.clone(), meter.clone(), interval)?;
     let _ = gauges::disk::start(instance_id.clone(), meter.clone(), interval)?;
     let _ = gauges::interrupt::start(meter.clone(), interval)?;
     loop {
