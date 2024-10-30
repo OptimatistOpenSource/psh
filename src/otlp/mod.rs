@@ -46,7 +46,7 @@ pub async fn otlp_tasks(
     let interval = Duration::from_secs(1);
     let _ = gauges::memory::start(instance_id.clone(), meter.clone(), interval)?;
     let _ = gauges::network::start(meter.clone(), interval)?;
-    let _ = gauges::disk::start(meter.clone(), interval)?;
+    let _ = gauges::disk::start(instance_id.clone(), meter.clone(), interval)?;
     let _ = gauges::interrupt::start(meter.clone(), interval)?;
     loop {
         tokio::time::sleep(interval).await;
