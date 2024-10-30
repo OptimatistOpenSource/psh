@@ -73,7 +73,7 @@ pub struct RawInfo {
 }
 
 impl RawInfo {
-    const INSTANCE_ID_FILE: &'static str = "/etc/psh/instance.id";
+    pub const INSTANCE_ID_FILE: &'static str = "/etc/psh/instance.id";
 
     pub fn new() -> Self {
         let hostname = nix::unistd::gethostname()
