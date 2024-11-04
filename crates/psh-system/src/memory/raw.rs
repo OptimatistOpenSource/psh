@@ -11,5 +11,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
+
 pub(crate) use super::mem_info::parse_meminfo;
 pub(crate) use super::memory_module::parse_memory_module;
