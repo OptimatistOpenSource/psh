@@ -68,16 +68,18 @@ fn main() -> Result<()> {
 
     let async_handle = async_tasks(rpc_conf, otlp_conf, psh_config.take_token());
 
-    let mut engine = PshEngineBuilder::new()
-        .wasi_inherit_stdio()
-        .wasi_envs(&component_envs)
-        .wasi_args(&component_args)
-        .allow_perf_op(true)
-        .allow_system_op(true)
-        .build()
-        .context("Failed to build PshEngine.")?;
+    if let Some(component_args) = component_args {
+        let mut engine = PshEngineBuilder::new()
+            .wasi_inherit_stdio()
+            .wasi_envs(&component_envs)
+            .wasi_args(&component_args)
+            .allow_perf_op(true)
+            .allow_system_op(true)
+            .build()
+            .context("Failed to build PshEngine.")?;
 
-    engine.run(&component_args[0])?;
+        engine.run(&component_args[0])?;
+    }
 
     let _ = async_handle.join();
 
