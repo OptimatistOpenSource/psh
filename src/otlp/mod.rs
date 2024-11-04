@@ -36,18 +36,14 @@ pub fn meter_provider(export_config: ExportConfig, token: String) -> Result<SdkM
         .map_err(Into::into)
 }
 
-pub async fn otlp_tasks(
-    instance_id: Option<String>,
-    export_config: ExportConfig,
-    token: String,
-) -> anyhow::Result<()> {
-    let provider = meter_provider(export_config, token)?;
+pub async fn otlp_tasks(export_config: ExportConfig, token: String) -> anyhow::Result<()> {
+    let provider = meter_provider(export_config, token.clone())?;
     let meter = provider.meter("SystemProfile");
     let interval = Duration::from_secs(1);
-    let _ = gauges::memory::start(instance_id.clone(), meter.clone(), interval)?;
-    let _ = gauges::network::start(instance_id.clone(), meter.clone(), interval)?;
-    let _ = gauges::disk::start(instance_id.clone(), meter.clone(), interval)?;
-    let _ = gauges::interrupt::start(instance_id, meter.clone(), interval)?;
+    let _ = gauges::memory::start(token.clone(), meter.clone(), interval)?;
+    let _ = gauges::network::start(token.clone(), meter.clone(), interval)?;
+    let _ = gauges::disk::start(token.clone(), meter.clone(), interval)?;
+    let _ = gauges::interrupt::start(token, meter.clone(), interval)?;
     loop {
         tokio::time::sleep(interval).await;
     }

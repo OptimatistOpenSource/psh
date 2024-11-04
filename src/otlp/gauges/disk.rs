@@ -7,7 +7,7 @@ use opentelemetry::{
 use psh_system::disk::DiskHandle;
 
 pub fn start(
-    instance_id: Option<String>,
+    token: String,
     meter: Meter,
     interval: Duration,
 ) -> anyhow::Result<ObservableGauge<u64>> {
@@ -146,16 +146,10 @@ pub fn start(
                     ),
                 ];
 
-                if let Some(instance_id) = &instance_id {
-                    gauges.into_iter().for_each(|(m, [kv1, kv2])| {
-                        let a = &[KeyValue::new("instance_id", instance_id.clone()), kv1, kv2];
-                        gauge.observe(m, a);
-                    })
-                } else {
-                    gauges.into_iter().for_each(|(m, a)| {
-                        gauge.observe(m, &a);
-                    })
-                }
+                gauges.into_iter().for_each(|(m, [kv1, kv2])| {
+                    let a = &[KeyValue::new("token", token.clone()), kv1, kv2];
+                    gauge.observe(m, a);
+                });
             }
         })
         .try_init()?;
