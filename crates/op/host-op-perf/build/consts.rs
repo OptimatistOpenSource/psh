@@ -11,6 +11,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
+
 // [(major, patch_level, is_selected)]
 #[rustfmt::skip]
 pub const LINUX_FEATURE_VERSIONS: [(usize, usize, bool); 27] = [
