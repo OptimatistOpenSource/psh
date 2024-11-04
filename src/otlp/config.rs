@@ -19,7 +19,6 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct OtlpConfig {
-    enable: bool,
     endpoint: String,
     timeout: Duration,
     protocol: String,
@@ -28,7 +27,6 @@ pub struct OtlpConfig {
 impl Default for OtlpConfig {
     fn default() -> Self {
         Self {
-            enable: true,
             endpoint: "http://localhost:4317".to_owned(),
             timeout: Duration::from_secs(3),
             protocol: "Grpc".to_owned(),
@@ -37,17 +35,12 @@ impl Default for OtlpConfig {
 }
 
 impl OtlpConfig {
-    pub fn new(enable: bool, endpoint: String, timeout: Duration, protocol: String) -> Self {
+    pub fn new(endpoint: String, timeout: Duration, protocol: String) -> Self {
         Self {
-            enable,
             endpoint,
             timeout,
             protocol,
         }
-    }
-
-    pub fn enable(&self) -> bool {
-        self.enable
     }
 }
 

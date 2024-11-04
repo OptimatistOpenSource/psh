@@ -31,10 +31,16 @@ pub struct PshConfig {
     auth: AuthConfig,
     #[serde(rename = "component")]
     component_conf: ComponentConfig,
-    #[serde(rename = "otlp")]
-    otlp_conf: OtlpConfig,
     daemon: DaemonConfig,
-    rpc: RpcConfig,
+    pub remote: RemoteConfig,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RemoteConfig {
+    pub enable: bool,
+    pub rpc: RpcConfig,
+    #[serde(rename = "otlp")]
+    pub otlp_conf: OtlpConfig,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -77,13 +83,17 @@ impl PshConfig {
         daemon: DaemonConfig,
         rpc: RpcConfig,
         auth: AuthConfig,
+        enable_remote: bool,
     ) -> Self {
         Self {
             component_conf,
-            otlp_conf,
             daemon,
-            rpc,
             auth,
+            remote: RemoteConfig {
+                enable: enable_remote,
+                rpc,
+                otlp_conf,
+            },
         }
     }
 
@@ -121,7 +131,7 @@ impl PshConfig {
     }
 
     pub fn otlp_conf(&mut self) -> OtlpConfig {
-        mem::take(&mut self.otlp_conf)
+        mem::take(&mut self.remote.otlp_conf)
     }
 
     pub fn get_component_args(&mut self) -> Vec<String> {
@@ -133,7 +143,7 @@ impl PshConfig {
     }
 
     pub fn rpc(&mut self) -> RpcConfig {
-        mem::take(&mut self.rpc)
+        mem::take(&mut self.remote.rpc)
     }
 
     pub fn take_token(&mut self) -> String {

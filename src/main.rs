@@ -66,7 +66,10 @@ fn main() -> Result<()> {
         daemon::Daemon::new(psh_config.daemon().clone()).daemon()?;
     }
 
-    let async_handle = async_tasks(rpc_conf, otlp_conf, psh_config.take_token());
+    let async_handle = psh_config
+        .remote
+        .enable
+        .then(|| async_tasks(rpc_conf, otlp_conf, psh_config.take_token()));
 
     let mut engine = PshEngineBuilder::new()
         .wasi_inherit_stdio()
@@ -79,7 +82,7 @@ fn main() -> Result<()> {
 
     engine.run(&component_args[0])?;
 
-    let _ = async_handle.join();
+    let _ = async_handle.map(|it| it.join());
 
     Ok(())
 }
@@ -94,18 +97,14 @@ fn async_tasks(
         rt.block_on(async {
             let token_ = token.clone();
             let rpc_task = async move {
-                if rpc_conf.enable {
-                    let mut client = RpcClient::new(rpc_conf, token_).await?;
-                    client.rpc_tasks().await?;
-                }
+                let mut client = RpcClient::new(rpc_conf, token_).await?;
+                client.rpc_tasks().await?;
                 Ok::<(), Error>(())
             };
 
             let otlp_task = async {
-                if otlp_conf.enable() {
-                    let export_conf: ExportConfig = otlp_conf.into();
-                    otlp::otlp_tasks(export_conf, token).await?;
-                }
+                let export_conf: ExportConfig = otlp_conf.into();
+                otlp::otlp_tasks(export_conf, token).await?;
                 Ok::<(), Error>(())
             };
 
