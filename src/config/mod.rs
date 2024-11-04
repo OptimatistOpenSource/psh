@@ -167,25 +167,26 @@ token = ""
 path = "cpu.wasm"
 args = ["1", "2", "3"]
 
-[otlp]
-enable = true
-endpoint = "http://localhost:4317"
-protocol = "Grpc"
-
-[otlp.timeout]
-secs = 3
-nanos = 0
-
 [daemon]
 pid_file = "/tmp/psh.pid"
 stdout_file = "/tmp/psh.stdout"
 stderr_file = "/tmp/psh.stderr"
 working_directory = "/"
 
-[rpc]
+[remote]
 enable = true
+
+[remote.rpc]
 addr = ""
 duration = 1
+
+[remote.otlp]
+endpoint = "http://localhost:4317"
+protocol = "Grpc"
+
+[remote.otlp.timeout]
+secs = 3
+nanos = 0
 "#;
 
     const TEST_CONF_PATH: &str = "./target/config.toml";
@@ -201,6 +202,7 @@ duration = 1
             DaemonConfig::default(),
             RpcConfig::default(),
             AuthConfig::default(),
+            true,
         );
         let s = toml::to_string(&cf).unwrap();
         assert_eq!(s, CONFIG_STR);
@@ -220,6 +222,7 @@ duration = 1
             DaemonConfig::default(),
             RpcConfig::default(),
             AuthConfig::default(),
+            false,
         );
         cf.generate_config(TEST_CONF_PATH, true).unwrap();
         let conf = PshConfig::read_config(TEST_CONF_PATH).unwrap();
