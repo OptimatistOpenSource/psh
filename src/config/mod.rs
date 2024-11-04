@@ -30,10 +30,16 @@ pub struct PshConfig {
     auth: AuthConfig,
     #[serde(rename = "component")]
     component_conf: ComponentConfig,
-    #[serde(rename = "otlp")]
-    otlp_conf: OtlpConfig,
     daemon: DaemonConfig,
-    rpc: RpcConfig,
+    pub remote: RemoteConfig,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RemoteConfig {
+    pub enable: bool,
+    pub rpc: RpcConfig,
+    #[serde(rename = "otlp")]
+    pub otlp_conf: OtlpConfig,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -75,13 +81,17 @@ impl PshConfig {
         daemon: DaemonConfig,
         rpc: RpcConfig,
         auth: AuthConfig,
+        enable_remote: bool,
     ) -> Self {
         Self {
             component_conf,
-            otlp_conf,
             daemon,
-            rpc,
             auth,
+            remote: RemoteConfig {
+                enable: enable_remote,
+                rpc,
+                otlp_conf,
+            },
         }
     }
 
@@ -119,7 +129,7 @@ impl PshConfig {
     }
 
     pub fn otlp_conf(&mut self) -> OtlpConfig {
-        mem::take(&mut self.otlp_conf)
+        mem::take(&mut self.remote.otlp_conf)
     }
 
     pub fn get_component_args(&mut self) -> Option<Vec<String>> {
@@ -131,7 +141,7 @@ impl PshConfig {
     }
 
     pub fn rpc(&mut self) -> RpcConfig {
-        mem::take(&mut self.rpc)
+        mem::take(&mut self.remote.rpc)
     }
 
     pub fn take_token(&mut self) -> String {
@@ -155,25 +165,26 @@ token = ""
 path = "cpu.wasm"
 args = ["1", "2", "3"]
 
-[otlp]
-enable = true
-endpoint = "http://localhost:4317"
-protocol = "Grpc"
-
-[otlp.timeout]
-secs = 3
-nanos = 0
-
 [daemon]
 pid_file = "/tmp/psh.pid"
 stdout_file = "/tmp/psh.stdout"
 stderr_file = "/tmp/psh.stderr"
 working_directory = "/"
 
-[rpc]
+[remote]
 enable = true
+
+[remote.rpc]
 addr = ""
 duration = 1
+
+[remote.otlp]
+endpoint = "http://localhost:4317"
+protocol = "Grpc"
+
+[remote.otlp.timeout]
+secs = 3
+nanos = 0
 "#;
 
     const TEST_CONF_PATH: &str = "./target/config.toml";
@@ -189,6 +200,7 @@ duration = 1
             DaemonConfig::default(),
             RpcConfig::default(),
             AuthConfig::default(),
+            true,
         );
         let s = toml::to_string(&cf).unwrap();
         assert_eq!(s, CONFIG_STR);
@@ -208,6 +220,7 @@ duration = 1
             DaemonConfig::default(),
             RpcConfig::default(),
             AuthConfig::default(),
+            false,
         );
         cf.generate_config(TEST_CONF_PATH, true).unwrap();
         let conf = PshConfig::read_config(TEST_CONF_PATH).unwrap();

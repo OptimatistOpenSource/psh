@@ -19,7 +19,6 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct OtlpConfig {
-    enable: bool,
     endpoint: String,
     timeout: Duration,
     protocol: String,
@@ -28,7 +27,6 @@ pub struct OtlpConfig {
 impl Default for OtlpConfig {
     fn default() -> Self {
         Self {
-            enable: true,
             endpoint: "http://localhost:4317".to_owned(),
             timeout: Duration::from_secs(3),
             protocol: "Grpc".to_owned(),
@@ -37,17 +35,12 @@ impl Default for OtlpConfig {
 }
 
 impl OtlpConfig {
-    pub fn new(enable: bool, endpoint: String, timeout: Duration, protocol: String) -> Self {
+    pub fn new(endpoint: String, timeout: Duration, protocol: String) -> Self {
         Self {
-            enable,
             endpoint,
             timeout,
             protocol,
         }
-    }
-
-    pub fn enable(&self) -> bool {
-        self.enable
     }
 }
 
@@ -94,8 +87,7 @@ mod tests {
 
     use super::*;
 
-    const CONF_STR_SECS_NANO: &str = r#"enable = true
-endpoint = "http://localhost:7878"
+    const CONF_STR_SECS_NANO: &str = r#"endpoint = "http://localhost:7878"
 protocol = "HttpJson"
 
 [timeout]
@@ -103,8 +95,7 @@ secs = 2
 nanos = 20
 "#;
 
-    const CONF_STR_SECS: &str = r#"enable = true
-endpoint = "http://localhost:4317"
+    const CONF_STR_SECS: &str = r#"endpoint = "http://localhost:4317"
 protocol = "Grpc"
 
 [timeout]
@@ -115,7 +106,6 @@ nanos = 0
     #[test]
     fn otlp_conf_to_str() {
         let cf = OtlpConfig::new(
-            true,
             "http://localhost:4317".to_owned(),
             Duration::from_secs(3),
             "Grpc".to_owned(),
@@ -125,7 +115,6 @@ nanos = 0
         assert_eq!(s, CONF_STR_SECS);
 
         let cf = OtlpConfig::new(
-            true,
             "http://localhost:7878".to_owned(),
             Duration::new(2, 20),
             "HttpJson".to_owned(),
@@ -137,9 +126,7 @@ nanos = 0
 
     #[test]
     fn str_to_otlp_conf() {
-        let conf_str: &str = r#"enable = true
-
-endpoint = "http://localhost:4317"
+        let conf_str: &str = r#"endpoint = "http://localhost:4317"
 
 protocol = "Grpc"
 
@@ -162,7 +149,6 @@ nanos = 0
         }
 
         let cf = OtlpConfig::new(
-            true,
             "http://localhost:4317".to_owned(),
             Duration::from_secs(3),
             "Grpc".to_owned(),
@@ -176,7 +162,6 @@ nanos = 0
         test_it(conf_str, &cf, &export_config);
 
         let cf = OtlpConfig::new(
-            true,
             "http://localhost:7878".to_owned(),
             Duration::new(2, 20),
             "HttpJson".to_owned(),
