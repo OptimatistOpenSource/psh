@@ -7,7 +7,7 @@ use opentelemetry::{
 use psh_system::interrupt::InterruptHandle;
 
 pub fn start(
-    instance_id: Option<String>,
+    token: String,
     meter: Meter,
     interval: Duration,
 ) -> anyhow::Result<ObservableGauge<u64>> {
@@ -24,20 +24,12 @@ pub fn start(
                 // TODO
                 let desc = Cow::from(int.description);
                 for (cpu, &cnt) in int.cpu_counts.iter().enumerate() {
-                    if let Some(instance_id) = &instance_id {
-                        let a = [
-                            KeyValue::new("instance_id", instance_id.clone()),
-                            KeyValue::new("desc", desc.clone()),
-                            KeyValue::new("cpu", cpu as i64),
-                        ];
-                        gauge.observe(cnt, &a)
-                    } else {
-                        let a = [
-                            KeyValue::new("desc", desc.clone()),
-                            KeyValue::new("cpu", cpu as i64),
-                        ];
-                        gauge.observe(cnt, &a)
-                    };
+                    let a = [
+                        KeyValue::new("token", token.clone()),
+                        KeyValue::new("desc", desc.clone()),
+                        KeyValue::new("cpu", cpu as i64),
+                    ];
+                    gauge.observe(cnt, &a)
                 }
             }
         })

@@ -24,12 +24,7 @@ mod security;
 mod services;
 mod utils;
 
-use std::{
-    fs::{self},
-    process::exit,
-    result::Result::Ok,
-    thread::JoinHandle,
-};
+use std::{process::exit, result::Result::Ok, thread::JoinHandle};
 
 use anyhow::{Context, Error, Result};
 use args::Args;
@@ -41,7 +36,7 @@ use runtime::PshEngineBuilder;
 use utils::check_root_privilege;
 
 use otlp::config::OtlpConfig;
-use services::{config::RpcConfig, host_info::RawInfo, rpc::RpcClient};
+use services::{config::RpcConfig, rpc::RpcClient};
 
 fn main() -> Result<()> {
     log_init();
@@ -109,10 +104,7 @@ fn async_tasks(
             let otlp_task = async {
                 if otlp_conf.enable() {
                     let export_conf: ExportConfig = otlp_conf.into();
-                    let instance_id = fs::read_to_string(RawInfo::INSTANCE_ID_FILE)
-                        .map(Some)
-                        .unwrap_or(None);
-                    otlp::otlp_tasks(instance_id, export_conf, token).await?;
+                    otlp::otlp_tasks(export_conf, token).await?;
                 }
                 Ok::<(), Error>(())
             };

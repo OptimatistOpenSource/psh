@@ -7,7 +7,7 @@ use opentelemetry::{
 use psh_system::memory::MemoryHandle;
 
 pub fn start(
-    instance_id: Option<String>,
+    token: String,
     meter: Meter,
     interval: Duration,
 ) -> anyhow::Result<ObservableGauge<u64>> {
@@ -119,15 +119,9 @@ pub fn start(
                 ),
             ];
 
-            if let Some(instance_id) = &instance_id {
-                gauges.into_iter().for_each(|(m, kv)| {
-                    gauge.observe(m, &[KeyValue::new("instance_id", instance_id.clone()), kv]);
-                })
-            } else {
-                gauges.into_iter().for_each(|(m, kv)| {
-                    gauge.observe(m, &[kv]);
-                })
-            }
+            gauges.into_iter().for_each(|(m, kv)| {
+                gauge.observe(m, &[KeyValue::new("token", token.clone()), kv]);
+            })
         })
         .try_init()?;
     Ok(gauge)
