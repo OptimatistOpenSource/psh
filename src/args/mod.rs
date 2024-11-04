@@ -13,7 +13,6 @@
 // see <https://www.gnu.org/licenses/>.
 
 use std::mem;
-use std::process::exit;
 
 use clap::Parser;
 
@@ -49,15 +48,11 @@ impl Args {
         self.daemon
     }
 
-    pub fn get_component_args(&mut self) -> Vec<String> {
-        if self.psh_wasm_component.is_none() {
-            tracing::error!("The cli must specify WASM path.");
-            exit(1);
-        }
+    pub fn get_component_args(&mut self) -> Option<Vec<String>> {
         let mut component_args = Vec::with_capacity(1 + self.extra_args.len());
-        component_args.push(self.psh_wasm_component.take().unwrap());
+        component_args.push(self.psh_wasm_component.take()?);
         component_args.extend(mem::take(&mut self.extra_args));
 
-        component_args
+        Some(component_args)
     }
 }

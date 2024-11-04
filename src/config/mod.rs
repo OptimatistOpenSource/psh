@@ -17,7 +17,6 @@ use std::{
     io::{Read, Write},
     mem,
     path::Path,
-    process::exit,
 };
 
 use anyhow::{Context, Result};
@@ -54,16 +53,15 @@ impl ComponentConfig {
         Self { path, args }
     }
 
-    pub fn get_component_args(&mut self) -> Vec<String> {
+    pub fn get_component_args(&mut self) -> Option<Vec<String>> {
         if self.path.is_empty() {
-            tracing::error!("The config `component.path` must specify WASM path.");
-            exit(1);
+            return None;
         }
         let mut args = Vec::with_capacity(1 + self.args.len());
         args.push(mem::take(&mut self.path));
         args.extend(mem::take(&mut self.args));
 
-        args
+        Some(args)
     }
 }
 
@@ -124,7 +122,7 @@ impl PshConfig {
         mem::take(&mut self.otlp_conf)
     }
 
-    pub fn get_component_args(&mut self) -> Vec<String> {
+    pub fn get_component_args(&mut self) -> Option<Vec<String>> {
         self.component_conf.get_component_args()
     }
 
