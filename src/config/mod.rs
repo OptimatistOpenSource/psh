@@ -72,8 +72,6 @@ impl ComponentConfig {
 }
 
 impl PshConfig {
-    pub const DEFAULT_PATH: &'static str = "/etc/psh/config.toml";
-
     #[allow(dead_code)]
     pub fn new(
         component_conf: ComponentConfig,
@@ -98,7 +96,7 @@ impl PshConfig {
     pub fn read_config<P: AsRef<Path>>(path: P) -> Result<Self> {
         let path = path.as_ref();
         if !path.exists() {
-            Self::default().generate_config(Self::DEFAULT_PATH, false)?;
+            Self::default().generate_config(path, false)?;
         }
         let mut config_str = String::new();
         let mut config_file = File::open(path).context("The config not exists.")?;

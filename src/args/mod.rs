@@ -27,12 +27,19 @@ pub struct Args {
     #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
     pub extra_args: Vec<String>,
 
+    /// Config file path
+    #[arg(short, long)]
+    #[arg(value_name = "PATH")]
+    #[arg(default_value = "/etc/psh/config.toml")]
+    pub config: String,
+
     /// When running as a systemd daemon, it ignores all other command-line arguments
-    /// except `--daemon`.
+    /// except `--daemon` and `--config`.
     #[arg(short, long)]
     systemd: bool,
 
     /// When running as a SysV daemon, it ignores all other command-line arguments
+    /// except `--config`.
     #[arg(short, long)]
     daemon: bool,
 }
