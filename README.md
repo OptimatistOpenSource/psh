@@ -34,18 +34,12 @@ PSH's vision is to reduce the duplication of construction within the enterprise 
 Psh default config located `/etc/psh/config.toml`.
 
 ```toml
+[auth]
+token = ""
+
 [component]
 path = "path/to/component.wasm"
 args = ["arg1", "arg2", "arg3"]
-
-[otlp]
-enable = true
-endpoint = "http://localhost:4317"
-protocol = "Grpc" # or "HttpJson", "HttpBinary", the field case insensitive
-
-[otlp.timeout]
-secs = 3
-nanos = 0
 
 [daemon] # when run as SysV daemon
 pid_file = "/tmp/psh.pid"
@@ -53,11 +47,20 @@ stdout_file = "/tmp/psh.stdout"
 stderr_file = "/tmp/psh.stderr"
 working_directory = "/"
 
-[rpc]
+[remote]
 enable = true
-addr = ""
-token = ""
+
+[remote.rpc]
+endpoint = "http://rpc.optimatist.com"
 duration = 1
+
+[remote.otlp]
+endpoint = "http://otel-col.optimatist.com"
+protocol = "Grpc"
+
+[remote.otlp.timeout]
+secs = 3
+nanos = 0
 ```
 
 ## Contribution Guide
