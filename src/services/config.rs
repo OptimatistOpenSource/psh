@@ -24,7 +24,7 @@ pub struct RpcConfig {
 impl Default for RpcConfig {
     fn default() -> Self {
         Self {
-            addr: String::new(),
+            addr: "https://rpc.optimatist.com".to_owned(),
             duration: 1,
             instance_id_file: "/etc/psh/instance.id".to_string(),
         }

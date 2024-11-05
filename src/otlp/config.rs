@@ -27,7 +27,7 @@ pub struct OtlpConfig {
 impl Default for OtlpConfig {
     fn default() -> Self {
         Self {
-            endpoint: "http://localhost:4317".to_owned(),
+            endpoint: "https://otel-col.optimatist.com".to_owned(),
             timeout: Duration::from_secs(3),
             protocol: "Grpc".to_owned(),
         }
