@@ -18,6 +18,7 @@ use serde::{Deserialize, Serialize};
 pub struct RpcConfig {
     pub addr: String,
     pub duration: u64,
+    pub instance_id_file: String,
 }
 
 impl Default for RpcConfig {
@@ -25,6 +26,7 @@ impl Default for RpcConfig {
         Self {
             addr: String::new(),
             duration: 1,
+            instance_id_file: "/etc/psh/instance.id".to_string(),
         }
     }
 }

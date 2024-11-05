@@ -32,6 +32,7 @@ pub struct RpcClient {
     client: PshServiceClient<Channel>,
     raw_info: RawInfo,
     duration: Duration,
+    instance_id_file: String,
 }
 
 impl RpcClient {
@@ -39,12 +40,13 @@ impl RpcClient {
         let ep = Endpoint::from_shared(config.addr)?
             .tls_config(ClientTlsConfig::new().with_native_roots())?;
         let client: PshServiceClient<Channel> = PshServiceClient::connect(ep).await?;
-        let raw_info = RawInfo::new();
+        let raw_info = RawInfo::new(&config.instance_id_file);
         Ok(Self {
             duration: Duration::from_secs(config.duration),
             token,
             client,
             raw_info,
+            instance_id_file: config.instance_id_file,
         })
     }
 
@@ -61,7 +63,8 @@ impl RpcClient {
 
         let resp = resp.get_ref();
         if let Some(id) = &resp.instance_id {
-            self.raw_info.set_instance_id(id.clone());
+            self.raw_info
+                .set_instance_id(id.clone(), &self.instance_id_file);
         };
 
         tracing::trace!("{:?}", resp);
@@ -83,7 +86,8 @@ impl RpcClient {
 
         let resp = resp.into_inner();
         if let Some(id) = &resp.instance_id {
-            self.raw_info.set_instance_id(id.clone());
+            self.raw_info
+                .set_instance_id(id.clone(), &self.instance_id_file);
         }
 
         tracing::trace!("{:?}", resp);
@@ -170,7 +174,7 @@ mod rpc_tests {
 
     type ClientChannelResult = Result<PshServiceClient<Channel>, Error>;
     async fn test_heartbeat(client: impl Future<Output = ClientChannelResult>) {
-        let info: HostInfoRequest = RawInfo::new().into();
+        let info: HostInfoRequest = RawInfo::new(String::new()).into();
         let resp = client.await.unwrap().send_host_info(info).await.unwrap();
 
         assert!(resp.get_ref().errno.is_none())

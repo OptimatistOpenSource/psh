@@ -81,6 +81,7 @@ enable = true
 [remote.rpc]
 endpoint = "http://rpc.optimatist.com"
 duration = 1
+instance_id_file = "/etc/psh/instance.id"
 
 [remote.otlp]
 endpoint = "http://otel-col.optimatist.com"

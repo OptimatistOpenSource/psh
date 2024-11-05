@@ -177,6 +177,7 @@ enable = true
 [remote.rpc]
 addr = ""
 duration = 1
+instance_id_file = "/etc/psh/instance.id"
 
 [remote.otlp]
 endpoint = "http://localhost:4317"

@@ -87,9 +87,10 @@ pub struct RawInfo {
 }
 
 impl RawInfo {
-    pub const INSTANCE_ID_FILE: &'static str = "/etc/psh/instance.id";
-
-    pub fn new() -> Self {
+    pub fn new<P>(instance_id_file: P) -> Self
+    where
+        P: AsRef<Path>,
+    {
         let hostname = nix::unistd::gethostname()
             .ok()
             .map(|v| v.to_string_lossy().to_string());
@@ -102,7 +103,7 @@ impl RawInfo {
             Ok(IpAddr::V6(v6)) => v6.wrap_some(),
             _ => None, // `local_ip_address::local_ipv6()` get v6
         };
-        let instance_id = Self::get_instance_id().ok();
+        let instance_id = Self::get_instance_id(instance_id_file).ok();
 
         let mut raw_info = Self {
             ipv4,
@@ -128,14 +129,19 @@ impl RawInfo {
         raw_info
     }
 
-    pub fn get_instance_id() -> anyhow::Result<String> {
-        let s = std::fs::read_to_string(Self::INSTANCE_ID_FILE)?;
+    pub fn get_instance_id<P>(path: P) -> anyhow::Result<String>
+    where
+        P: AsRef<Path>,
+    {
+        let s = std::fs::read_to_string(path)?;
         Ok(s)
     }
 
-    pub fn write_instance_id(id: &str) -> anyhow::Result<()> {
-        let path = Path::new(Self::INSTANCE_ID_FILE);
-        std::fs::create_dir_all(path.parent().expect("No parent dir"))?;
+    pub fn write_instance_id<P>(id: &str, path: P) -> anyhow::Result<()>
+    where
+        P: AsRef<Path>,
+    {
+        std::fs::create_dir_all(path.as_ref().parent().expect("No parent dir"))?;
         let mut f = File::create(path)?;
         f.write_all(id.as_bytes())?;
 
@@ -155,9 +161,12 @@ impl RawInfo {
     }
 
     /// Update instance_id when get a new instance_id
-    pub fn set_instance_id(&mut self, instance_id: String) {
+    pub fn set_instance_id<P>(&mut self, instance_id: String, instance_id_file: P)
+    where
+        P: AsRef<Path>,
+    {
         if Some(&instance_id) != self.instance_id.as_ref() {
-            _ = Self::write_instance_id(&instance_id);
+            _ = Self::write_instance_id(&instance_id, instance_id_file);
             self.instance_id = Some(instance_id);
         }
     }
@@ -169,7 +178,7 @@ mod tests {
 
     #[test]
     fn test_get_info() {
-        let info = RawInfo::new();
+        let info = RawInfo::new(String::new());
         let info: HostInfoRequest = info.into();
         dbg!(&info);
     }
