@@ -174,7 +174,7 @@ mod rpc_tests {
 
     type ClientChannelResult = Result<PshServiceClient<Channel>, Error>;
     async fn test_heartbeat(client: impl Future<Output = ClientChannelResult>) {
-        let info: HostInfoRequest = RawInfo::new().into();
+        let info: HostInfoRequest = RawInfo::new(String::new()).into();
         let resp = client.await.unwrap().send_host_info(info).await.unwrap();
 
         assert!(resp.get_ref().errno.is_none())

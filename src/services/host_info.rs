@@ -178,7 +178,7 @@ mod tests {
 
     #[test]
     fn test_get_info() {
-        let info = RawInfo::new();
+        let info = RawInfo::new(String::new());
         let info: HostInfoRequest = info.into();
         dbg!(&info);
     }
