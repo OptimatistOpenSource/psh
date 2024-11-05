@@ -47,7 +47,7 @@ fn main() -> Result<()> {
     }
 
     let mut args = Args::parse();
-    let mut psh_config = PshConfig::read_config(PshConfig::DEFAULT_PATH).unwrap_or_else(|e| {
+    let mut psh_config = PshConfig::read_config(&args.config).unwrap_or_else(|e| {
         tracing::warn!("{e}, use default Psh config.");
         PshConfig::default()
     });
