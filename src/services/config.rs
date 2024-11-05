@@ -23,7 +23,7 @@ pub struct RpcConfig {
 impl Default for RpcConfig {
     fn default() -> Self {
         Self {
-            addr: String::new(),
+            addr: "https://rpc.optimatist.com".to_owned(),
             duration: 1,
         }
     }
