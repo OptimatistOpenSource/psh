@@ -24,7 +24,7 @@ mod security;
 mod services;
 mod utils;
 
-use std::{process::exit, result::Result::Ok, thread::JoinHandle};
+use std::{fs, process::exit, result::Result::Ok, thread::JoinHandle};
 
 use anyhow::{Context, Error, Result};
 use args::Args;
@@ -81,7 +81,9 @@ fn main() -> Result<()> {
             .build()
             .context("Failed to build PshEngine.")?;
 
-        engine.run(&component_args[0])?;
+        let binary = fs::read(&component_args[0])?;
+
+        engine.run(&binary)?;
     }
 
     let _ = async_handle.map(|it| it.join());
