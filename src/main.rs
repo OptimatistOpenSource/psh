@@ -24,15 +24,15 @@ mod security;
 mod services;
 mod utils;
 
-use std::{process::exit, result::Result::Ok, thread::JoinHandle};
+use std::{fs, process::exit, result::Result::Ok, thread::JoinHandle};
 
-use anyhow::{Context, Error, Result};
+use anyhow::{Error, Result};
 use args::Args;
 use clap::Parser;
 use config::PshConfig;
 use log::log_init;
 use opentelemetry_otlp::ExportConfig;
-use runtime::PshEngineBuilder;
+use runtime::{Task, TaskRuntime};
 use utils::check_root_privilege;
 
 use otlp::config::OtlpConfig;
@@ -60,7 +60,6 @@ fn main() -> Result<()> {
     } else {
         args.get_component_args()
     };
-    let component_envs: Vec<(String, String)> = std::env::vars().collect();
 
     if args.daemon() {
         daemon::Daemon::new(psh_config.daemon().clone()).daemon()?;
@@ -71,20 +70,23 @@ fn main() -> Result<()> {
         .enable
         .then(|| async_tasks(rpc_conf, otlp_conf, psh_config.take_token()));
 
-    if let Some(component_args) = component_args {
-        let mut engine = PshEngineBuilder::new()
-            .wasi_inherit_stdio()
-            .wasi_envs(&component_envs)
-            .wasi_args(&component_args)
-            .allow_perf_op(true)
-            .allow_system_op(true)
-            .build()
-            .context("Failed to build PshEngine.")?;
+    let mut task_rt = TaskRuntime::new()?;
 
-        engine.run(&component_args[0])?;
+    if let Some(args) = component_args {
+        let task = Task {
+            wasm_component: fs::read(&args[0])?,
+            wasm_component_args: args,
+        };
+        task_rt.schedule(task)?;
+    };
+
+    let task_handle = task_rt.spawn()?;
+    if let Some(async_handle) = async_handle {
+        let _ = async_handle.join();
+    } else {
+        drop(task_rt);
     }
-
-    let _ = async_handle.map(|it| it.join());
+    let _ = task_handle.join();
 
     Ok(())
 }

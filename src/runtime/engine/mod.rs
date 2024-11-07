@@ -12,8 +12,6 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use std::path::Path;
-
 use anyhow::Context;
 use wasmtime::{
     component::{Component, Linker},
@@ -30,9 +28,9 @@ pub struct PshEngine {
 }
 
 impl PshEngine {
-    pub fn run(&mut self, path: impl AsRef<Path>) -> anyhow::Result<()> {
+    pub fn run(&mut self, binary: &[u8]) -> anyhow::Result<()> {
         let component =
-            Component::from_file(&self.engine, path).context("Failed to read component file!")?;
+            Component::from_binary(&self.engine, binary).context("Failed to load component!")?;
         let (cmd, _inst) = Command::instantiate(&mut self.store, &component, &self.linker)
             .context("Failed to instantiate Wasi Command!")?;
         cmd.wasi_cli_run()

@@ -12,7 +12,7 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use std::{path::Path, process::Command};
+use std::{fs, path::Path, process::Command};
 
 use anyhow::Context as _;
 
@@ -50,7 +50,8 @@ fn test_wasm_component(wasm: &str) {
     };
     let path = format!("./test_resources/profiling/{wasm}/target/wasm32-wasi/debug/{wasm}.wasm");
     assert!(Path::new(&path).exists());
-    assert!(engine.run(&path).is_ok());
+    let binary = fs::read(wasm).unwrap();
+    assert!(engine.run(&binary).is_ok());
 }
 
 #[test]
