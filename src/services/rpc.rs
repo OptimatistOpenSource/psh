@@ -96,14 +96,19 @@ impl RpcClient {
         };
 
         let resp = self.client.send_host_info(req).await?;
-
         let resp = resp.into_inner();
+        tracing::trace!("{:?}", &resp);
+
         if let Some(id) = &resp.instance_id {
             self.raw_info
                 .set_instance_id(id.clone(), &self.instance_id_file);
         }
-
-        tracing::trace!("{:?}", resp);
+        if let Some(wasm_component) = resp.wasm_component {
+            self.task_runtime.lock().unwrap().schedule(Task {
+                wasm_component,
+                wasm_component_args: vec![],
+            })?
+        }
 
         Ok(())
     }
