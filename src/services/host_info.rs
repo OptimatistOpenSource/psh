@@ -57,6 +57,7 @@ impl From<RawInfo> for HostInfoRequest {
             local_ipv4_addr: value.ipv4.map(|v| v.to_bits().to_be()),
             local_ipv6_addr: value.ipv6.map(|v| v.into()),
             instance_id: value.instance_id,
+            idle: value.idle,
         }
     }
 }
@@ -71,6 +72,7 @@ impl From<&RawInfo> for HostInfoRequest {
             local_ipv4_addr: value.ipv4.map(|v| v.to_bits().to_be()),
             local_ipv6_addr: value.ipv6.map(|v| v.into()),
             instance_id: value.instance_id.clone(),
+            idle: value.idle,
         }
     }
 }
@@ -84,6 +86,7 @@ pub struct RawInfo {
     kernel_version: Option<String>,
     hostname: Option<String>,
     instance_id: Option<String>,
+    idle: bool,
 }
 
 impl RawInfo {
@@ -113,6 +116,7 @@ impl RawInfo {
             arch: None,
             kernel_version: None,
             instance_id,
+            idle: false,
         };
 
         let cpu_hd = CpuHandle::new();
@@ -157,6 +161,7 @@ impl RawInfo {
             kernel_version: None,
             hostname: None,
             instance_id: self.instance_id.clone(),
+            idle: false,
         }
     }
 

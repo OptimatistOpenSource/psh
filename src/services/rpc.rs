@@ -13,30 +13,41 @@
 // see <https://www.gnu.org/licenses/>.
 
 use anyhow::Result;
-use std::time::Duration;
+use std::{
+    sync::{Arc, Mutex},
+    time::Duration,
+};
 use tonic::{
     transport::{Channel, ClientTlsConfig, Endpoint},
     Request,
 };
 
-use crate::services::{
-    host_info::RawInfo,
-    pb::{psh_service_client::PshServiceClient, HostInfoRequest},
+use crate::{
+    runtime::{Task, TaskRuntime},
+    services::{
+        host_info::RawInfo,
+        pb::{psh_service_client::PshServiceClient, HostInfoRequest},
+    },
 };
 
 use super::config::RpcConfig;
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct RpcClient {
     token: String,
     client: PshServiceClient<Channel>,
     raw_info: RawInfo,
     duration: Duration,
     instance_id_file: String,
+    task_runtime: Arc<Mutex<TaskRuntime>>,
 }
 
 impl RpcClient {
-    pub async fn new(config: RpcConfig, token: String) -> Result<Self> {
+    pub async fn new(
+        config: RpcConfig,
+        token: String,
+        task_runtime: Arc<Mutex<TaskRuntime>>,
+    ) -> Result<Self> {
         let ep = Endpoint::from_shared(config.addr)?
             .tls_config(ClientTlsConfig::new().with_native_roots())?;
         let client: PshServiceClient<Channel> = PshServiceClient::connect(ep).await?;
@@ -47,6 +58,7 @@ impl RpcClient {
             client,
             raw_info,
             instance_id_file: config.instance_id_file,
+            task_runtime,
         })
     }
 
@@ -75,7 +87,8 @@ impl RpcClient {
     pub async fn heartbeat(&mut self) -> Result<()> {
         let req: Request<HostInfoRequest> = {
             let raw_info = self.raw_info.to_heartbeat();
-            let req: HostInfoRequest = raw_info.into();
+            let mut req: HostInfoRequest = raw_info.into();
+            req.idle = self.task_runtime.lock().unwrap().is_idle();
             let mut req = Request::new(req);
             req.metadata_mut()
                 .insert("authorization", format!("Bearer {}", self.token).parse()?);
@@ -83,14 +96,19 @@ impl RpcClient {
         };
 
         let resp = self.client.send_host_info(req).await?;
-
         let resp = resp.into_inner();
+        tracing::trace!("{:?}", &resp);
+
         if let Some(id) = &resp.instance_id {
             self.raw_info
                 .set_instance_id(id.clone(), &self.instance_id_file);
         }
-
-        tracing::trace!("{:?}", resp);
+        if let Some(wasm_component) = resp.wasm_component {
+            self.task_runtime.lock().unwrap().schedule(Task {
+                wasm_component,
+                wasm_component_args: vec![],
+            })?
+        }
 
         Ok(())
     }
@@ -144,6 +162,7 @@ mod rpc_tests {
                 errno: None,
                 message: "ok".to_owned().wrap_some(),
                 instance_id: None,
+                wasm_component: None,
             };
             tonic::Response::new(resp).wrap_ok()
         }
@@ -208,6 +227,7 @@ mod rpc_tests {
             local_ipv4_addr: Some(Ipv4Addr::new(127, 0, 0, 1).to_bits()),
             local_ipv6_addr: None,
             instance_id: None,
+            idle: false,
         };
 
         let heartbeat = test_send_info(client, info_req);

@@ -24,7 +24,13 @@ mod security;
 mod services;
 mod utils;
 
-use std::{fs, process::exit, result::Result::Ok, thread::JoinHandle};
+use std::{
+    fs,
+    process::exit,
+    result::Result::Ok,
+    sync::{Arc, Mutex},
+    thread::JoinHandle,
+};
 
 use anyhow::{Error, Result};
 use args::Args;
@@ -65,11 +71,6 @@ fn main() -> Result<()> {
         daemon::Daemon::new(psh_config.daemon().clone()).daemon()?;
     }
 
-    let async_handle = psh_config
-        .remote
-        .enable
-        .then(|| async_tasks(rpc_conf, otlp_conf, psh_config.take_token()));
-
     let mut task_rt = TaskRuntime::new()?;
 
     if let Some(args) = component_args {
@@ -80,7 +81,18 @@ fn main() -> Result<()> {
         task_rt.schedule(task)?;
     };
 
-    let task_handle = task_rt.spawn()?;
+    let task_rt = Arc::new(Mutex::new(task_rt));
+
+    let async_handle = psh_config.remote.enable.then(|| {
+        async_tasks(
+            rpc_conf,
+            otlp_conf,
+            psh_config.take_token(),
+            Arc::clone(&task_rt),
+        )
+    });
+
+    let task_handle = task_rt.lock().unwrap().spawn()?;
     if let Some(async_handle) = async_handle {
         let _ = async_handle.join();
     } else {
@@ -95,13 +107,14 @@ fn async_tasks(
     rpc_conf: RpcConfig,
     otlp_conf: OtlpConfig,
     token: String,
+    task_rt: Arc<Mutex<TaskRuntime>>,
 ) -> JoinHandle<Result<()>> {
     std::thread::spawn(move || {
         let rt = tokio::runtime::Runtime::new()?;
         rt.block_on(async {
             let token_ = token.clone();
             let rpc_task = async move {
-                let mut client = RpcClient::new(rpc_conf, token_).await?;
+                let mut client = RpcClient::new(rpc_conf, token_, task_rt).await?;
                 client.rpc_tasks().await?;
                 Ok::<(), Error>(())
             };

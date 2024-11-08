@@ -62,7 +62,6 @@ impl TaskRuntime {
         Ok(())
     }
 
-    #[expect(dead_code)]
     pub fn is_idle(&self) -> bool {
         let len = self.len.load(Ordering::Acquire);
         len == 0
