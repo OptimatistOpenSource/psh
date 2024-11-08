@@ -162,6 +162,7 @@ mod rpc_tests {
                 errno: None,
                 message: "ok".to_owned().wrap_some(),
                 instance_id: None,
+                wasm_component: None,
             };
             tonic::Response::new(resp).wrap_ok()
         }
@@ -226,6 +227,7 @@ mod rpc_tests {
             local_ipv4_addr: Some(Ipv4Addr::new(127, 0, 0, 1).to_bits()),
             local_ipv6_addr: None,
             instance_id: None,
+            idle: false,
         };
 
         let heartbeat = test_send_info(client, info_req);
