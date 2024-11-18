@@ -103,10 +103,10 @@ impl RpcClient {
             self.raw_info
                 .set_instance_id(id.clone(), &self.instance_id_file);
         }
-        if let Some(wasm_component) = resp.wasm_component {
+        if let Some(task) = resp.task {
             self.task_runtime.lock().unwrap().schedule(Task {
-                wasm_component,
-                wasm_component_args: vec![],
+                wasm_component: task.wasm,
+                wasm_component_args: task.wasm_args,
             })?
         }
 
