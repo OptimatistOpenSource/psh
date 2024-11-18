@@ -173,12 +173,12 @@ working_directory = "/"
 enable = true
 
 [remote.rpc]
-addr = ""
+addr = "https://rpc.optimatist.com"
 duration = 1
 instance_id_file = "/etc/psh/instance.id"
 
 [remote.otlp]
-endpoint = "http://localhost:4317"
+endpoint = "https://otel-col.optimatist.com"
 protocol = "Grpc"
 
 [remote.otlp.timeout]
