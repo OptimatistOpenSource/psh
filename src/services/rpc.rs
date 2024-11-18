@@ -103,10 +103,10 @@ impl RpcClient {
             self.raw_info
                 .set_instance_id(id.clone(), &self.instance_id_file);
         }
-        if let Some(wasm_component) = resp.wasm_component {
+        if let Some(task) = resp.task {
             self.task_runtime.lock().unwrap().schedule(Task {
-                wasm_component,
-                wasm_component_args: vec![],
+                wasm_component: task.wasm,
+                wasm_component_args: task.wasm_args,
             })?
         }
 
@@ -162,9 +162,15 @@ mod rpc_tests {
                 errno: None,
                 message: "ok".to_owned().wrap_some(),
                 instance_id: None,
-                wasm_component: None,
+                task: None,
             };
             tonic::Response::new(resp).wrap_ok()
+        }
+        async fn send_data(
+            &self,
+            _: tonic::Request<DataRequest>,
+        ) -> std::result::Result<tonic::Response<DataResponse>, tonic::Status> {
+            todo!()
         }
     }
 
