@@ -162,9 +162,15 @@ mod rpc_tests {
                 errno: None,
                 message: "ok".to_owned().wrap_some(),
                 instance_id: None,
-                wasm_component: None,
+                task: None,
             };
             tonic::Response::new(resp).wrap_ok()
+        }
+        async fn send_data(
+            &self,
+            _: tonic::Request<DataRequest>,
+        ) -> std::result::Result<tonic::Response<DataResponse>, tonic::Status> {
+            todo!()
         }
     }
 
