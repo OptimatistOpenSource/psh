@@ -18,7 +18,7 @@
       };
       toolchain = pkgs.rust-bin.stable."1.81.0".complete.override {
         extensions = [ "rust-src" ];
-        targets = [ "x86_64-unknown-linux-gnu" ];
+        targets = [ "x86_64-unknown-linux-gnu" "wasm32-wasip1" ];
       };
 
       compileTimeDeps = with pkgs; [
