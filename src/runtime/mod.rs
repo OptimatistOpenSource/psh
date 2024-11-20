@@ -82,10 +82,11 @@ impl TaskRuntime {
         let handle = thread::spawn(move || {
             while let Ok(task) = rx.recv() {
                 let mut envs = envs.clone();
-                envs.push((
-                    "TASK_TIME_SLICE".to_string(),
-                    (task.end_time.timestamp_millis() - Utc::now().timestamp_millis()).to_string(),
-                ));
+                let task_time_slice = {
+                    let delta = task.end_time.timestamp_millis() - Utc::now().timestamp_millis();
+                    delta.max(0) as u64
+                };
+                envs.push(("TASK_TIME_SLICE".to_string(), task_time_slice.to_string()));
                 let engine = PshEngineBuilder::new()
                     .wasi_inherit_stdio()
                     .wasi_envs(&envs)
