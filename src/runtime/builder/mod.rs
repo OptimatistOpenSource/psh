@@ -37,6 +37,7 @@ impl PshEngineBuilder {
     pub fn new() -> Self {
         let mut engine_config = Config::new();
         engine_config.wasm_component_model(true);
+        engine_config.epoch_interruption(true);
         Self {
             wasi_ctx_builder: WasiCtxBuilder::new(),
             engine_config,

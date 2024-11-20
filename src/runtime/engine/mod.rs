@@ -12,6 +12,8 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
+use std::{thread, time::Duration};
+
 use anyhow::Context;
 use wasmtime::{
     component::{Component, Linker},
@@ -28,14 +30,20 @@ pub struct PshEngine {
 }
 
 impl PshEngine {
-    pub fn run(&mut self, binary: &[u8]) -> anyhow::Result<()> {
+    pub fn run(mut self, binary: &[u8], time_slice: u64) -> anyhow::Result<()> {
         let component =
             Component::from_binary(&self.engine, binary).context("Failed to load component!")?;
         let (cmd, _inst) = Command::instantiate(&mut self.store, &component, &self.linker)
             .context("Failed to instantiate Wasi Command!")?;
-        cmd.wasi_cli_run()
+        self.store.set_epoch_deadline(1);
+        thread::spawn(move || {
+            thread::sleep(Duration::from_millis(time_slice as _));
+            self.engine.increment_epoch();
+        });
+        let _ = cmd
+            .wasi_cli_run()
             .call_run(&mut self.store)
-            .context("Failed to run component")?
-            .map_err(|()| anyhow::anyhow!("Component returned an error!"))
+            .context("Failed to run component")?;
+        Ok(())
     }
 }

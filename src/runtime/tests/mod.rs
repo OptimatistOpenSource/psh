@@ -45,13 +45,13 @@ fn engine() -> anyhow::Result<PshEngine> {
 }
 
 fn test_wasm_component(wasm: &str) {
-    let Ok(mut engine) = engine() else {
+    let Ok(engine) = engine() else {
         panic!();
     };
     let path = format!("./test_resources/profiling/{wasm}/target/wasm32-wasi/debug/{wasm}.wasm");
     assert!(Path::new(&path).exists());
     let binary = fs::read(wasm).unwrap();
-    assert!(engine.run(&binary).is_ok());
+    assert!(engine.run(&binary, 60 * 1000).is_ok());
 }
 
 #[test]
