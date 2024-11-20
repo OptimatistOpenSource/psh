@@ -34,6 +34,7 @@ use std::{
 
 use anyhow::{Error, Result};
 use args::Args;
+use chrono::{TimeZone, Utc};
 use clap::Parser;
 use config::PshConfig;
 use log::log_init;
@@ -77,6 +78,7 @@ fn main() -> Result<()> {
         let task = Task {
             wasm_component: fs::read(&args[0])?,
             wasm_component_args: args,
+            end_time: Utc.with_ymd_and_hms(3000, 1, 1, 1, 1, 1).unwrap(),
         };
         task_rt.schedule(task)?;
     };

@@ -31,12 +31,15 @@ use std::thread::JoinHandle;
 use anyhow::Context;
 use anyhow::Result;
 pub use builder::PshEngineBuilder;
+use chrono::DateTime;
+use chrono::Utc;
 pub use engine::PshEngine;
 pub use state::PshState;
 
 pub struct Task {
     pub wasm_component: Vec<u8>,
     pub wasm_component_args: Vec<String>,
+    pub end_time: DateTime<Utc>,
 }
 
 pub struct TaskRuntime {
@@ -78,6 +81,11 @@ impl TaskRuntime {
         let len = self.len.clone();
         let handle = thread::spawn(move || {
             while let Ok(task) = rx.recv() {
+                let mut envs = envs.clone();
+                envs.push((
+                    "TASK_TIME_SLICE".to_string(),
+                    (task.end_time.timestamp_millis() - Utc::now().timestamp_millis()).to_string(),
+                ));
                 let engine = PshEngineBuilder::new()
                     .wasi_inherit_stdio()
                     .wasi_envs(&envs)
