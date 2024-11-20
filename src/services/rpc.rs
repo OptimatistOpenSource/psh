@@ -12,7 +12,8 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use anyhow::Result;
+use anyhow::{bail, Result};
+use chrono::{TimeZone, Utc};
 use std::{
     sync::{Arc, Mutex},
     time::Duration,
@@ -107,6 +108,10 @@ impl RpcClient {
             self.task_runtime.lock().unwrap().schedule(Task {
                 wasm_component: task.wasm,
                 wasm_component_args: task.wasm_args,
+                end_time: match Utc.timestamp_millis_opt(task.end_time as _) {
+                    chrono::offset::LocalResult::Single(t) => t,
+                    _ => bail!("Invalid task end time"),
+                },
             })?
         }
 
