@@ -97,8 +97,8 @@ impl TaskRuntime {
                     .context("Failed to build PshEngine.");
 
                 match engine {
-                    Ok(mut o) => {
-                        let _ = o.run(&task.wasm_component);
+                    Ok(o) => {
+                        let _ = o.run(&task.wasm_component, task_time_slice);
                     }
                     Err(e) => eprintln!("{}", e),
                 };
