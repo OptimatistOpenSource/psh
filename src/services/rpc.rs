@@ -23,7 +23,10 @@ use crate::services::{
     pb::{psh_service_client::PshServiceClient, HostInfoRequest},
 };
 
-use super::{config::RpcConfig, pb};
+use super::{
+    config::RpcConfig,
+    pb::{self, DataRequest},
+};
 
 #[derive(Clone)]
 pub struct RpcClient {
@@ -66,6 +69,11 @@ impl RpcClient {
 
         tracing::trace!("{:?}", resp);
 
+        Ok(())
+    }
+
+    pub async fn send_data(&mut self, req: DataRequest) -> Result<()> {
+        self.client.send_data(req).await?;
         Ok(())
     }
 
