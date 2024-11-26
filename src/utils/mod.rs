@@ -25,7 +25,7 @@ pub fn check_root_privilege() -> bool {
 }
 
 #[allow(dead_code)]
-pub(crate) fn which<P>(exe_name: P) -> Option<PathBuf>
+pub fn which<P>(exe_name: P) -> Option<PathBuf>
 where
     P: AsRef<Path>,
 {
