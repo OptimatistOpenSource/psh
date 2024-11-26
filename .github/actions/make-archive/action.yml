@@ -15,9 +15,3 @@ runs:
       shell: bash
       run: |
         zip ${{ inputs.out }} ${{ inputs.files }} -j
-
-    - name: Archive (Windows)
-      if: runner.os == 'Windows'
-      shell: pwsh
-      run: |
-        Compress-Archive ${{ inputs.files }} ${{ inputs.out }}
