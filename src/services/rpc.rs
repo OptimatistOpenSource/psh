@@ -12,54 +12,38 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use anyhow::{bail, Result};
-use chrono::{TimeZone, Utc};
-use std::{
-    sync::{Arc, Mutex},
-    time::Duration,
-};
+use anyhow::Result;
 use tonic::{
     transport::{Channel, ClientTlsConfig, Endpoint},
     Request,
 };
 
-use crate::{
-    runtime::{Task, TaskRuntime},
-    services::{
-        host_info::RawInfo,
-        pb::{psh_service_client::PshServiceClient, HostInfoRequest},
-    },
+use crate::services::{
+    host_info::RawInfo,
+    pb::{psh_service_client::PshServiceClient, HostInfoRequest},
 };
 
-use super::config::RpcConfig;
+use super::{config::RpcConfig, pb};
 
 #[derive(Clone)]
 pub struct RpcClient {
     token: String,
     client: PshServiceClient<Channel>,
     raw_info: RawInfo,
-    duration: Duration,
     instance_id_file: String,
-    task_runtime: Arc<Mutex<TaskRuntime>>,
 }
 
 impl RpcClient {
-    pub async fn new(
-        config: RpcConfig,
-        token: String,
-        task_runtime: Arc<Mutex<TaskRuntime>>,
-    ) -> Result<Self> {
+    pub async fn new(config: RpcConfig, token: String) -> Result<Self> {
         let ep = Endpoint::from_shared(config.addr)?
             .tls_config(ClientTlsConfig::new().with_native_roots())?;
         let client: PshServiceClient<Channel> = PshServiceClient::connect(ep).await?;
         let raw_info = RawInfo::new(&config.instance_id_file);
         Ok(Self {
-            duration: Duration::from_secs(config.duration),
             token,
             client,
             raw_info,
             instance_id_file: config.instance_id_file,
-            task_runtime,
         })
     }
 
@@ -85,11 +69,11 @@ impl RpcClient {
         Ok(())
     }
 
-    pub async fn heartbeat(&mut self) -> Result<()> {
+    pub async fn heartbeat(&mut self, idle: bool) -> Result<Option<pb::Task>> {
         let req: Request<HostInfoRequest> = {
             let raw_info = self.raw_info.to_heartbeat();
             let mut req: HostInfoRequest = raw_info.into();
-            req.idle = self.task_runtime.lock().unwrap().is_idle();
+            req.idle = idle;
             let mut req = Request::new(req);
             req.metadata_mut()
                 .insert("authorization", format!("Bearer {}", self.token).parse()?);
@@ -104,28 +88,8 @@ impl RpcClient {
             self.raw_info
                 .set_instance_id(id.clone(), &self.instance_id_file);
         }
-        if let Some(task) = resp.task {
-            self.task_runtime.lock().unwrap().schedule(Task {
-                wasm_component: task.wasm,
-                wasm_component_args: task.wasm_args,
-                end_time: match Utc.timestamp_millis_opt(task.end_time as _) {
-                    chrono::offset::LocalResult::Single(t) => t,
-                    _ => bail!("Invalid task end time"),
-                },
-            })?
-        }
 
-        Ok(())
-    }
-
-    pub async fn rpc_tasks(&mut self) -> Result<()> {
-        self.send_info().await?;
-        loop {
-            if let Err(e) = self.heartbeat().await {
-                tracing::error!("heartbeat: {e}");
-            }
-            tokio::time::sleep(self.duration).await;
-        }
+        Ok(resp.task)
     }
 }
 

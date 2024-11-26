@@ -28,13 +28,13 @@ use std::{
     fs,
     process::exit,
     result::Result::Ok,
-    sync::{Arc, Mutex},
-    thread::JoinHandle,
+    thread::{self, JoinHandle},
+    time::Duration,
 };
 
-use anyhow::{Error, Result};
+use anyhow::{bail, Error, Result};
 use args::Args;
-use chrono::{TimeZone, Utc};
+use chrono::{offset::LocalResult, TimeZone, Utc};
 use clap::Parser;
 use config::PshConfig;
 use log::log_init;
@@ -82,24 +82,14 @@ fn main() -> Result<()> {
         };
         task_rt.schedule(task)?;
     };
+    let task_handle = task_rt.spawn()?;
 
-    let task_rt = Arc::new(Mutex::new(task_rt));
+    psh_config
+        .remote
+        .enable
+        .then(|| async_tasks(rpc_conf, otlp_conf, psh_config.take_token(), task_rt))
+        .map(|it| it.join());
 
-    let async_handle = psh_config.remote.enable.then(|| {
-        async_tasks(
-            rpc_conf,
-            otlp_conf,
-            psh_config.take_token(),
-            Arc::clone(&task_rt),
-        )
-    });
-
-    let task_handle = task_rt.lock().unwrap().spawn()?;
-    if let Some(async_handle) = async_handle {
-        let _ = async_handle.join();
-    } else {
-        drop(task_rt);
-    }
     let _ = task_handle.join();
 
     Ok(())
@@ -109,15 +99,32 @@ fn async_tasks(
     rpc_conf: RpcConfig,
     otlp_conf: OtlpConfig,
     token: String,
-    task_rt: Arc<Mutex<TaskRuntime>>,
+    mut task_rt: TaskRuntime,
 ) -> JoinHandle<Result<()>> {
-    std::thread::spawn(move || {
+    thread::spawn(move || {
         let rt = tokio::runtime::Runtime::new()?;
         rt.block_on(async {
             let token_ = token.clone();
             let rpc_task = async move {
-                let mut client = RpcClient::new(rpc_conf, token_, task_rt).await?;
-                client.rpc_tasks().await?;
+                let duration = Duration::from_secs(rpc_conf.duration);
+                let mut client = RpcClient::new(rpc_conf, token_).await?;
+                client.send_info().await?;
+                loop {
+                    if let Some(task) = client.heartbeat(task_rt.is_idle()).await? {
+                        let end_time = match Utc.timestamp_millis_opt(task.end_time as _) {
+                            LocalResult::Single(t) => t,
+                            _ => bail!("Invalid task end time"),
+                        };
+                        let task = Task {
+                            wasm_component: task.wasm,
+                            wasm_component_args: task.wasm_args,
+                            end_time,
+                        };
+                        task_rt.schedule(task)?
+                    }
+                    tokio::time::sleep(duration).await;
+                }
+                #[allow(unreachable_code)]
                 Ok::<(), Error>(())
             };
 
