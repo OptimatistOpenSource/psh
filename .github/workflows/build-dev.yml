@@ -27,12 +27,10 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           submodules: true
 
-      - name: Setup Rust toolchain
-        uses: hecrj/setup-rust-action@v2
+      - name: Install Toolchain
+        uses: dtolnay/rust-toolchain@master
         with:
-          rust-version: ${{ matrix.toolchain }}
-          targets: ${{ matrix.target }}
-          components: rustfmt, clippy
+          toolchain:  ${{ matrix.toolchain }}
 
       - name: Install Protoc
         uses: arduino/setup-protoc@v3
