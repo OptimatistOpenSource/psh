@@ -48,9 +48,9 @@ fn test_wasm_component(wasm: &str) {
     let Ok(engine) = engine() else {
         panic!();
     };
-    let path = format!("./test_resources/profiling/{wasm}/target/wasm32-wasi/debug/{wasm}.wasm");
+    let path = format!("./test_resources/profiling/{wasm}/target/wasm32-wasip1/debug/{wasm}.wasm");
     assert!(Path::new(&path).exists());
-    let binary = fs::read(wasm).unwrap();
+    let binary = fs::read(path).unwrap();
     assert!(engine.run(&binary, 60 * 1000).is_ok());
 }
 
