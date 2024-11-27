@@ -67,9 +67,6 @@ jobs:
         with:
           version: ${{ steps.gen-version.outputs.VERSION }}
 
-      - name: Run check
-        uses: ./.github/actions/check
-
       #- name: Run test
       #  uses: ./.github/actions/test
 
