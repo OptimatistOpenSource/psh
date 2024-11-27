@@ -13,6 +13,7 @@
 // see <https://www.gnu.org/licenses/>.
 
 mod builder;
+mod data_export;
 mod engine;
 mod state;
 
