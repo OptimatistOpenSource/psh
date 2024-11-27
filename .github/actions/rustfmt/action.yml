@@ -1,0 +1,9 @@
+name: Rustfmt
+description: Check the code with rustfmt
+
+runs:
+  using: composite
+  steps:
+    - name: Fmt
+      shell: bash
+      run: cargo fmt --check --all
