@@ -25,13 +25,8 @@ jobs:
           toolchain: stable
           components: rustfmt
 
-      - name: Show environment information
-        shell: bash
-        run: |
-          cargo -V
-          cargo fmt -- -V
-          rustc -V
-          uname -a
+      - name:  Show environment information
+        uses: ./.github/actions/show-env
 
       - name: Check fmt
         uses: ./.github/actions/rustfmt

@@ -30,13 +30,8 @@ jobs:
           toolchain: ${{ matrix.toolchain }}
           components: clippy
 
-      - name: Show environment information
-        shell: bash
-        run: |
-          cargo -V
-          cargo fmt -- -V
-          rustc -V
-          uname -a
+      - name:  Show environment information
+        uses: ./.github/actions/show-env
 
       - name: Install Protoc
         uses: arduino/setup-protoc@v3
