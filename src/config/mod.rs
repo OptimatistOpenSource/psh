@@ -126,6 +126,7 @@ impl PshConfig {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn otlp_conf(&mut self) -> OtlpConfig {
         mem::take(&mut self.remote.otlp_conf)
     }
@@ -138,6 +139,7 @@ impl PshConfig {
         &self.daemon
     }
 
+    #[allow(dead_code)]
     pub fn rpc(&mut self) -> RpcConfig {
         mem::take(&mut self.remote.rpc)
     }
