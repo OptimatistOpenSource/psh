@@ -30,6 +30,14 @@ jobs:
         with:
           toolchain: ${{ matrix.toolchain }}
 
+      - name: Install cargo-binstall
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-binstall
+
+      - name: install cargo-component
+        run: cargo binstall cargo-component
+
       - name: Show environment information
         uses: ./.github/actions/show-env
 
