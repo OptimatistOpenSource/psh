@@ -67,14 +67,15 @@ jobs:
         with:
           version: ${{ steps.gen-version.outputs.VERSION }}
 
-      #- name: Run test
-      #  uses: ./.github/actions/test
-
-      - name: Run build
+      - name: Build Psh
         uses: ./.github/actions/build
         with:
           target: ${{ matrix.target }}
           release: false
+
+      #- name: Run test
+      #  uses: ./.github/actions/test
+
 #      - name: Generate artifacts name
 #        id: gen-name
 #        shell: bash
