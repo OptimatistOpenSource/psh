@@ -1,0 +1,43 @@
+name: Clippy
+
+on:
+  push:
+  pull_request:
+
+env:
+  RUST_BACKTRACE: 1
+
+jobs:
+  clippy:
+    name: Clippy rust
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        # make sure it runs on latest stable rust
+        toolchain: [stable]
+
+    env:
+      SCCACHE_GHA_ENABLED: "true"
+      RUSTC_WRAPPER: "sccache"
+
+    steps:
+      - uses: actions/checkout/@v4
+
+      - name: Install Toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.toolchain }}
+          components: clippy
+
+      - name:  Show environment information
+        uses: ./.github/actions/show-env
+
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v3
+
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.6
+
+      - name: Run clippy
+        uses: ./.github/actions/clippy

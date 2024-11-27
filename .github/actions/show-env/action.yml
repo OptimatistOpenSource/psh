@@ -1,0 +1,13 @@
+name: Show env
+description: Show action env
+
+runs:
+  using: composite
+  steps:
+    - name: Show environment information
+      shell: bash
+      run: |
+        cargo -V
+        cargo fmt -- -V
+        rustc -V
+        uname -a

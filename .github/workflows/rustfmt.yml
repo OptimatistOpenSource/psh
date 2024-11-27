@@ -1,0 +1,32 @@
+name: Rustfmt
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  rustfmt:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          components: rustfmt
+
+      - name:  Show environment information
+        uses: ./.github/actions/show-env
+
+      - name: Check fmt
+        uses: ./.github/actions/rustfmt
