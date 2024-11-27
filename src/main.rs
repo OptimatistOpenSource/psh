@@ -24,26 +24,20 @@ mod security;
 mod services;
 mod utils;
 
-use std::{
-    fs,
-    process::exit,
-    result::Result::Ok,
-    thread::{self, JoinHandle},
-    time::Duration,
-};
+use std::{fs, process::exit, result::Result::Ok, thread, time::Duration};
 
 use anyhow::{bail, Error, Result};
 use args::Args;
 use chrono::{offset::LocalResult, TimeZone, Utc};
 use clap::Parser;
-use config::PshConfig;
+use config::{PshConfig, RemoteConfig};
 use log::log_init;
 use opentelemetry_otlp::ExportConfig;
 use runtime::{Task, TaskRuntime};
+use tokio::try_join;
 use utils::check_root_privilege;
 
-use otlp::config::OtlpConfig;
-use services::{config::RpcConfig, rpc::RpcClient};
+use services::rpc::RpcClient;
 
 fn main() -> Result<()> {
     log_init();
@@ -58,8 +52,6 @@ fn main() -> Result<()> {
         tracing::warn!("{e}, use default Psh config.");
         PshConfig::default()
     });
-    let rpc_conf = psh_config.rpc();
-    let otlp_conf = psh_config.otlp_conf();
 
     // When running as a daemon, it ignores all other cli arguments
     let component_args = if args.systemd() || args.daemon() {
@@ -82,64 +74,67 @@ fn main() -> Result<()> {
         };
         task_rt.schedule(task)?;
     };
-    let task_handle = task_rt.spawn()?;
 
-    psh_config
-        .remote
-        .enable
-        .then(|| async_tasks(rpc_conf, otlp_conf, psh_config.take_token(), task_rt))
-        .map(|it| it.join());
-
-    let _ = task_handle.join();
+    thread::spawn(move || -> Result<()> {
+        let rt = tokio::runtime::Runtime::new()?;
+        let tasks = async_tasks(psh_config.remote.clone(), psh_config.take_token(), task_rt);
+        rt.block_on(tasks)?;
+        Ok(())
+    })
+    .join()
+    .expect("The async tasks thread has panicked")?;
 
     Ok(())
 }
 
-fn async_tasks(
-    rpc_conf: RpcConfig,
-    otlp_conf: OtlpConfig,
+async fn async_tasks(
+    remote_cfg: RemoteConfig,
     token: String,
     mut task_rt: TaskRuntime,
-) -> JoinHandle<Result<()>> {
-    thread::spawn(move || {
-        let rt = tokio::runtime::Runtime::new()?;
-        rt.block_on(async {
-            let token_ = token.clone();
-            let rpc_task = async move {
-                let duration = Duration::from_secs(rpc_conf.duration);
-                let mut client = RpcClient::new(rpc_conf, token_).await?;
-                client.send_info().await?;
-                loop {
-                    if let Some(task) = client.heartbeat(task_rt.is_idle()).await? {
-                        let end_time = match Utc.timestamp_millis_opt(task.end_time as _) {
-                            LocalResult::Single(t) => t,
-                            _ => bail!("Invalid task end time"),
-                        };
-                        let task = Task {
-                            wasm_component: task.wasm,
-                            wasm_component_args: task.wasm_args,
-                            end_time,
-                        };
-                        task_rt.schedule(task)?
-                    }
-                    tokio::time::sleep(duration).await;
-                }
-                #[allow(unreachable_code)]
-                Ok::<(), Error>(())
-            };
+) -> Result<()> {
+    let token_ = token.clone();
 
-            let otlp_task = async {
-                let export_conf: ExportConfig = otlp_conf.into();
-                otlp::otlp_tasks(export_conf, token).await?;
-                Ok::<(), Error>(())
-            };
+    let rpc_task = async move {
+        if !remote_cfg.enable {
+            let handle = task_rt.spawn(None)?;
+            handle.join().expect("TaskRuntime has panicked");
+            return Ok(());
+        }
 
-            if let Err(e) = tokio::try_join!(rpc_task, otlp_task) {
-                tracing::error!("Some async tasks failed:\n{e}");
+        let duration = Duration::from_secs(remote_cfg.rpc.duration);
+        let mut client = RpcClient::new(remote_cfg.rpc, token_).await?;
+        task_rt.spawn(None)?;
+        client.send_info().await?;
+        loop {
+            if let Some(task) = client.heartbeat(task_rt.is_idle()).await? {
+                let end_time = match Utc.timestamp_millis_opt(task.end_time as _) {
+                    LocalResult::Single(t) => t,
+                    _ => bail!("Invalid task end time"),
+                };
+                let task = Task {
+                    wasm_component: task.wasm,
+                    wasm_component_args: task.wasm_args,
+                    end_time,
+                };
+                task_rt.schedule(task)?
             }
-            Ok::<(), Error>(())
-        })?;
-
+            tokio::time::sleep(duration).await;
+        }
+        #[allow(unreachable_code)]
         Ok::<(), Error>(())
-    })
+    };
+
+    let otlp_task = async {
+        if !remote_cfg.enable {
+            return Ok(());
+        }
+
+        let export_conf: ExportConfig = remote_cfg.otlp_conf.into();
+        otlp::otlp_tasks(export_conf, token).await?;
+        Ok::<(), Error>(())
+    };
+
+    try_join!(rpc_task, otlp_task)?;
+
+    Ok(())
 }
