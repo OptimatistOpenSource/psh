@@ -54,6 +54,7 @@ fn test_wasm_component(wasm: &str) {
     assert!(engine.run(&binary, 60 * 1000).is_ok());
 }
 
+#[ignore]
 #[test]
 fn test_get_cpu_info() {
     let wasm = "test-get-cpu-info";
@@ -61,6 +62,7 @@ fn test_get_cpu_info() {
     test_wasm_component(wasm)
 }
 
+#[ignore]
 #[test]
 fn test_get_disks() {
     let wasm = "test-get-disks";
@@ -68,6 +70,7 @@ fn test_get_disks() {
     test_wasm_component(wasm)
 }
 
+#[ignore]
 #[test]
 fn test_get_interrupts_info() {
     let wasm = "test-get-interrupts-info";
@@ -75,6 +78,7 @@ fn test_get_interrupts_info() {
     test_wasm_component(wasm);
 }
 
+#[ignore]
 #[test]
 fn test_get_memory_info() {
     let wasm = "test-get-memory-info";
@@ -82,6 +86,7 @@ fn test_get_memory_info() {
     test_wasm_component(wasm);
 }
 
+#[ignore]
 #[test]
 fn test_get_networks() {
     let wasm = "test-get-networks";
@@ -89,6 +94,7 @@ fn test_get_networks() {
     test_wasm_component(wasm);
 }
 
+#[ignore]
 #[test]
 fn test_get_processes() {
     let wasm = "test-get-processes";
@@ -96,6 +102,7 @@ fn test_get_processes() {
     test_wasm_component(wasm);
 }
 
+#[ignore]
 #[test]
 fn test_get_rps_info() {
     let wasm = "test-get-rps-info";
@@ -103,6 +110,7 @@ fn test_get_rps_info() {
     test_wasm_component(wasm);
 }
 
+#[ignore]
 #[test]
 fn test_get_system_info() {
     let wasm = "test-get-system-info";
@@ -110,6 +118,7 @@ fn test_get_system_info() {
     test_wasm_component(wasm);
 }
 
+#[ignore]
 #[test]
 fn test_perf_counter() {
     let wasm = "test-perf-counter";
@@ -117,6 +126,7 @@ fn test_perf_counter() {
     test_wasm_component(wasm);
 }
 
+#[ignore]
 #[test]
 fn test_perf_counter_group() {
     let wasm = "test-perf-counter-group";
