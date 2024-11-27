@@ -1,0 +1,15 @@
+name: Audit
+description: Check the code with audit
+
+runs:
+  using: composite
+  steps:
+    - name: Install cargo-audit
+      uses: taiki-e/install-action@v2
+      with:
+        tool: cargo-audit
+
+    - name: Audit
+      shell: bash
+      run: |
+        cargo audit
