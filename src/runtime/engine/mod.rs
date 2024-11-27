@@ -24,9 +24,9 @@ use wasmtime_wasi::bindings::sync::Command;
 use super::PshState;
 
 pub struct PshEngine {
-    pub(crate) engine: Engine,
-    pub(crate) store: Store<PshState>,
-    pub(crate) linker: Linker<PshState>,
+    pub engine: Engine,
+    pub store: Store<PshState>,
+    pub linker: Linker<PshState>,
 }
 
 impl PshEngine {

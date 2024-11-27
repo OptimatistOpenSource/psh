@@ -18,13 +18,16 @@ use wasmtime_wasi::{WasiCtx, WasiView};
 use host_op_perf::PerfCtx;
 use host_op_system::SysCtx;
 
+use super::DataExportCtx;
+
 pub struct PshState {
     #[allow(dead_code)]
-    pub(crate) name: String,
-    pub(crate) table: ResourceTable,
-    pub(crate) wasi_ctx: WasiCtx,
-    pub(crate) perf_ctx: PerfCtx,
-    pub(crate) sys_ctx: SysCtx,
+    pub name: String,
+    pub table: ResourceTable,
+    pub wasi_ctx: WasiCtx,
+    pub perf_ctx: PerfCtx,
+    pub sys_ctx: SysCtx,
+    pub data_export_ctx: DataExportCtx,
     // TODO: add more context for modules
 }
 

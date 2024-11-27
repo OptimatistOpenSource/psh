@@ -22,7 +22,7 @@ use wasmtime_wasi::{StdinStream, StdoutStream, WasiCtxBuilder};
 use host_op_perf::PerfCtx;
 use host_op_system::SysCtx;
 
-use super::{PshEngine, PshState};
+use super::{data_export, DataExportCtx, PshEngine, PshState};
 
 #[allow(dead_code)]
 pub struct PshEngineBuilder {
@@ -30,6 +30,7 @@ pub struct PshEngineBuilder {
     engine_config: Config,
     use_perf_op: bool,
     use_system_op: bool,
+    data_export_ctx: Option<DataExportCtx>,
 }
 
 #[allow(dead_code)]
@@ -43,20 +44,12 @@ impl PshEngineBuilder {
             engine_config,
             use_perf_op: false,
             use_system_op: false,
+            data_export_ctx: None,
         }
     }
 
     pub fn build(mut self) -> anyhow::Result<PshEngine> {
-        let wasi_ctx = self.wasi_ctx_builder.build();
         let engine = Engine::new(&self.engine_config).context("Failed to create Wasi Engine.")?;
-        let state = PshState {
-            name: "PSH Wasi Runtime".to_owned(),
-            table: ResourceTable::new(),
-            wasi_ctx,
-            perf_ctx: PerfCtx::new(),
-            sys_ctx: SysCtx::default(),
-        };
-        let store = Store::new(&engine, state);
         let mut linker: Linker<PshState> = Linker::new(&engine);
         wasmtime_wasi::add_to_linker_sync(&mut linker)
             .context("Failed to link wasi sync module")?;
@@ -68,6 +61,23 @@ impl PshEngineBuilder {
             host_op_system::add_to_linker(&mut linker, |state| &mut state.sys_ctx)
                 .context("Failed to link system module")?;
         }
+        if self.data_export_ctx.is_some() {
+            data_export::add_to_linker(&mut linker, |state| &mut state.data_export_ctx)
+                .context("Failed to link data-export module")?;
+        }
+
+        let state = PshState {
+            name: "PSH Wasi Runtime".to_owned(),
+            table: ResourceTable::new(),
+            wasi_ctx: self.wasi_ctx_builder.build(),
+            perf_ctx: PerfCtx::new(),
+            sys_ctx: SysCtx::default(),
+            data_export_ctx: self
+                .data_export_ctx
+                .unwrap_or(DataExportCtx { rpc_client: None }),
+        };
+        let store = Store::new(&engine, state);
+
         Ok(PshEngine {
             engine,
             store,
@@ -156,6 +166,11 @@ impl PshEngineBuilder {
 
     pub fn allow_system_op(mut self, enable: bool) -> Self {
         self.use_system_op = enable;
+        self
+    }
+
+    pub fn allow_data_export_op(mut self, ctx: Option<DataExportCtx>) -> Self {
+        self.data_export_ctx = ctx;
         self
     }
 }

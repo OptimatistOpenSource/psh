@@ -13,6 +13,7 @@
 // see <https://www.gnu.org/licenses/>.
 
 mod builder;
+mod data_export;
 mod engine;
 mod state;
 
@@ -33,8 +34,11 @@ use anyhow::Result;
 pub use builder::PshEngineBuilder;
 use chrono::DateTime;
 use chrono::Utc;
+use data_export::DataExportCtx;
 pub use engine::PshEngine;
 pub use state::PshState;
+
+use crate::services::rpc::RpcClient;
 
 pub struct Task {
     pub wasm_component: Vec<u8>,
@@ -70,13 +74,14 @@ impl TaskRuntime {
         len == 0
     }
 
-    pub fn spawn(&mut self) -> Result<JoinHandle<()>> {
+    pub fn spawn(&mut self, rpc_client: Option<RpcClient>) -> Result<JoinHandle<()>> {
         let rx = match self.rx.take() {
             Some(rx) => rx,
             None => panic!("twice spawned"),
         };
 
         let envs: Vec<(String, String)> = std::env::vars().collect();
+        let data_export_ctx = DataExportCtx { rpc_client };
 
         let len = self.len.clone();
         let handle = thread::spawn(move || {
@@ -93,6 +98,7 @@ impl TaskRuntime {
                     .wasi_args(&task.wasm_component_args)
                     .allow_perf_op(true)
                     .allow_system_op(true)
+                    .allow_data_export_op(Some(data_export_ctx.clone()))
                     .build()
                     .context("Failed to build PshEngine.");
 
