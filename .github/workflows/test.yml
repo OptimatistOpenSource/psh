@@ -1,0 +1,43 @@
+name: Test
+
+on:
+  push:
+  pull_request:
+
+env:
+  RUST_BACKTRACE: 1
+
+jobs:
+  test:
+    name: ${{ matrix.os }}-${{ matrix.target }}-${{ matrix.toolchain }}
+    runs-on: ${{ matrix.os }}
+    env:
+      SCCACHE_GHA_ENABLED: "true"
+      RUSTC_WRAPPER: "sccache"
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-20.04, ubuntu-latest]
+        target: [x86_64-unknown-linux-gnu]
+        toolchain: [stable]
+
+    steps:
+      - uses: actions/checkout/@v4
+
+      - name: Rust Toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.toolchain }}
+
+      - name: Show environment information
+        uses: ./.github/actions/show-env
+
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.6
+
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v3
+
+      - name: Run Test
+        uses: ./.github/actions/test

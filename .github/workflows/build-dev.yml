@@ -71,9 +71,6 @@ jobs:
           target: ${{ matrix.target }}
           release: false
 
-      #- name: Run test
-      #  uses: ./.github/actions/test
-
 #      - name: Generate artifacts name
 #        id: gen-name
 #        shell: bash
