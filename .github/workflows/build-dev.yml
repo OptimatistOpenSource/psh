@@ -20,6 +20,10 @@ jobs:
         # make sure it runs on latest stable
         toolchain: [stable]
 
+    env:
+      SCCACHE_GHA_ENABLED: "true"
+      RUSTC_WRAPPER: "sccache"
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,7 +34,7 @@ jobs:
       - name: Install Toolchain
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain:  ${{ matrix.toolchain }}
+          toolchain: ${{ matrix.toolchain }}
 
       - name: Install Protoc
         uses: arduino/setup-protoc@v3
@@ -48,10 +52,8 @@ jobs:
       #   shell: bash
       #   run: sudo apt -y install musl-tools
 
-      - name: Setup Rust cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          prefix-key: ${{ matrix.os }}-${{ matrix.target }}-${{ matrix.toolchain }}
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.6
 
       - name: Generate version
         id: gen-version
