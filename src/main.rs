@@ -103,7 +103,7 @@ async fn async_tasks(
 
         let duration = Duration::from_secs(remote_cfg.rpc.duration);
         let mut client = RpcClient::new(remote_cfg.rpc, token_).await?;
-        task_rt.spawn(None)?;
+        task_rt.spawn(Some(client.clone()))?;
         client.send_info().await?;
         loop {
             if let Some(task) = client.heartbeat(task_rt.is_idle()).await? {
