@@ -41,6 +41,7 @@ opentelemetry_sdk = { workspace = true, features = [
   "rt-tokio",
   "tokio",
 ] }
+rinfluxdb = { workspace = true }
 toml = { workspace = true }
 serde = { workspace = true }
 tracing = { workspace = true }
@@ -64,6 +65,7 @@ clap = "^4"
 opentelemetry-otlp = "^0.25"
 opentelemetry = "^0.25"
 opentelemetry_sdk = "^0.25"
+rinfluxdb = "0.2.0"
 tonic = "^0.12"
 tonic-build = "0.12"
 prost = "^0.13"

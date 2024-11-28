@@ -12,10 +12,13 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
+use profiling::data_export::metric::Sample;
+use rinfluxdb::line_protocol::LineBuilder;
 use wasmtime::component::Linker;
 
 use crate::services::pb::DataRequest;
 use crate::services::pb::Metadata;
+use crate::services::pb::MetricMeta;
 use crate::services::rpc::RpcClient;
 
 wasmtime::component::bindgen!({
@@ -47,6 +50,41 @@ impl profiling::data_export::file::Host for DataExportCtx {
         let req = DataRequest {
             metadata: Some(metadata),
             payload: bytes,
+        };
+        let rt = tokio::runtime::Runtime::new()?;
+        rt.block_on(rpc_client.send_data(req))?;
+        Ok(Ok(()))
+    }
+}
+
+impl profiling::data_export::metric::Host for DataExportCtx {
+    fn export_sample(&mut self, sample: Sample) -> wasmtime::Result<Result<(), String>> {
+        let Some(rpc_client) = &mut self.rpc_client else {
+            return Ok(Ok(()));
+        };
+        let payload = {
+            let mut lb = LineBuilder::new(sample.name).insert_field("value", sample.value);
+            for (k, v) in sample.tags.clone() {
+                lb = lb.insert_tag(k, v);
+            }
+            lb.build().to_string().into_bytes()
+        };
+        let metadata = Metadata {
+            r#type: "metric".to_string(),
+            size: payload.len() as _,
+            metric_meta: Some(MetricMeta {
+                start_time: sample.ts.unwrap_or(0),
+                end_time: sample.ts.unwrap_or(0),
+                key_type: sample
+                    .tags
+                    .into_iter()
+                    .map(|(k, _)| (k, "String".to_string()))
+                    .collect(),
+            }),
+        };
+        let req = DataRequest {
+            metadata: Some(metadata),
+            payload,
         };
         let rt = tokio::runtime::Runtime::new()?;
         rt.block_on(rpc_client.send_data(req))?;
