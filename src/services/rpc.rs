@@ -50,6 +50,10 @@ impl RpcClient {
         })
     }
 
+    pub fn instance_id(&self) -> Result<String> {
+        Ok(std::fs::read_to_string(&self.instance_id_file)?)
+    }
+
     pub async fn send_info(&mut self) -> Result<()> {
         let req: Request<HostInfoRequest> = {
             let req: HostInfoRequest = (&self.raw_info).into();
