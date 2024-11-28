@@ -58,10 +58,16 @@ impl profiling::data_export::file::Host for DataExportCtx {
 }
 
 impl profiling::data_export::metric::Host for DataExportCtx {
-    fn export_sample(&mut self, sample: Sample) -> wasmtime::Result<Result<(), String>> {
+    fn export_sample(&mut self, mut sample: Sample) -> wasmtime::Result<Result<(), String>> {
         let Some(rpc_client) = &mut self.rpc_client else {
             return Ok(Ok(()));
         };
+
+        let instance_id = rpc_client
+            .instance_id()
+            .unwrap_or_else(|_| "unknown".to_string());
+        sample.tags.push(("instance_id".to_string(), instance_id));
+
         let payload = {
             let mut lb = LineBuilder::new(sample.name).insert_field("value", sample.value);
             for (k, v) in sample.tags.clone() {
