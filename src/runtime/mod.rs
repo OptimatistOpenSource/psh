@@ -26,6 +26,7 @@ use std::sync::mpsc::channel;
 use std::sync::mpsc::Receiver;
 use std::sync::mpsc::Sender;
 use std::sync::Arc;
+use std::sync::Mutex;
 use std::thread;
 use std::thread::JoinHandle;
 
@@ -41,6 +42,7 @@ pub use state::PshState;
 use crate::services::rpc::RpcClient;
 
 pub struct Task {
+    pub id: Option<String>,
     pub wasm_component: Vec<u8>,
     pub wasm_component_args: Vec<String>,
     pub end_time: DateTime<Utc>,
@@ -50,6 +52,7 @@ pub struct TaskRuntime {
     tx: Sender<Task>,
     rx: Option<Receiver<Task>>,
     len: Arc<AtomicUsize>,
+    finished_task_id: Arc<Mutex<Vec<String>>>,
 }
 
 impl TaskRuntime {
@@ -60,6 +63,7 @@ impl TaskRuntime {
             tx,
             rx: Some(rx),
             len: Arc::new(AtomicUsize::new(0)),
+            finished_task_id: Arc::new(Mutex::new(vec![])),
         })
     }
 
@@ -74,6 +78,10 @@ impl TaskRuntime {
         len == 0
     }
 
+    pub fn finished_task_id(&mut self) -> Option<String> {
+        self.finished_task_id.lock().unwrap().pop()
+    }
+
     pub fn spawn(&mut self, rpc_client: Option<RpcClient>) -> Result<JoinHandle<()>> {
         let rx = match self.rx.take() {
             Some(rx) => rx,
@@ -84,6 +92,7 @@ impl TaskRuntime {
         let data_export_ctx = DataExportCtx { rpc_client };
 
         let len = self.len.clone();
+        let finished_task_id = self.finished_task_id.clone();
         let handle = thread::spawn(move || {
             while let Ok(task) = rx.recv() {
                 let mut envs = envs.clone();
@@ -108,7 +117,9 @@ impl TaskRuntime {
                     }
                     Err(e) => eprintln!("{}", e),
                 };
-
+                if let Some(id) = task.id {
+                    finished_task_id.lock().unwrap().push(id);
+                }
                 len.fetch_sub(1, Ordering::Release);
             }
         });
