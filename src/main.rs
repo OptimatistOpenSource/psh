@@ -68,6 +68,7 @@ fn main() -> Result<()> {
 
     if let Some(args) = component_args {
         let task = Task {
+            id: None,
             wasm_component: fs::read(&args[0])?,
             wasm_component_args: args,
             end_time: Utc.with_ymd_and_hms(3000, 1, 1, 1, 1, 1).unwrap(),
@@ -106,12 +107,17 @@ async fn async_tasks(
         task_rt.spawn(Some(client.clone()))?;
         client.send_info().await?;
         loop {
-            if let Some(task) = client.heartbeat(task_rt.is_idle()).await? {
+            let finished_task_id = task_rt.finished_task_id();
+            if let Some(task) = client
+                .heartbeat(task_rt.is_idle(), finished_task_id)
+                .await?
+            {
                 let end_time = match Utc.timestamp_millis_opt(task.end_time as _) {
                     LocalResult::Single(t) => t,
                     _ => bail!("Invalid task end time"),
                 };
                 let task = Task {
+                    id: Some(task.id),
                     wasm_component: task.wasm,
                     wasm_component_args: task.wasm_args,
                     end_time,

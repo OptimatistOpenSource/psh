@@ -81,11 +81,16 @@ impl RpcClient {
         Ok(())
     }
 
-    pub async fn heartbeat(&mut self, idle: bool) -> Result<Option<pb::Task>> {
+    pub async fn heartbeat(
+        &mut self,
+        idle: bool,
+        finished_task_id: Option<String>,
+    ) -> Result<Option<pb::Task>> {
         let req: Request<HostInfoRequest> = {
             let raw_info = self.raw_info.to_heartbeat();
             let mut req: HostInfoRequest = raw_info.into();
             req.idle = idle;
+            req.task_id = finished_task_id;
             let mut req = Request::new(req);
             req.metadata_mut()
                 .insert("authorization", format!("Bearer {}", self.token).parse()?);
@@ -215,6 +220,7 @@ mod rpc_tests {
             local_ipv6_addr: None,
             instance_id: None,
             idle: false,
+            task_id: None,
         };
 
         let heartbeat = test_send_info(client, info_req);
