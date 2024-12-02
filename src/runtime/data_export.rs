@@ -12,6 +12,7 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
+use profiling::data_export::measurement::Point;
 use profiling::data_export::metric::Sample;
 use rinfluxdb::line_protocol::LineBuilder;
 use wasmtime::component::Linker;
@@ -87,6 +88,42 @@ impl profiling::data_export::metric::Host for DataExportCtx {
                     .map(|(k, _)| (k, "String".to_string()))
                     .collect(),
             }),
+        };
+        let req = DataRequest {
+            metadata: Some(metadata),
+            payload,
+        };
+        let rt = tokio::runtime::Runtime::new()?;
+        rt.block_on(rpc_client.send_data(req))?;
+        Ok(Ok(()))
+    }
+}
+
+impl profiling::data_export::measurement::Host for DataExportCtx {
+    fn export_point(&mut self, mut point: Point) -> wasmtime::Result<Result<(), String>> {
+        let Some(rpc_client) = &mut self.rpc_client else {
+            return Ok(Ok(()));
+        };
+
+        let instance_id = rpc_client
+            .instance_id()
+            .unwrap_or_else(|_| "unknown".to_string());
+        point.tags.push(("instance_id".to_string(), instance_id));
+
+        let payload = {
+            let mut lb = LineBuilder::new(point.name);
+            for (k, v) in point.tags.clone() {
+                lb = lb.insert_tag(k, v);
+            }
+            for (k, v) in point.fields {
+                lb = lb.insert_field(k, v);
+            }
+            lb.build().to_string().into_bytes()
+        };
+        let metadata = Metadata {
+            r#type: "measurement".to_string(),
+            size: payload.len() as _,
+            metric_meta: None,
         };
         let req = DataRequest {
             metadata: Some(metadata),
