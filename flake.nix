@@ -28,6 +28,7 @@
         pkg-config
       ];
       runTimeDeps = with pkgs; [
+        libgcc
         openssl_3_3.dev
       ];
     in
