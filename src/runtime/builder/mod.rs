@@ -72,9 +72,7 @@ impl PshEngineBuilder {
             wasi_ctx: self.wasi_ctx_builder.build(),
             perf_ctx: PerfCtx::new(),
             sys_ctx: SysCtx::default(),
-            data_export_ctx: self
-                .data_export_ctx
-                .unwrap_or(DataExportCtx { rpc_client: None }),
+            data_export_ctx: self.data_export_ctx.unwrap_or(DataExportCtx { ctx: None }),
         };
         let store = Store::new(&engine, state);
 
