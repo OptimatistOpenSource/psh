@@ -34,13 +34,19 @@ wasmtime::component::bindgen!({
 });
 
 #[derive(Clone)]
+pub struct Ctx {
+    pub task_id: String,
+    pub rpc_client: RpcClient,
+}
+
+#[derive(Clone)]
 pub struct DataExportCtx {
-    pub rpc_client: Option<RpcClient>,
+    pub ctx: Option<Ctx>,
 }
 
 impl profiling::data_export::file::Host for DataExportCtx {
     fn export_bytes(&mut self, bytes: Vec<u8>) -> wasmtime::Result<Result<(), String>> {
-        let Some(rpc_client) = &mut self.rpc_client else {
+        let Some(ctx) = &mut self.ctx else {
             return Ok(Ok(()));
         };
         let metadata = Metadata {
@@ -49,22 +55,24 @@ impl profiling::data_export::file::Host for DataExportCtx {
             metric_meta: None,
         };
         let req = DataRequest {
+            task_id: ctx.task_id.clone(),
             metadata: Some(metadata),
             payload: bytes,
         };
         let rt = tokio::runtime::Runtime::new()?;
-        rt.block_on(rpc_client.send_data(req))?;
+        rt.block_on(ctx.rpc_client.send_data(req))?;
         Ok(Ok(()))
     }
 }
 
 impl profiling::data_export::metric::Host for DataExportCtx {
     fn export_sample(&mut self, mut sample: Sample) -> wasmtime::Result<Result<(), String>> {
-        let Some(rpc_client) = &mut self.rpc_client else {
+        let Some(ctx) = &mut self.ctx else {
             return Ok(Ok(()));
         };
 
-        let instance_id = rpc_client
+        let instance_id = ctx
+            .rpc_client
             .instance_id()
             .unwrap_or_else(|_| "unknown".to_string());
         sample.tags.push(("instance_id".to_string(), instance_id));
@@ -90,22 +98,24 @@ impl profiling::data_export::metric::Host for DataExportCtx {
             }),
         };
         let req = DataRequest {
+            task_id: ctx.task_id.clone(),
             metadata: Some(metadata),
             payload,
         };
         let rt = tokio::runtime::Runtime::new()?;
-        rt.block_on(rpc_client.send_data(req))?;
+        rt.block_on(ctx.rpc_client.send_data(req))?;
         Ok(Ok(()))
     }
 }
 
 impl profiling::data_export::measurement::Host for DataExportCtx {
     fn export_point(&mut self, mut point: Point) -> wasmtime::Result<Result<(), String>> {
-        let Some(rpc_client) = &mut self.rpc_client else {
+        let Some(ctx) = &mut self.ctx else {
             return Ok(Ok(()));
         };
 
-        let instance_id = rpc_client
+        let instance_id = ctx
+            .rpc_client
             .instance_id()
             .unwrap_or_else(|_| "unknown".to_string());
         point.tags.push(("instance_id".to_string(), instance_id));
@@ -126,11 +136,12 @@ impl profiling::data_export::measurement::Host for DataExportCtx {
             metric_meta: None,
         };
         let req = DataRequest {
+            task_id: ctx.task_id.clone(),
             metadata: Some(metadata),
             payload,
         };
         let rt = tokio::runtime::Runtime::new()?;
-        rt.block_on(rpc_client.send_data(req))?;
+        rt.block_on(ctx.rpc_client.send_data(req))?;
         Ok(Ok(()))
     }
 }

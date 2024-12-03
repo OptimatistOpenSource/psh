@@ -35,6 +35,7 @@ use anyhow::Result;
 pub use builder::PshEngineBuilder;
 use chrono::DateTime;
 use chrono::Utc;
+use data_export::Ctx;
 use data_export::DataExportCtx;
 pub use engine::PshEngine;
 pub use state::PshState;
@@ -89,7 +90,6 @@ impl TaskRuntime {
         };
 
         let envs: Vec<(String, String)> = std::env::vars().collect();
-        let data_export_ctx = DataExportCtx { rpc_client };
 
         let len = self.len.clone();
         let finished_task_id = self.finished_task_id.clone();
@@ -101,6 +101,15 @@ impl TaskRuntime {
                     delta.max(0) as u64
                 };
                 envs.push(("TASK_TIME_SLICE".to_string(), task_time_slice.to_string()));
+
+                let ctx = match (rpc_client.clone(), task.id.clone()) {
+                    (Some(rpc_client), Some(task_id)) => Some(Ctx {
+                        task_id,
+                        rpc_client,
+                    }),
+                    _ => None,
+                };
+                let data_export_ctx = DataExportCtx { ctx };
                 let engine = PshEngineBuilder::new()
                     .wasi_inherit_stdio()
                     .wasi_envs(&envs)
