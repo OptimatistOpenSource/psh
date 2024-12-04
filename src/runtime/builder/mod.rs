@@ -17,7 +17,7 @@ use wasmtime::{
     component::{Linker, ResourceTable},
     Config, Engine, Store,
 };
-use wasmtime_wasi::{StdinStream, StdoutStream, WasiCtxBuilder};
+use wasmtime_wasi::{DirPerms, FilePerms, StdinStream, StdoutStream, WasiCtxBuilder};
 
 use host_op_perf::PerfCtx;
 use host_op_system::SysCtx;
@@ -65,6 +65,9 @@ impl PshEngineBuilder {
             data_export::add_to_linker(&mut linker, |state| &mut state.data_export_ctx)
                 .context("Failed to link data-export module")?;
         }
+
+        self.wasi_ctx_builder
+            .preopened_dir("/", "/", DirPerms::READ, FilePerms::READ)?;
 
         let state = PshState {
             name: "PSH Wasi Runtime".to_owned(),
