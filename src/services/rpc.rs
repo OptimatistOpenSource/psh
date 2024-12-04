@@ -77,6 +77,9 @@ impl RpcClient {
     }
 
     pub async fn send_data(&mut self, req: DataRequest) -> Result<()> {
+        let mut req = Request::new(req);
+        req.metadata_mut()
+            .insert("authorization", format!("Bearer {}", self.token).parse()?);
         self.client.send_data(req).await?;
         Ok(())
     }
