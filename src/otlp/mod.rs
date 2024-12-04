@@ -19,12 +19,9 @@ use std::time::Duration;
 
 use anyhow::Result;
 use opentelemetry::{metrics::MeterProvider, KeyValue};
-use opentelemetry_otlp::{ExportConfig, WithExportConfig};
+use opentelemetry_otlp::{ExportConfig, MetricExporter, WithExportConfig, WithTonicConfig};
 use opentelemetry_sdk::{
-    metrics::{
-        reader::{DefaultAggregationSelector, DefaultTemporalitySelector},
-        SdkMeterProvider,
-    },
+    metrics::{PeriodicReader, SdkMeterProvider},
     runtime, Resource,
 };
 use tonic::{metadata::MetadataMap, transport::ClientTlsConfig};
@@ -32,22 +29,23 @@ use tonic::{metadata::MetadataMap, transport::ClientTlsConfig};
 pub fn meter_provider(export_config: ExportConfig, token: String) -> Result<SdkMeterProvider> {
     let mut meta = MetadataMap::new();
     meta.insert("authorization", format!("Bearer {}", token).parse()?);
-    let otlp_exporter = opentelemetry_otlp::new_exporter()
-        .tonic()
+    let otlp_exporter = MetricExporter::builder()
+        .with_tonic()
         .with_tls_config(ClientTlsConfig::new().with_native_roots())
         .with_metadata(meta)
-        .with_export_config(export_config);
-
-    opentelemetry_otlp::new_pipeline()
-        .metrics(runtime::Tokio)
-        .with_exporter(otlp_exporter)
-        .with_resource(Resource::new(vec![KeyValue::new("service.name", "PSH")]))
-        .with_period(Duration::from_secs(1))
         .with_timeout(Duration::from_secs(10))
-        .with_aggregation_selector(DefaultAggregationSelector::new())
-        .with_temporality_selector(DefaultTemporalitySelector::new())
-        .build()
-        .map_err(Into::into)
+        .with_export_config(export_config)
+        .build()?;
+    let reader = PeriodicReader::builder(otlp_exporter, runtime::Tokio)
+        .with_interval(Duration::from_secs(1))
+        .build();
+
+    let a = SdkMeterProvider::builder()
+        .with_reader(reader)
+        .with_resource(Resource::new(vec![KeyValue::new("service.name", "PSH")]))
+        .build();
+
+    Ok(a)
 }
 
 pub async fn otlp_tasks(export_config: ExportConfig, token: String) -> anyhow::Result<()> {

@@ -56,7 +56,7 @@ impl From<OtlpConfig> for ExportConfig {
             panic!("Not support protocol, just support Grpc, HttpBinary, HttpJson")
         };
         Self {
-            endpoint: val.endpoint,
+            endpoint: Some(val.endpoint),
             protocol,
             timeout: val.timeout,
         }
@@ -74,7 +74,7 @@ impl From<&OtlpConfig> for ExportConfig {
             panic!("Not support protocol, just support Grpc, HttpBinary, HttpJson")
         };
         Self {
-            endpoint: val.endpoint.clone(),
+            endpoint: Some(val.endpoint.clone()),
             protocol,
             timeout: val.timeout,
         }
@@ -154,7 +154,7 @@ nanos = 0
             "Grpc".to_owned(),
         );
         let export_config = ExportConfig {
-            endpoint: "http://localhost:4317".to_owned(),
+            endpoint: Some("http://localhost:4317".to_owned()),
             timeout: Duration::from_secs(3),
             protocol: Protocol::Grpc,
         };
@@ -167,7 +167,7 @@ nanos = 0
             "HttpJson".to_owned(),
         );
         let export_config = ExportConfig {
-            endpoint: "http://localhost:7878".to_owned(),
+            endpoint: Some("http://localhost:7878".to_owned()),
             timeout: Duration::new(2, 20),
             protocol: Protocol::HttpJson,
         };
