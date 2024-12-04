@@ -159,6 +159,6 @@ pub fn start(
                 })
             }
         })
-        .try_init()?;
+        .build();
     Ok(gauge)
 }

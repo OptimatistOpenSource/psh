@@ -137,6 +137,6 @@ pub fn start(
                 gauge.observe(m, &[KeyValue::new("token", token.clone()), kv]);
             })
         })
-        .try_init()?;
+        .build();
     Ok(gauge)
 }
