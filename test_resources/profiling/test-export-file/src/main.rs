@@ -22,7 +22,7 @@ use crate::imports::profiling::data_export::file::export_bytes;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let path = args.get(0).expect("Argument 0 not provided");
+    let path = args.get(1).expect("Argument 0 not provided");
     let content = read_to_string(path).expect("Failed to read file");
     let bytes = content.as_bytes();
     export_bytes(bytes).expect("Failed to export bytes");
