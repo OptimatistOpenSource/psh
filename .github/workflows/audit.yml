@@ -2,6 +2,10 @@ name: Audit
 
 on:
   pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
 
 jobs:
   audit:
