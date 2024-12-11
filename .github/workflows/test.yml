@@ -17,14 +17,15 @@ env:
 jobs:
   test:
     runs-on: ${{ matrix.os }}
-    env:
-      SCCACHE_GHA_ENABLED: "true"
-      RUSTC_WRAPPER: "sccache"
 
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-22.04]
+
+    env:
+      SCCACHE_GHA_ENABLED: "true"
+      RUSTC_WRAPPER: "sccache"
 
     steps:
       - uses: actions/checkout/@v4
