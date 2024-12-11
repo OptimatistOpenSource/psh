@@ -15,7 +15,6 @@ concurrency:
 
 jobs:
   audit:
-    name: ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
 
     strategy:

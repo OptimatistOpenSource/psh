@@ -16,7 +16,6 @@ env:
 
 jobs:
   build:
-    name: Build Check
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:

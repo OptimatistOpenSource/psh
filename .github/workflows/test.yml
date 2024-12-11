@@ -16,7 +16,6 @@ env:
 
 jobs:
   test:
-    name: ${{ matrix.os }}-${{ matrix.target }}-${{ matrix.toolchain }}
     runs-on: ${{ matrix.os }}
     env:
       SCCACHE_GHA_ENABLED: "true"

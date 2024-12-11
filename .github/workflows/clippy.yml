@@ -16,7 +16,6 @@ env:
 
 jobs:
   clippy:
-    name: Clippy rust
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
