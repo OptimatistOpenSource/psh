@@ -17,7 +17,6 @@ mod config;
 mod daemon;
 mod log;
 mod otlp;
-mod resources;
 mod runtime;
 mod services;
 mod utils;
