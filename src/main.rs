@@ -24,20 +24,23 @@ mod security;
 mod services;
 mod utils;
 
-use std::{fs, process::exit, result::Result::Ok, thread, time::Duration};
+use std::process::exit;
+use std::result::Result::Ok;
+use std::time::Duration;
+use std::{fs, thread};
 
 use anyhow::{bail, Error, Result};
 use args::Args;
-use chrono::{offset::LocalResult, TimeZone, Utc};
+use chrono::offset::LocalResult;
+use chrono::{TimeZone, Utc};
 use clap::Parser;
 use config::{PshConfig, RemoteConfig};
 use log::log_init;
 use opentelemetry_otlp::ExportConfig;
 use runtime::{Task, TaskRuntime};
+use services::rpc::RpcClient;
 use tokio::try_join;
 use utils::check_root_privilege;
-
-use services::rpc::RpcClient;
 
 fn main() -> Result<()> {
     log_init();

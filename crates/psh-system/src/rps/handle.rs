@@ -15,7 +15,8 @@
 use once_cell::sync::Lazy;
 
 use crate::error::Result;
-use crate::rps::{raw::parse_rps, RpsDetails};
+use crate::rps::raw::parse_rps;
+use crate::rps::RpsDetails;
 use crate::utils::Handle;
 
 static INFO_GLOBAL: Lazy<Handle<Vec<RpsDetails>>> = Lazy::new(|| Handle::new(|| Ok(parse_rps!())));

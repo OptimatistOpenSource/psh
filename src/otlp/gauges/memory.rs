@@ -14,10 +14,8 @@
 
 use std::time::Duration;
 
-use opentelemetry::{
-    metrics::{Meter, ObservableGauge},
-    KeyValue,
-};
+use opentelemetry::metrics::{Meter, ObservableGauge};
+use opentelemetry::KeyValue;
 use psh_system::memory::MemoryHandle;
 
 pub fn start(

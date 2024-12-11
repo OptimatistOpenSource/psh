@@ -12,18 +12,19 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use std::{collections::HashMap, ffi::OsString, path::PathBuf, sync::Arc, time::Duration};
-
-use wasmtime::component::Resource;
+use std::collections::HashMap;
+use std::ffi::OsString;
+use std::path::PathBuf;
+use std::sync::Arc;
+use std::time::Duration;
 
 use psh_system::process::{ProcState, Process};
+use wasmtime::component::Resource;
 
-use crate::{
-    profiling::system::process::{
-        self, ProcessStat as GuestProcessStat, ProcessState as GuestProcessState,
-    },
-    SysCtx,
+use crate::profiling::system::process::{
+    self, ProcessStat as GuestProcessStat, ProcessState as GuestProcessState,
 };
+use crate::SysCtx;
 
 impl From<&ProcState> for GuestProcessState {
     fn from(value: &ProcState) -> Self {

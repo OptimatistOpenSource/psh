@@ -13,9 +13,10 @@
 // see <https://www.gnu.org/licenses/>.
 
 use std::io;
-use tracing_subscriber::{
-    prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt, EnvFilter,
-};
+
+use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
+use tracing_subscriber::util::SubscriberInitExt;
+use tracing_subscriber::EnvFilter;
 
 /// It is also possible to set the `RUST_LOG` environment variable for other level.
 pub fn log_init() {

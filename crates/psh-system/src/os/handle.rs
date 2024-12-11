@@ -14,11 +14,8 @@
 
 use once_cell::sync::Lazy;
 
-use super::{
-    raw::{get_kernel_version, parse_distro_version},
-    OsInfo,
-};
-
+use super::raw::{get_kernel_version, parse_distro_version};
+use super::OsInfo;
 use crate::error::{Error, Result};
 use crate::utils::Handle;
 

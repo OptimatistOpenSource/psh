@@ -12,18 +12,16 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use crate::{
-    profiling::system::os::{
-        self, DistroKind as GuestDistroKind, DistroVersion as GuestDistroVersion,
-        KernelVersion as GuestKernelVersion, OsInfo as GuestOsInfo,
-    },
-    SysCtx,
-};
-
 use psh_system::os::{
     DistroKind as HostDistroKind, DistroVersion as HostDistroVersion,
     KernelVersion as HostKernelVersion, OsInfo as HostOsInfo,
 };
+
+use crate::profiling::system::os::{
+    self, DistroKind as GuestDistroKind, DistroVersion as GuestDistroVersion,
+    KernelVersion as GuestKernelVersion, OsInfo as GuestOsInfo,
+};
+use crate::SysCtx;
 
 impl From<&HostDistroKind> for GuestDistroKind {
     fn from(value: &HostDistroKind) -> Self {

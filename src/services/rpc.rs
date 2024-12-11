@@ -13,20 +13,14 @@
 // see <https://www.gnu.org/licenses/>.
 
 use anyhow::Result;
-use tonic::{
-    transport::{Channel, ClientTlsConfig, Endpoint},
-    Request,
-};
+use tonic::transport::{Channel, ClientTlsConfig, Endpoint};
+use tonic::Request;
 
-use crate::services::{
-    host_info::RawInfo,
-    pb::{psh_service_client::PshServiceClient, HostInfoRequest},
-};
-
-use super::{
-    config::RpcConfig,
-    pb::{self, DataRequest},
-};
+use super::config::RpcConfig;
+use super::pb::{self, DataRequest};
+use crate::services::host_info::RawInfo;
+use crate::services::pb::psh_service_client::PshServiceClient;
+use crate::services::pb::HostInfoRequest;
 
 #[derive(Clone)]
 pub struct RpcClient {
@@ -115,22 +109,18 @@ impl RpcClient {
 
 #[cfg(test)]
 mod rpc_tests {
-    use std::{future::Future, net::Ipv4Addr};
+    use std::future::Future;
+    use std::net::Ipv4Addr;
 
     use tokio::sync::oneshot;
     use tonic::transport::{Channel, Error, Server};
 
     use self::psh_service_client::PshServiceClient;
-    use crate::{
-        infra::{option::WrapOption, result::WrapResult},
-        services::{
-            host_info::RawInfo,
-            pb::{
-                psh_service_server::{PshService, PshServiceServer},
-                *,
-            },
-        },
-    };
+    use crate::infra::option::WrapOption;
+    use crate::infra::result::WrapResult;
+    use crate::services::host_info::RawInfo;
+    use crate::services::pb::psh_service_server::{PshService, PshServiceServer};
+    use crate::services::pb::*;
 
     static ADDR: &str = "[::1]:50051";
     static ADDR_INFO: &str = "[::1]:50052";

@@ -14,14 +14,12 @@
 
 use std::time::Duration;
 
-use crate::{
-    profiling::system::disk::{
-        self, DiskOperationStat as GuestDiskOperationStat, DiskStat as GuestDiskStat,
-    },
-    SysCtx,
-};
-
 use psh_system::disk::DiskStat as HostDiskStat;
+
+use crate::profiling::system::disk::{
+    self, DiskOperationStat as GuestDiskOperationStat, DiskStat as GuestDiskStat,
+};
+use crate::SysCtx;
 
 impl From<&HostDiskStat> for GuestDiskStat {
     fn from(value: &HostDiskStat) -> Self {

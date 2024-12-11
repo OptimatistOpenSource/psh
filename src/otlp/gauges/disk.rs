@@ -12,12 +12,11 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use std::{borrow::Cow, time::Duration};
+use std::borrow::Cow;
+use std::time::Duration;
 
-use opentelemetry::{
-    metrics::{Meter, ObservableGauge},
-    KeyValue,
-};
+use opentelemetry::metrics::{Meter, ObservableGauge};
+use opentelemetry::KeyValue;
 use psh_system::disk::DiskHandle;
 
 pub fn start(

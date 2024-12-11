@@ -17,9 +17,7 @@ use profiling::data_export::metric::Sample;
 use rinfluxdb::line_protocol::LineBuilder;
 use wasmtime::component::Linker;
 
-use crate::services::pb::DataRequest;
-use crate::services::pb::Metadata;
-use crate::services::pb::MetricMeta;
+use crate::services::pb::{DataRequest, Metadata, MetricMeta};
 use crate::services::rpc::RpcClient;
 
 wasmtime::component::bindgen!({

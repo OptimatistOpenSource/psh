@@ -14,12 +14,13 @@
 
 mod raw;
 
-use crate::convert::Wrap;
-use crate::profiling::perf::counter_group::*;
-use crate::{FixedCounterGroup, PerfCtx};
 use perf_event_rs::config::{Cpu as RawCpu, Process as RawProcess};
 use perf_event_rs::counting::{Config as RawConfig, CounterGroup, CounterGuard};
 use wasmtime::component::Resource;
+
+use crate::convert::Wrap;
+use crate::profiling::perf::counter_group::*;
+use crate::{FixedCounterGroup, PerfCtx};
 
 impl HostCounterGroup for PerfCtx {
     fn new(

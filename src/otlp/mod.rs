@@ -18,13 +18,13 @@ pub mod gauges;
 use std::time::Duration;
 
 use anyhow::Result;
-use opentelemetry::{metrics::MeterProvider, KeyValue};
+use opentelemetry::metrics::MeterProvider;
+use opentelemetry::KeyValue;
 use opentelemetry_otlp::{ExportConfig, MetricExporter, WithExportConfig, WithTonicConfig};
-use opentelemetry_sdk::{
-    metrics::{PeriodicReader, SdkMeterProvider},
-    runtime, Resource,
-};
-use tonic::{metadata::MetadataMap, transport::ClientTlsConfig};
+use opentelemetry_sdk::metrics::{PeriodicReader, SdkMeterProvider};
+use opentelemetry_sdk::{runtime, Resource};
+use tonic::metadata::MetadataMap;
+use tonic::transport::ClientTlsConfig;
 
 pub fn meter_provider(export_config: ExportConfig, token: String) -> Result<SdkMeterProvider> {
     let mut meta = MetadataMap::new();

@@ -29,11 +29,10 @@ use psh_system::interrupt::InterruptHandle;
 use psh_system::memory::MemoryHandle;
 use psh_system::network::NetworkHandle;
 use psh_system::os::OsHandle;
-use psh_system::rps::RpsHandle;
-use wasmtime::component::{Linker, ResourceTable};
-
 use psh_system::process::{Process, ProcessHandle};
+use psh_system::rps::RpsHandle;
 use psh_system::System;
+use wasmtime::component::{Linker, ResourceTable};
 
 pub type HostProc = Arc<Process>;
 

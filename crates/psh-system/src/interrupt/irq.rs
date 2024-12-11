@@ -65,8 +65,9 @@ pub(crate) use parse_irq;
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::path::PathBuf;
+
+    use super::*;
 
     #[test]
     fn test_parse_all_irq() {

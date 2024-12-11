@@ -12,10 +12,8 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use std::{
-    fs::File,
-    io::{self, BufRead},
-};
+use std::fs::File;
+use std::io::{self, BufRead};
 
 use anyhow::bail;
 
@@ -99,9 +97,7 @@ pub(crate) use parse_distro_version;
 
 #[cfg(test)]
 mod test {
-    use super::{DistroKind, DistroVersion, KernelVersion};
-
-    use super::parse_kernel_version;
+    use super::{parse_kernel_version, DistroKind, DistroVersion, KernelVersion};
 
     #[test]
     fn test_parse_kernel_version() {
