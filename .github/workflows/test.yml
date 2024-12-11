@@ -27,15 +27,14 @@ jobs:
       matrix:
         os: [ubuntu-20.04, ubuntu-latest]
         target: [x86_64-unknown-linux-gnu]
-        toolchain: [stable]
 
     steps:
       - uses: actions/checkout/@v4
 
-      - name: Rust Toolchain
+      - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: ${{ matrix.toolchain }}
+          toolchain: 1.81.0
 
       - name: Install cargo-binstall
         uses: taiki-e/install-action@v2
