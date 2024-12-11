@@ -1,21 +1,26 @@
 name: Clippy
 
 on:
-  push:
   pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   RUST_BACKTRACE: 1
 
 jobs:
   clippy:
-    name: Clippy rust
     runs-on: ${{ matrix.os }}
+
     strategy:
       matrix:
-        os: [ubuntu-latest]
-        # make sure it runs on latest stable rust
-        toolchain: [stable]
+        os: [ubuntu-22.04]
 
     env:
       SCCACHE_GHA_ENABLED: "true"
@@ -24,20 +29,20 @@ jobs:
     steps:
       - uses: actions/checkout/@v4
 
-      - name: Install Toolchain
+      - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: ${{ matrix.toolchain }}
+          toolchain: 1.81.0
           components: clippy
 
-      - name:  Show environment information
+      - name: Show env
         uses: ./.github/actions/show-env
 
-      - name: Install Protoc
+      - name: Setup protoc
         uses: arduino/setup-protoc@v3
 
-      - name: Run sccache-cache
+      - name: Setup build cache
         uses: mozilla-actions/sccache-action@v0.0.6
 
-      - name: Run clippy
+      - name: Clippy
         uses: ./.github/actions/clippy
