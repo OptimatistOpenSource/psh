@@ -21,7 +21,6 @@ use psh_system::cpu::CpuHandle;
 use psh_system::os::OsHandle;
 
 use super::pb::{HostInfoRequest, Ipv6Addr as PbIpv6};
-use crate::infra::option::WrapOption;
 
 impl From<Ipv6Addr> for PbIpv6 {
     fn from(value: Ipv6Addr) -> Self {
@@ -100,12 +99,12 @@ impl RawInfo {
             .ok()
             .map(|v| v.to_string_lossy().to_string());
         let ipv4 = match local_ip_address::local_ip() {
-            Ok(IpAddr::V4(v4)) => v4.wrap_some(),
+            Ok(IpAddr::V4(v4)) => Some(v4),
             _ => None, // `local_ip_address::local_ip()` get v4
         };
 
         let ipv6 = match local_ip_address::local_ipv6() {
-            Ok(IpAddr::V6(v6)) => v6.wrap_some(),
+            Ok(IpAddr::V6(v6)) => Some(v6),
             _ => None, // `local_ip_address::local_ipv6()` get v6
         };
         let instance_id = Self::get_instance_id(instance_id_file).ok();
@@ -124,13 +123,13 @@ impl RawInfo {
 
         let cpu_hd = CpuHandle::new();
         if let Ok(cpu) = cpu_hd.info() {
-            raw_info.arch = cpu.to_string().wrap_some();
+            raw_info.arch = Some(cpu.to_string());
         }
 
         let os_hd = OsHandle::new();
         if let Ok(info) = os_hd.info() {
-            raw_info.os = info.distro.distro.to_string().wrap_some();
-            raw_info.kernel_version = info.kernel.to_string().wrap_some();
+            raw_info.os = Some(info.distro.distro.to_string());
+            raw_info.kernel_version = Some(info.kernel.to_string());
         }
 
         raw_info
