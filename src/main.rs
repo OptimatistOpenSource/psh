@@ -19,7 +19,6 @@ mod log;
 mod otlp;
 mod resources;
 mod runtime;
-mod security;
 mod services;
 mod utils;
 
