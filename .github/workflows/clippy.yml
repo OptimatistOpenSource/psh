@@ -1,7 +1,6 @@
 name: Clippy
 
 on:
-  push:
   pull_request:
 
 env:
