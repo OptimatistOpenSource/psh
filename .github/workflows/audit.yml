@@ -33,8 +33,8 @@ jobs:
         with:
           toolchain: 1.81.0
 
-      - name:  Show environment information
+      - name: Show env
         uses: ./.github/actions/show-env
 
-      - name: Run cargo-audit
+      - name: Audit
         uses: ./.github/actions/audit

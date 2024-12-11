@@ -40,17 +40,17 @@ jobs:
         with:
           tool: cargo-binstall
 
-      - name: install cargo-component
+      - name: Install cargo-component
         run: cargo binstall cargo-component
 
-      - name: Show environment information
+      - name: Show env
         uses: ./.github/actions/show-env
 
-      - name: Run sccache-cache
+      - name: Setup build cache
         uses: mozilla-actions/sccache-action@v0.0.6
 
-      - name: Install Protoc
+      - name: Setup protoc
         uses: arduino/setup-protoc@v3
 
-      - name: Run Test
+      - name: Test
         uses: ./.github/actions/test
