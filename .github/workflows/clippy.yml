@@ -20,7 +20,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-22.04]
 
     env:
       SCCACHE_GHA_ENABLED: "true"
