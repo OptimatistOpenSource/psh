@@ -1,4 +1,4 @@
-name: Check if Psh can build
+name: Build
 
 on:
   push:
