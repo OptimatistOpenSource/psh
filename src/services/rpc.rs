@@ -116,8 +116,6 @@ mod rpc_tests {
     use tonic::transport::{Channel, Error, Server};
 
     use self::psh_service_client::PshServiceClient;
-    use crate::infra::option::WrapOption;
-    use crate::infra::result::WrapResult;
     use crate::services::host_info::RawInfo;
     use crate::services::pb::psh_service_server::{PshService, PshServiceServer};
     use crate::services::pb::*;
@@ -139,11 +137,11 @@ mod rpc_tests {
             dbg!(addr.ip());
             let resp = HostInfoResponse {
                 errno: None,
-                message: "ok".to_owned().wrap_some(),
+                message: Some("ok".to_owned()),
                 instance_id: None,
                 task: None,
             };
-            tonic::Response::new(resp).wrap_ok()
+            Ok(tonic::Response::new(resp))
         }
         async fn send_data(
             &self,
@@ -205,10 +203,10 @@ mod rpc_tests {
         let server = server_setup(rx, ADDR_INFO);
         let client = PshServiceClient::connect(format!("http://{}", ADDR_INFO));
         let info_req = HostInfoRequest {
-            os: "Linux".to_owned().wrap_some(),
-            hostname: "Host".to_owned().wrap_some(),
-            architecture: "x86_64".to_owned().wrap_some(),
-            kernel_version: "6.10.2".to_owned().wrap_some(),
+            os: Some("Linux".to_owned()),
+            hostname: Some("Host".to_owned()),
+            architecture: Some("x86_64".to_owned()),
+            kernel_version: Some("6.10.2".to_owned()),
             local_ipv4_addr: Some(Ipv4Addr::new(127, 0, 0, 1).to_bits()),
             local_ipv6_addr: None,
             instance_id: None,
