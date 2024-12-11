@@ -8,6 +8,5 @@ runs:
       shell: bash
       run: |
         cargo -V
-        cargo fmt -- -V
         rustc -V
         uname -a
