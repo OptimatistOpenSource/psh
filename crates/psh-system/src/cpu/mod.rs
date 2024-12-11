@@ -22,7 +22,6 @@ mod raw;
 
 pub use handle::CpuHandle;
 pub use procfs::CpuTime;
-
 use procfs::KernelStats;
 
 // use Vec<bool> to represent CpuMask but wrap it in a tuple struct to make it a distinct type

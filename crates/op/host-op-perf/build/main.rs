@@ -15,11 +15,12 @@
 mod consts;
 mod helpers;
 
-use crate::consts::LINUX_FEATURE_VERSIONS;
-use crate::helpers::parse_linux_version_h;
 use std::env;
 use std::path::Path;
 use std::process::Command;
+
+use crate::consts::LINUX_FEATURE_VERSIONS;
+use crate::helpers::parse_linux_version_h;
 
 fn main() {
     // update git submodule

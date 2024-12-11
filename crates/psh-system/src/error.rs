@@ -12,7 +12,8 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use std::{io, str::Utf8Error};
+use std::io;
+use std::str::Utf8Error;
 
 use thiserror::Error;
 

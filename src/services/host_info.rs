@@ -20,8 +20,7 @@ use std::path::Path;
 use psh_system::cpu::CpuHandle;
 use psh_system::os::OsHandle;
 
-use super::pb::HostInfoRequest;
-use super::pb::Ipv6Addr as PbIpv6;
+use super::pb::{HostInfoRequest, Ipv6Addr as PbIpv6};
 use crate::infra::option::WrapOption;
 
 impl From<Ipv6Addr> for PbIpv6 {

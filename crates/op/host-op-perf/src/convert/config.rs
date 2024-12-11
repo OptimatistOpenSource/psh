@@ -12,14 +12,16 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use crate::convert::{Error, Wrap};
+use std::io;
+
 use perf_event_rs::config::{Cpu as RawCpu, Process as RawProcess};
 use perf_event_rs::counting::{
     Config as RawConfig, Counter, CounterStat, ExtraConfig as RawExtraConfig,
 };
 use perf_event_rs::event::Event as RawEv;
 use perf_event_rs::{config, EventScope as RawEvScope};
-use std::io;
+
+use crate::convert::{Error, Wrap};
 
 type FromT = crate::profiling::perf::config::Config;
 type IntoT = perf_event_rs::counting::Config;

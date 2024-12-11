@@ -12,10 +12,9 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use crate::profiling::system::rps::{self, RpsInfo as GuestRpsInfo, RpsQueue as GuestRpsQueue};
-
 use psh_system::rps::{RpsDetails as HostRpsInfo, RpsQueue as HostRpsQueue};
 
+use crate::profiling::system::rps::{self, RpsInfo as GuestRpsInfo, RpsQueue as GuestRpsQueue};
 use crate::SysCtx;
 
 impl From<&HostRpsQueue> for GuestRpsQueue {

@@ -12,10 +12,11 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
+use std::io;
+
 use perf_event_rs::config;
 use perf_event_rs::config::{Cpu, Process};
 use perf_event_rs::counting::{Config, Counter, CounterStat};
-use std::io;
 
 pub fn counter_new(process: &Process, cpu: &Cpu, cfg: &mut Config) -> config::Result<Counter> {
     Counter::new(process, cpu, cfg)

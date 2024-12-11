@@ -172,9 +172,8 @@ mod test {
     use std::path::PathBuf;
     use std::process::Command;
 
-    use crate::memory::MemoryModule;
-
     use super::parse_memory_module;
+    use crate::memory::MemoryModule;
 
     #[test]
     #[cfg(target_os = "linux")]

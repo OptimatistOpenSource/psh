@@ -14,20 +14,18 @@
 
 use std::time::Duration;
 
-use crate::{
-    profiling::system::cpu::{
-        self, AddressSizes as GuestAddressSizes, Arm64CpuInfo as GuestArm64CpuInfo,
-        CpuInfo as GuestCpuInfo, CpuMask as GuestCpuMask, CpuStat as GuestCpuStat,
-        CpuStats as GuestCpuStats, TlbSize as GuestTlbSize, X64CpuInfo as GuestX64CpuInfo,
-    },
-    SysCtx,
-};
-
 use psh_system::cpu::{
     AddressSizes as HostAddressSizes, Arm64CpuInfo as HostArm64CpuInfo, CPUInfo as HostCpuInfo,
     CpuMask as HostCpuMask, CpuStats as HostCpuStats, CpuTime as HostCpuStat,
     TlbSize as HostTlbSize, X86_64CpuInfo as HostX86_64CpuInfo,
 };
+
+use crate::profiling::system::cpu::{
+    self, AddressSizes as GuestAddressSizes, Arm64CpuInfo as GuestArm64CpuInfo,
+    CpuInfo as GuestCpuInfo, CpuMask as GuestCpuMask, CpuStat as GuestCpuStat,
+    CpuStats as GuestCpuStats, TlbSize as GuestTlbSize, X64CpuInfo as GuestX64CpuInfo,
+};
+use crate::SysCtx;
 
 impl From<&HostCpuMask> for GuestCpuMask {
     fn from(value: &HostCpuMask) -> Self {

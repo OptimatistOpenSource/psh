@@ -12,17 +12,9 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use crate::convert::{Error, Wrap};
-
 use std::ffi::CString;
 use std::rc::Rc;
 
-use crate::profiling::perf::config::{
-    BreakpointLen as BpLen, BreakpointType as BpTy, CacheOp, CacheOpResult,
-    DpKprobeConfig as KpCfg, DpKprobeConfigVar as KpCfgVar, DpOtherConfig as OtherCfg,
-    DpUprobeConfig as UpCfg, DynamicPmuEvent as DpEv, Event as Ev, HardwareEvent as HwEv,
-    SoftwareEvent as SwEv,
-};
 use perf_event_rs::event::{
     BreakpointEvent as RawBpEv, BreakpointType as RawBpTy, CacheOp as RawCacheOp,
     CacheOpResult as RawCacheOpResult, Event as RawEv, HardwareEvent as RawHwEv,
@@ -30,6 +22,14 @@ use perf_event_rs::event::{
     TracepointEvent as RawTpEv, UprobeConfig as RawUpCfg,
 };
 use perf_event_rs::{BreakpointLen as RawBpLen, DynamicPmuEvent as RawDpEv};
+
+use crate::convert::{Error, Wrap};
+use crate::profiling::perf::config::{
+    BreakpointLen as BpLen, BreakpointType as BpTy, CacheOp, CacheOpResult,
+    DpKprobeConfig as KpCfg, DpKprobeConfigVar as KpCfgVar, DpOtherConfig as OtherCfg,
+    DpUprobeConfig as UpCfg, DynamicPmuEvent as DpEv, Event as Ev, HardwareEvent as HwEv,
+    SoftwareEvent as SwEv,
+};
 
 type FromT = Ev;
 type IntoT = RawEv;

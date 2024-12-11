@@ -14,10 +14,10 @@
 
 use std::time::Duration;
 
+use psh_system::interrupt::{InterruptDetails, InterruptType, IrqDetails};
+
 use crate::profiling::system::interrupt;
 use crate::SysCtx;
-
-use psh_system::interrupt::{InterruptDetails, InterruptType, IrqDetails};
 
 impl From<&InterruptType> for interrupt::InterruptType {
     fn from(value: &InterruptType) -> Self {

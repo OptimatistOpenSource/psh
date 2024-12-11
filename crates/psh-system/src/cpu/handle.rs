@@ -17,8 +17,8 @@ use std::time::Duration;
 use once_cell::sync::Lazy;
 use procfs::CurrentSI;
 
-use super::CpuStats;
-use super::{raw::parse_cpuinfo, CPUInfo};
+use super::raw::parse_cpuinfo;
+use super::{CPUInfo, CpuStats};
 use crate::error::Result;
 use crate::utils::Handle;
 

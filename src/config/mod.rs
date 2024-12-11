@@ -12,17 +12,17 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use std::{
-    fs::{create_dir_all, File},
-    io::{Read, Write},
-    mem,
-    path::Path,
-};
+use std::fs::{create_dir_all, File};
+use std::io::{Read, Write};
+use std::mem;
+use std::path::Path;
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
-use crate::{daemon::DaemonConfig, otlp::config::OtlpConfig, services::config::RpcConfig};
+use crate::daemon::DaemonConfig;
+use crate::otlp::config::OtlpConfig;
+use crate::services::config::RpcConfig;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PshConfig {
@@ -151,12 +151,10 @@ impl PshConfig {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        config::{AuthConfig, ComponentConfig, PshConfig},
-        daemon::DaemonConfig,
-        otlp::config::OtlpConfig,
-        services::config::RpcConfig,
-    };
+    use crate::config::{AuthConfig, ComponentConfig, PshConfig};
+    use crate::daemon::DaemonConfig;
+    use crate::otlp::config::OtlpConfig;
+    use crate::services::config::RpcConfig;
 
     const CONFIG_STR: &str = r#"[auth]
 token = ""
