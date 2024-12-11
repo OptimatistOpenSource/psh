@@ -6,6 +6,8 @@ on:
       - opened
       - reopened
       - synchronize
+    paths:
+      - 'Cargo.lock'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
