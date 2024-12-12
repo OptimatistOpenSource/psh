@@ -16,8 +16,8 @@ use anyhow::Result;
 use tonic::transport::{Channel, ClientTlsConfig, Endpoint};
 use tonic::Request;
 
-use super::config::RpcConfig;
 use super::pb::{self, DataRequest};
+use crate::config::RpcConfig;
 use crate::services::host_info::RawInfo;
 use crate::services::pb::psh_service_client::PshServiceClient;
 use crate::services::pb::HostInfoRequest;

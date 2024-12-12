@@ -59,38 +59,9 @@ and to collect performance data in a reliable, low-overhead, and elegant way.
 
 ## Config
 
-Psh default config located `/etc/psh/config.toml`.
+The default config is located in `/etc/psh/config.toml`.
 
-```toml
-[auth]
-token = ""
-
-[component]
-path = "path/to/component.wasm"
-args = ["arg1", "arg2", "arg3"]
-
-[daemon] # when run as SysV daemon
-pid_file = "/tmp/psh.pid"
-stdout_file = "/tmp/psh.stdout"
-stderr_file = "/tmp/psh.stderr"
-working_directory = "/"
-
-[remote]
-enable = true
-
-[remote.rpc]
-endpoint = "http://rpc.optimatist.com"
-duration = 1
-instance_id_file = "/etc/psh/instance.id"
-
-[remote.otlp]
-endpoint = "http://otel-col.optimatist.com"
-protocol = "Grpc"
-
-[remote.otlp.timeout]
-secs = 3
-nanos = 0
-```
+See [config template](./doc/config.toml)
 
 ## Contribution Guide
 
