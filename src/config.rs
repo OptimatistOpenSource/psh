@@ -12,217 +12,66 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use std::fs::{create_dir_all, File};
-use std::io::{Read, Write};
-use std::mem;
-use std::path::Path;
+use std::{fs, path::Path};
 
-use anyhow::{Context, Result};
-use serde::{Deserialize, Serialize};
+use anyhow::Result;
+use serde::Deserialize;
 
-use crate::daemon::DaemonConfig;
-use crate::otlp::config::OtlpConfig;
-use crate::services::config::RpcConfig;
+const TEMPLATE: &str = include_str!("../doc/config.toml");
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
-pub struct PshConfig {
-    #[serde(rename = "auth")]
-    auth: AuthConfig,
-    #[serde(rename = "component")]
-    component_conf: ComponentConfig,
-    daemon: DaemonConfig,
+#[derive(Deserialize)]
+pub struct Config {
+    pub daemon: DaemonConfig,
     pub remote: RemoteConfig,
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
-pub struct RemoteConfig {
+#[derive(Deserialize)]
+pub struct DaemonConfig {
+    pub pid_file: String,
+    pub stdout: String,
+    pub stderr: String,
+    pub workdir: String,
+    pub wasm: DaemonWasmConfig,
+}
+
+#[derive(Clone, Deserialize)]
+pub struct DaemonWasmConfig {
     pub enable: bool,
+    pub path: String,
+    pub args: Vec<String>,
+}
+
+#[derive(Deserialize)]
+pub struct RemoteConfig {
+    pub token: String,
     pub rpc: RpcConfig,
-    #[serde(rename = "otlp")]
-    pub otlp_conf: OtlpConfig,
+    pub otlp: OtlpConfig,
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
-pub struct AuthConfig {
-    token: String,
+#[derive(Deserialize)]
+pub struct RpcConfig {
+    pub enable: bool,
+    pub addr: String,
+    /// in seconds
+    pub heartbeat_interval: u64,
+    pub instance_id_file: String,
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
-pub struct ComponentConfig {
-    path: String,
-    args: Vec<String>,
+#[derive(Deserialize)]
+pub struct OtlpConfig {
+    pub enable: bool,
+    pub addr: String,
 }
 
-impl ComponentConfig {
-    #![allow(dead_code)]
-    pub fn new(path: String, args: Vec<String>) -> Self {
-        Self { path, args }
+pub fn read_or_gen<P>(path: P) -> Result<Config>
+where
+    P: AsRef<Path>,
+{
+    let path = path.as_ref();
+    if !path.exists() {
+        fs::write(path, TEMPLATE)?;
     }
-
-    pub fn get_component_args(&mut self) -> Option<Vec<String>> {
-        if self.path.is_empty() {
-            return None;
-        }
-        let mut args = Vec::with_capacity(1 + self.args.len());
-        args.push(mem::take(&mut self.path));
-        args.extend(mem::take(&mut self.args));
-
-        Some(args)
-    }
-}
-
-impl PshConfig {
-    #[allow(dead_code)]
-    pub fn new(
-        component_conf: ComponentConfig,
-        otlp_conf: OtlpConfig,
-        daemon: DaemonConfig,
-        rpc: RpcConfig,
-        auth: AuthConfig,
-        enable_remote: bool,
-    ) -> Self {
-        Self {
-            component_conf,
-            daemon,
-            auth,
-            remote: RemoteConfig {
-                enable: enable_remote,
-                rpc,
-                otlp_conf,
-            },
-        }
-    }
-
-    pub fn read_config<P: AsRef<Path>>(path: P) -> Result<Self> {
-        let path = path.as_ref();
-        if !path.exists() {
-            Self::default().generate_config(path, false)?;
-        }
-        let mut config_str = String::new();
-        let mut config_file = File::open(path).context("The config not exists.")?;
-        config_file.read_to_string(&mut config_str)?;
-
-        let conf: Self = toml::from_str(&config_str)?;
-        Ok(conf)
-    }
-
-    /// When overwrite set to true, it will overwrite the config file.
-    pub fn generate_config<P: AsRef<Path>>(&self, path: P, overwrite: bool) -> Result<()> {
-        let path = path.as_ref();
-        if !overwrite && path.exists() {
-            return Ok(());
-        }
-        create_dir_all(path.parent().expect("no parent directory"))?;
-
-        let s = toml::to_string(self)?;
-
-        let mut f = File::options()
-            .create(true)
-            .truncate(true)
-            .write(true)
-            .open(path)?;
-
-        f.write_all(s.as_bytes())?;
-        Ok(())
-    }
-
-    #[allow(dead_code)]
-    pub fn otlp_conf(&mut self) -> OtlpConfig {
-        mem::take(&mut self.remote.otlp_conf)
-    }
-
-    pub fn get_component_args(&mut self) -> Option<Vec<String>> {
-        self.component_conf.get_component_args()
-    }
-
-    pub fn daemon(&self) -> &DaemonConfig {
-        &self.daemon
-    }
-
-    #[allow(dead_code)]
-    pub fn rpc(&mut self) -> RpcConfig {
-        mem::take(&mut self.remote.rpc)
-    }
-
-    pub fn take_token(&mut self) -> String {
-        mem::take(&mut self.auth.token)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::config::{AuthConfig, ComponentConfig, PshConfig};
-    use crate::daemon::DaemonConfig;
-    use crate::otlp::config::OtlpConfig;
-    use crate::services::config::RpcConfig;
-
-    const CONFIG_STR: &str = r#"[auth]
-token = ""
-
-[component]
-path = "cpu.wasm"
-args = ["1", "2", "3"]
-
-[daemon]
-pid_file = "/tmp/psh.pid"
-stdout_file = "/tmp/psh.stdout"
-stderr_file = "/tmp/psh.stderr"
-working_directory = "/"
-
-[remote]
-enable = true
-
-[remote.rpc]
-addr = "https://rpc.optimatist.com"
-duration = 1
-instance_id_file = "/etc/psh/instance.id"
-
-[remote.otlp]
-endpoint = "https://otel-col.optimatist.com"
-protocol = "Grpc"
-
-[remote.otlp.timeout]
-secs = 3
-nanos = 0
-"#;
-
-    const TEST_CONF_PATH: &str = "./target/config.toml";
-
-    #[test]
-    fn conf_str_convert_work() {
-        let cf = PshConfig::new(
-            ComponentConfig::new(
-                "cpu.wasm".to_owned(),
-                vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
-            ),
-            OtlpConfig::default(),
-            DaemonConfig::default(),
-            RpcConfig::default(),
-            AuthConfig::default(),
-            true,
-        );
-        let s = toml::to_string(&cf).unwrap();
-        assert_eq!(s, CONFIG_STR);
-
-        let str_to_cf: PshConfig = toml::from_str(CONFIG_STR).unwrap();
-        assert_eq!(cf, str_to_cf);
-    }
-
-    #[test]
-    fn generate_config_work() {
-        let cf = PshConfig::new(
-            ComponentConfig::new(
-                "cpu.wasm".to_owned(),
-                vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
-            ),
-            OtlpConfig::default(),
-            DaemonConfig::default(),
-            RpcConfig::default(),
-            AuthConfig::default(),
-            false,
-        );
-        cf.generate_config(TEST_CONF_PATH, true).unwrap();
-        let conf = PshConfig::read_config(TEST_CONF_PATH).unwrap();
-        assert_eq!(conf, cf);
-    }
+    let cfg = fs::read_to_string(path)?;
+    let cfg: Config = toml::from_str(&cfg)?;
+    Ok(cfg)
 }
