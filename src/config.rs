@@ -75,3 +75,8 @@ where
     let cfg: Config = toml::from_str(&cfg)?;
     Ok(cfg)
 }
+
+#[test]
+fn parse_config_template() {
+    toml::from_str::<Config>(TEMPLATE).unwrap();
+}
