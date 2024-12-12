@@ -1,0 +1,24 @@
+[daemon]
+pid_file = "/tmp/psh.pid"
+stdout = "/tmp/psh.stdout"
+stderr = "/tmp/psh.stderr"
+workdir = "/"
+
+[daemon.wasm]
+enable = false
+path = ""
+args = []
+
+[remote]
+token = ""
+
+[remote.rpc]
+enable = false
+addr = "https://rpc.optimatist.com"
+# in seconds
+heartbeat_interval = 1
+instance_id_file = "/etc/psh/instance.id"
+
+[remote.otlp]
+enable = false
+addr = "https://otel-col.optimatist.com"
