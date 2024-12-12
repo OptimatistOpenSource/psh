@@ -31,7 +31,8 @@ use args::Args;
 use chrono::offset::LocalResult;
 use chrono::{TimeZone, Utc};
 use clap::Parser;
-use config::{PshConfig, RemoteConfig};
+use config::RemoteConfig;
+use daemon::{get_daemon_wasm_args, spawn_daemon};
 use log::log_init;
 use opentelemetry_otlp::ExportConfig;
 use runtime::{Task, TaskRuntime};
@@ -48,20 +49,17 @@ fn main() -> Result<()> {
     }
 
     let mut args = Args::parse();
-    let mut psh_config = PshConfig::read_config(&args.config).unwrap_or_else(|e| {
-        tracing::warn!("{e}, use default Psh config.");
-        PshConfig::default()
-    });
+    let cfg = config::read_or_gen(args.config.clone())?;
 
     // When running as a daemon, it ignores all other cli arguments
     let component_args = if args.systemd() || args.daemon() {
-        psh_config.get_component_args()
+        get_daemon_wasm_args(cfg.daemon.wasm.clone())
     } else {
         args.get_component_args()
     };
 
     if args.daemon() {
-        daemon::Daemon::new(psh_config.daemon().clone()).daemon()?;
+        spawn_daemon(cfg.daemon)?;
     }
 
     let mut task_rt = TaskRuntime::new()?;
@@ -78,7 +76,7 @@ fn main() -> Result<()> {
 
     thread::spawn(move || -> Result<()> {
         let rt = tokio::runtime::Runtime::new()?;
-        let tasks = async_tasks(psh_config.remote.clone(), psh_config.take_token(), task_rt);
+        let tasks = async_tasks(cfg.remote, task_rt);
         rt.block_on(tasks)?;
         Ok(())
     })
@@ -88,22 +86,17 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-async fn async_tasks(
-    remote_cfg: RemoteConfig,
-    token: String,
-    mut task_rt: TaskRuntime,
-) -> Result<()> {
-    let token_ = token.clone();
-
+async fn async_tasks(remote_cfg: RemoteConfig, mut task_rt: TaskRuntime) -> Result<()> {
+    let token_cloned = remote_cfg.token.clone();
     let rpc_task = async move {
-        if !remote_cfg.enable {
+        if !remote_cfg.rpc.enable {
             let handle = task_rt.spawn(None)?;
             handle.join().expect("TaskRuntime has panicked");
             return Ok(());
         }
 
-        let duration = Duration::from_secs(remote_cfg.rpc.duration);
-        let mut client = RpcClient::new(remote_cfg.rpc, token_).await?;
+        let duration = Duration::from_secs(remote_cfg.rpc.heartbeat_interval);
+        let mut client = RpcClient::new(remote_cfg.rpc, token_cloned).await?;
         task_rt.spawn(Some(client.clone()))?;
         client.send_info().await?;
         loop {
@@ -131,12 +124,15 @@ async fn async_tasks(
     };
 
     let otlp_task = async {
-        if !remote_cfg.enable {
+        if !remote_cfg.otlp.enable {
             return Ok(());
         }
 
-        let export_conf: ExportConfig = remote_cfg.otlp_conf.into();
-        otlp::otlp_tasks(export_conf, token).await?;
+        let export_conf = ExportConfig {
+            endpoint: Some(remote_cfg.otlp.addr),
+            ..Default::default()
+        };
+        otlp::otlp_tasks(export_conf, remote_cfg.token).await?;
         Ok::<(), Error>(())
     };
 

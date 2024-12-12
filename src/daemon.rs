@@ -14,12 +14,37 @@
 
 use std::fs::File;
 
+use anyhow::Result;
 use daemonize::Daemonize;
 
+use crate::config::{DaemonConfig, DaemonWasmConfig};
 
+/// run the process as daemon
+pub fn spawn_daemon(cfg: DaemonConfig) -> Result<()> {
+    let stdout = File::create(cfg.stdout)?;
+    let stderr = File::create(cfg.stderr)?;
 
+    let daemonize = Daemonize::new()
+        .pid_file(cfg.pid_file)
+        .chown_pid_file(true) // is optional, see `Daemonize` documentation
+        .working_directory(cfg.workdir)
+        .user("root")
+        .group("root")
+        .umask(0o027) // Set umask, `0o027` by default.
+        .stdout(stdout) // by default, stdout is redirect to `/tmp/psh.stdout`.
+        .stderr(stderr); // by default, stderr is redirect to `/tmp/psh.stderr`.
 
+    daemonize.start()?;
 
+    Ok(())
+}
 
+pub fn get_daemon_wasm_args(cfg: DaemonWasmConfig) -> Option<Vec<String>> {
+    if !cfg.enable {
+        return None;
     }
+    let mut vec = Vec::with_capacity(cfg.args.len() + 1);
+    vec.push(cfg.path);
+    vec.extend(cfg.args);
+    Some(vec)
 }
