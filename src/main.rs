@@ -110,6 +110,7 @@ async fn async_tasks(remote_cfg: RemoteConfig, mut task_rt: TaskRuntime) -> Resu
     let rpc_task = async move {
         if !remote_cfg.rpc.enable {
             let handle = task_rt.spawn(None)?;
+            drop(task_rt);
             handle.join().expect("TaskRuntime has panicked");
             return Ok(());
         }
