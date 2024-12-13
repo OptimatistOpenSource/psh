@@ -3,7 +3,7 @@ Description=Performance Savior Home (PSH) collects software and hardware perform
 
 [Service]
 Type=simple
-ExecStart=/usr/sbin/psh -s
+ExecStart=/usr/sbin/psh --wdc
 Restart=on-abnormal
 
 [Install]
