@@ -25,7 +25,7 @@ pub struct Config {
     pub remote: RemoteConfig,
 }
 
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize)]
 pub struct DaemonConfig {
     pub pid_file: String,
     pub stdout: String,

@@ -48,23 +48,42 @@ fn main() -> Result<()> {
         exit(1);
     }
 
-    let mut args = Args::parse();
+    let args = Args::parse();
     let cfg = config::read_or_gen(args.config.clone())?;
 
-    // When running as a daemon, it ignores all other cli arguments
-    let component_args = if args.systemd() || args.daemon() {
-        get_daemon_wasm_args(cfg.daemon.wasm.clone())
-    } else {
-        args.get_component_args()
+    let wasm_with_args = match args {
+        Args {
+            daemon: true,
+            wasm_with_args: None,
+            ..
+        } => {
+            spawn_daemon(cfg.daemon.clone())?;
+            get_daemon_wasm_args(cfg.daemon.wasm.clone())
+        }
+        Args {
+            daemon: true,
+            wasm_with_args: Some(_),
+            ..
+        } => {
+            bail!("Invalid argument, WASM can only be configured in the config file in daemon mode")
+        }
+        Args {
+            daemon: false,
+            wasm_from_daemon_config,
+            wasm_with_args,
+            ..
+        } => {
+            if wasm_from_daemon_config {
+                get_daemon_wasm_args(cfg.daemon.wasm.clone())
+            } else {
+                wasm_with_args
+            }
+        }
     };
-
-    if args.daemon() {
-        spawn_daemon(cfg.daemon)?;
-    }
 
     let mut task_rt = TaskRuntime::new()?;
 
-    if let Some(args) = component_args {
+    if let Some(args) = wasm_with_args {
         let task = Task {
             id: None,
             wasm_component: fs::read(&args[0])?,
