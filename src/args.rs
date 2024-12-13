@@ -12,54 +12,37 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use std::mem;
-
 use clap::Parser;
 
 #[derive(Parser, Debug)]
-#[non_exhaustive]
 pub struct Args {
-    /// Path to PSH wasm component
-    #[arg(short, long)]
-    #[arg(value_name = "PATH")]
-    pub psh_wasm_component: Option<String>,
-
-    #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
-    pub extra_args: Vec<String>,
-
-    /// Config file path
+    /// Config file
+    /// └╴Will be generated if it does not exist
     #[arg(short, long)]
     #[arg(value_name = "PATH")]
     #[arg(default_value = "/etc/psh/config.toml")]
+    #[arg(verbatim_doc_comment)]
     pub config: String,
 
-    /// When running as a systemd daemon, it ignores all other command-line arguments
-    /// except `--daemon` and `--config`.
+    /// Run as daemon
+    /// └╴WASM binary and it's args are read from the config file in this mode
+    ///   (Auto applies --wasm-from-daemon-config)
     #[arg(short, long)]
-    systemd: bool,
+    #[arg(verbatim_doc_comment)]
+    pub daemon: bool,
 
-    /// When running as a SysV daemon, it ignores all other command-line arguments
-    /// except `--config`.
-    #[arg(short, long)]
-    daemon: bool,
-}
+    /// Use WASM from daemon config
+    /// └╴This is useful when run as systemd daemon and you don't want to config
+    ///   the WASM in the service file
+    #[arg(long)]
+    #[clap(visible_alias = "wdc")]
+    #[arg(verbatim_doc_comment)]
+    pub wasm_from_daemon_config: bool,
 
-impl Args {
-    /// whether run as systemd daemon
-    pub fn systemd(&self) -> bool {
-        self.systemd
-    }
-
-    /// whether run as SysV daemon
-    pub fn daemon(&self) -> bool {
-        self.daemon
-    }
-
-    pub fn get_component_args(&mut self) -> Option<Vec<String>> {
-        let mut component_args = Vec::with_capacity(1 + self.extra_args.len());
-        component_args.push(self.psh_wasm_component.take()?);
-        component_args.extend(mem::take(&mut self.extra_args));
-
-        Some(component_args)
-    }
+    /// WASM binary followed with arguments
+    /// └╴e.g. /path/to/your.wasm foo bar baz
+    ///   Invalid in daemon mode (--daemon)
+    #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+    #[arg(verbatim_doc_comment)]
+    pub wasm_with_args: Option<Vec<String>>,
 }
