@@ -13,7 +13,7 @@
 // see <https://www.gnu.org/licenses/>.
 
 pub mod pb {
-    tonic::include_proto!("psh");
+    tonic::include_proto!("psh.proto.instance");
 }
 pub mod host_info;
 pub mod rpc;
