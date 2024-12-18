@@ -121,7 +121,7 @@ async fn async_tasks(remote_cfg: RemoteConfig, mut task_rt: TaskRuntime) -> Resu
         client.send_info().await?;
         loop {
             let finished_task_id = task_rt.finished_task_id();
-            if let Some(task) = client
+            if let Some(mut task) = client
                 .heartbeat(task_rt.is_idle(), finished_task_id)
                 .await?
             {
@@ -129,10 +129,12 @@ async fn async_tasks(remote_cfg: RemoteConfig, mut task_rt: TaskRuntime) -> Resu
                     LocalResult::Single(t) => t,
                     _ => bail!("Invalid task end time"),
                 };
+                let mut wasm_component_args = vec![task.id.to_string()];
+                wasm_component_args.append(&mut task.wasm_args);
                 let task = Task {
                     id: Some(task.id),
                     wasm_component: task.wasm,
-                    wasm_component_args: task.wasm_args,
+                    wasm_component_args,
                     end_time,
                 };
                 task_rt.schedule(task)?
