@@ -88,11 +88,6 @@ impl profiling::data_export::metric::Host for DataExportCtx {
             metric_meta: Some(MetricMeta {
                 start_time: sample.ts.unwrap_or(0),
                 end_time: sample.ts.unwrap_or(0),
-                key_type: sample
-                    .tags
-                    .into_iter()
-                    .map(|(k, _)| (k, "String".to_string()))
-                    .collect(),
             }),
         };
         let req = DataRequest {
