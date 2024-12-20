@@ -12,9 +12,11 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
+use chrono::{TimeZone, Utc};
 use profiling::data_export::measurement::Point;
 use profiling::data_export::metric::Sample;
-use rinfluxdb::line_protocol::LineBuilder;
+use profiling::data_export::types::FieldValue as WitFieldValue;
+use rinfluxdb::line_protocol::{FieldValue, LineBuilder};
 use wasmtime::component::Linker;
 
 use crate::services::pb::{DataRequest, Metadata, MetricMeta};
@@ -41,6 +43,21 @@ pub struct Ctx {
 pub struct DataExportCtx {
     pub ctx: Option<Ctx>,
 }
+
+impl From<WitFieldValue> for FieldValue {
+    fn from(value: WitFieldValue) -> Self {
+        match value {
+            WitFieldValue::Float(x) => Self::Float(x),
+            WitFieldValue::Int(x) => Self::Integer(x),
+            WitFieldValue::Uint(x) => Self::UnsignedInteger(x),
+            WitFieldValue::Text(x) => Self::String(x),
+            WitFieldValue::Boolean(x) => Self::Boolean(x),
+            WitFieldValue::NsTs(x) => Self::Timestamp(Utc.timestamp_nanos(x as _)),
+        }
+    }
+}
+
+impl profiling::data_export::types::Host for DataExportCtx {}
 
 impl profiling::data_export::file::Host for DataExportCtx {
     fn export_bytes(&mut self, bytes: Vec<u8>) -> wasmtime::Result<Result<(), String>> {
