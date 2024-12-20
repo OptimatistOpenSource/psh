@@ -16,15 +16,18 @@
 #[allow(dead_code)]
 mod imports;
 
-use imports::profiling::data_export::measurement::{export_point, Point};
+use imports::profiling::data_export::{
+    measurement::{export_point, Point},
+    types::FieldValue,
+};
 
 fn main() {
     for i in 0..100 {
         let point = Point {
             name: "test-export-measurement".to_string(),
             tags: vec![("tag".to_string(), "hello".to_string())],
-            fields: vec![("count".to_string(), i.to_string())],
-            ts: None,
+            fields: vec![("count".to_string(), FieldValue::Int(i))],
+            ns_ts: None,
         };
         export_point(&point).expect("Failed to export point");
     }
