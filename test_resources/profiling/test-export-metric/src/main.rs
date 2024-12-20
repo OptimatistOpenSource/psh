@@ -16,15 +16,18 @@
 #[allow(dead_code)]
 mod imports;
 
-use imports::profiling::data_export::metric::{export_sample, Sample};
+use imports::profiling::data_export::{
+    metric::{export_sample, Sample},
+    types::FieldValue,
+};
 
 fn main() {
     for i in 0..100 {
         let sample = Sample {
             name: "test-export-metric".to_string(),
             tags: vec![("tag".to_string(), "hello".to_string())],
-            value: i as _,
-            ts: None,
+            value: FieldValue::Int(i),
+            ns_ts: None,
         };
         export_sample(&sample).expect("Failed to export sample");
     }
