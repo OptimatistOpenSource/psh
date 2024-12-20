@@ -103,8 +103,8 @@ impl profiling::data_export::metric::Host for DataExportCtx {
             r#type: "metric".to_string(),
             size: payload.len() as _,
             metric_meta: Some(MetricMeta {
-                start_time: sample.ts.unwrap_or(0),
-                end_time: sample.ts.unwrap_or(0),
+                start_time: sample.ns_ts.unwrap_or(0),
+                end_time: sample.ns_ts.unwrap_or(0),
             }),
         };
         let req = DataRequest {
