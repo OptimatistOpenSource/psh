@@ -12,7 +12,6 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-pub mod config;
 pub mod gauges;
 
 use std::time::Duration;
