@@ -18,11 +18,11 @@ use once_cell::sync::Lazy;
 use procfs::CurrentSI;
 
 use super::raw::parse_cpuinfo;
-use super::{CPUInfo, CpuStats};
+use super::{CpuInfo, CpuStats};
 use crate::error::Result;
 use crate::utils::Handle;
 
-static INFO_GLOBAL: Lazy<Handle<CPUInfo>> =
+static INFO_GLOBAL: Lazy<Handle<CpuInfo>> =
     Lazy::new(|| Handle::new(|| parse_cpuinfo!().map_err(Into::into)));
 
 static STAT_GLOBAL: Lazy<Handle<CpuStats>> = Lazy::new(|| {
@@ -35,7 +35,7 @@ static STAT_GLOBAL: Lazy<Handle<CpuStats>> = Lazy::new(|| {
 
 #[derive(Debug, Clone)]
 pub struct CpuHandle {
-    info: Handle<CPUInfo>,
+    info: Handle<CpuInfo>,
     stat: Handle<CpuStats>,
 }
 
@@ -53,7 +53,7 @@ impl CpuHandle {
         Self::default()
     }
 
-    pub fn info(&self) -> Result<CPUInfo> {
+    pub fn info(&self) -> Result<CpuInfo> {
         self.info.get(None)
     }
 

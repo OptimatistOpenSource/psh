@@ -15,7 +15,7 @@
 use std::fs::File;
 use std::io::{self, BufRead, BufReader};
 
-use super::{AddressSizes, Arm64CpuInfo, CPUInfo, TlbSize, X86_64CpuInfo};
+use super::{AddressSizes, Arm64CpuInfo, CpuInfo, TlbSize, X86_64CpuInfo};
 
 fn parse_unit(unit: &str) -> u32 {
     match unit.trim() {
@@ -240,20 +240,20 @@ fn parse_aarch64_cpu_info(reader: BufReader<File>) -> io::Result<Vec<Arm64CpuInf
 }
 
 #[allow(dead_code)]
-pub fn do_parse_cpuinfo(path: &str, arch: &str) -> io::Result<CPUInfo> {
+pub fn do_parse_cpuinfo(path: &str, arch: &str) -> io::Result<CpuInfo> {
     let file = File::open(path)?;
     let reader = io::BufReader::new(file);
 
     let cpu_info = match arch {
         "x86_64" => {
             let x86_64_cpu_info = parse_x86_64_cpu_info(reader)?;
-            CPUInfo::X86_64(x86_64_cpu_info)
+            CpuInfo::X86_64(x86_64_cpu_info)
         }
         "aarch64" => {
             let aarch64_cpu_info = parse_aarch64_cpu_info(reader)?;
-            CPUInfo::Arm64(aarch64_cpu_info)
+            CpuInfo::Arm64(aarch64_cpu_info)
         }
-        _ => CPUInfo::Unsupported(format!("unsupported architecture {}", arch).to_string()),
+        _ => CpuInfo::Unsupported(format!("unsupported architecture {}", arch).to_string()),
     };
 
     Ok(cpu_info)
@@ -275,7 +275,7 @@ pub(crate) use parse_cpuinfo;
 mod test {
     use std::path::PathBuf;
 
-    use crate::cpu::{AddressSizes, Arm64CpuInfo, CPUInfo, TlbSize, X86_64CpuInfo};
+    use crate::cpu::{AddressSizes, Arm64CpuInfo, CpuInfo, TlbSize, X86_64CpuInfo};
 
     #[test]
     #[cfg(target_os = "linux")]
@@ -283,10 +283,10 @@ mod test {
         let cpus = num_cpus::get();
         let cpu_info = parse_cpuinfo!().unwrap();
         match cpu_info {
-            CPUInfo::X86_64(x86_64_cpu_info) => {
+            CpuInfo::X86_64(x86_64_cpu_info) => {
                 assert_eq!(cpus, x86_64_cpu_info.len());
             }
-            CPUInfo::Arm64(aarch64_cpu_info) => {
+            CpuInfo::Arm64(aarch64_cpu_info) => {
                 assert_eq!(cpus, aarch64_cpu_info.len());
             }
             _ => {
@@ -305,10 +305,10 @@ mod test {
         let cpus = 128;
         let cpu_info = parse_cpuinfo!(cpuinfo_path, "aarch64").unwrap();
         match cpu_info {
-            CPUInfo::X86_64(_) => {
+            CpuInfo::X86_64(_) => {
                 panic!("Should not reach here");
             }
-            CPUInfo::Arm64(cpu_vec) => {
+            CpuInfo::Arm64(cpu_vec) => {
                 let cpu126 = Arm64CpuInfo {
                     processor: 126,
                     bogomips: 100.0,
@@ -387,7 +387,7 @@ mod test {
         let cpus = 2;
         let cpu_info = parse_cpuinfo!(cpuinfo_path, "x86_64").unwrap();
         match cpu_info {
-            CPUInfo::X86_64(cpu_vec) => {
+            CpuInfo::X86_64(cpu_vec) => {
                 let cpu0 = X86_64CpuInfo {
                     processor: 0,
                     vendor_id: "GenuineIntel".to_string(),
@@ -523,7 +523,7 @@ mod test {
                 assert_eq!(cpu0, cpu_vec[0]);
                 assert_eq!(cpus, cpu_vec.len());
             }
-            CPUInfo::Arm64(_) => {
+            CpuInfo::Arm64(_) => {
                 panic!("Should not reach here");
             }
             _ => {
@@ -542,7 +542,7 @@ mod test {
         let cpus = 16;
         let cpu_info = parse_cpuinfo!(cpuinfo_path, "x86_64").unwrap();
         match cpu_info {
-            CPUInfo::X86_64(cpu_vec) => {
+            CpuInfo::X86_64(cpu_vec) => {
                 let cpu0 = X86_64CpuInfo {
                     processor: 0,
                     vendor_id: "AuthenticAMD".to_string(),
@@ -739,7 +739,7 @@ mod test {
                 assert_eq!(cpu0, cpu_vec[0]);
                 assert_eq!(cpus, cpu_vec.len());
             }
-            CPUInfo::Arm64(_) => {
+            CpuInfo::Arm64(_) => {
                 panic!("Should not reach here");
             }
             _ => {
