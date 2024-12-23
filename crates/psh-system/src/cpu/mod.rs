@@ -165,18 +165,18 @@ impl X86_64CpuInfo {
 }
 
 #[derive(Debug, Clone)]
-pub enum CPUInfo {
+pub enum CpuInfo {
     X86_64(Vec<X86_64CpuInfo>),
     Arm64(Vec<Arm64CpuInfo>),
     Unsupported(String),
 }
 
-impl Display for CPUInfo {
+impl Display for CpuInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            CPUInfo::X86_64(_) => f.write_str("X86_64"),
-            CPUInfo::Arm64(_) => f.write_str("arm64"),
-            CPUInfo::Unsupported(s) => f.write_str(s),
+            CpuInfo::X86_64(_) => f.write_str("X86_64"),
+            CpuInfo::Arm64(_) => f.write_str("arm64"),
+            CpuInfo::Unsupported(s) => f.write_str(s),
         }
     }
 }

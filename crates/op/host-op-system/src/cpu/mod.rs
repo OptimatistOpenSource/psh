@@ -15,7 +15,7 @@
 use std::time::Duration;
 
 use psh_system::cpu::{
-    AddressSizes as HostAddressSizes, Arm64CpuInfo as HostArm64CpuInfo, CPUInfo as HostCpuInfo,
+    AddressSizes as HostAddressSizes, Arm64CpuInfo as HostArm64CpuInfo, CpuInfo as HostCpuInfo,
     CpuMask as HostCpuMask, CpuStats as HostCpuStats, CpuTime as HostCpuStat,
     TlbSize as HostTlbSize, X86_64CpuInfo as HostX86_64CpuInfo,
 };
