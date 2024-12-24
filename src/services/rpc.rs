@@ -16,7 +16,7 @@ use anyhow::Result;
 use tonic::transport::{Channel, ClientTlsConfig, Endpoint};
 use tonic::Request;
 
-use super::pb::{self, DataRequest};
+use super::pb::{self, DataRequest, InstanceState};
 use crate::config::RpcConfig;
 use crate::services::host_info::RawInfo;
 use crate::services::pb::psh_service_client::PshServiceClient;
@@ -104,6 +104,19 @@ impl RpcClient {
         }
 
         Ok(resp.task)
+    }
+
+    pub async fn heartbeat_v2(&mut self, state: InstanceState) -> Result<()> {
+        let req = {
+            let mut req = Request::new(state);
+            req.metadata_mut()
+                .insert("authorization", format!("Bearer {}", self.token).parse()?);
+            req
+        };
+
+        self.client.heartbeat(req).await?;
+
+        Ok(())
     }
 }
 
