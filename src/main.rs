@@ -36,6 +36,7 @@ use daemon::{get_daemon_wasm_args, spawn_daemon};
 use log::log_init;
 use opentelemetry_otlp::ExportConfig;
 use runtime::{Task, TaskRuntime};
+use services::pb::InstanceState;
 use services::rpc::RpcClient;
 use tokio::try_join;
 use utils::check_root_privilege;
@@ -121,10 +122,8 @@ async fn async_tasks(remote_cfg: RemoteConfig, mut task_rt: TaskRuntime) -> Resu
         client.send_info().await?;
         loop {
             let finished_task_id = task_rt.finished_task_id();
-            if let Some(mut task) = client
-                .heartbeat(task_rt.is_idle(), finished_task_id)
-                .await?
-            {
+            let idle = task_rt.is_idle();
+            if let Some(mut task) = client.heartbeat(idle, finished_task_id).await? {
                 let end_time = match Utc.timestamp_millis_opt(task.end_time as _) {
                     LocalResult::Single(t) => t,
                     _ => bail!("Invalid task end time"),
@@ -139,6 +138,14 @@ async fn async_tasks(remote_cfg: RemoteConfig, mut task_rt: TaskRuntime) -> Resu
                 };
                 task_rt.schedule(task)?
             }
+
+            client
+                .heartbeat_v2(InstanceState {
+                    instance_id: client.instance_id()?,
+                    idle,
+                })
+                .await?;
+
             tokio::time::sleep(duration).await;
         }
         #[allow(unreachable_code)]
