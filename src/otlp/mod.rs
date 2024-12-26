@@ -54,7 +54,8 @@ pub async fn otlp_tasks(export_config: ExportConfig, token: String) -> anyhow::R
     let _ = gauges::memory::start(token.clone(), meter.clone(), interval)?;
     let _ = gauges::network::start(token.clone(), meter.clone(), interval)?;
     let _ = gauges::disk::start(token.clone(), meter.clone(), interval)?;
-    let _ = gauges::interrupt::start(token, meter.clone(), interval)?;
+    let _ = gauges::interrupt::start(token.clone(), meter.clone(), interval)?;
+    let _ = gauges::cpu::start(token, &meter, interval)?;
     loop {
         tokio::time::sleep(interval).await;
     }
