@@ -12,6 +12,7 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
+pub mod cpu;
 pub mod disk;
 pub mod interrupt;
 pub mod memory;
