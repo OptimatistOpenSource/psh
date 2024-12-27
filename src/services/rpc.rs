@@ -12,15 +12,18 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use anyhow::Result;
+use anyhow::{bail, Result};
+use chrono::offset::LocalResult;
+use chrono::{TimeZone, Utc};
 use tonic::transport::{Channel, ClientTlsConfig, Endpoint};
 use tonic::Request;
 
 use super::pb::{self, DataRequest, InstanceState};
 use crate::config::RpcConfig;
+use crate::runtime::Task;
 use crate::services::host_info::RawInfo;
 use crate::services::pb::psh_service_client::PshServiceClient;
-use crate::services::pb::HostInfoRequest;
+use crate::services::pb::{GetTaskReq, HostInfoRequest};
 
 #[derive(Clone)]
 pub struct RpcClient {
@@ -117,5 +120,31 @@ impl RpcClient {
         self.client.heartbeat(req).await?;
 
         Ok(())
+    }
+
+    pub async fn get_task(&mut self, instance_id: String) -> Result<Option<Task>> {
+        let req = {
+            let mut req = Request::new(GetTaskReq { instance_id });
+            req.metadata_mut()
+                .insert("authorization", format!("Bearer {}", self.token).parse()?);
+            req
+        };
+
+        let Some(task) = self.client.get_task(req).await?.into_inner().task else {
+            return Ok(None);
+        };
+
+        let end_time = match Utc.timestamp_millis_opt(task.end_time as _) {
+            LocalResult::Single(t) => t,
+            _ => bail!("Invalid task end time"),
+        };
+        let task = Task {
+            id: Some(task.id),
+            wasm_component: task.wasm,
+            wasm_component_args: task.wasm_args,
+            end_time,
+        };
+
+        Ok(Some(task))
     }
 }

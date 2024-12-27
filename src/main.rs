@@ -28,7 +28,6 @@ use std::{fs, thread};
 
 use anyhow::{bail, Error, Result};
 use args::Args;
-use chrono::offset::LocalResult;
 use chrono::{TimeZone, Utc};
 use clap::Parser;
 use config::RemoteConfig;
@@ -123,19 +122,11 @@ async fn async_tasks(remote_cfg: RemoteConfig, mut task_rt: TaskRuntime) -> Resu
         loop {
             let finished_task_id = task_rt.finished_task_id();
             let idle = task_rt.is_idle();
-            if let Some(mut task) = client.heartbeat(idle, finished_task_id).await? {
-                let end_time = match Utc.timestamp_millis_opt(task.end_time as _) {
-                    LocalResult::Single(t) => t,
-                    _ => bail!("Invalid task end time"),
-                };
-                let mut wasm_component_args = vec![task.id.to_string()];
-                wasm_component_args.append(&mut task.wasm_args);
-                let task = Task {
-                    id: Some(task.id),
-                    wasm_component: task.wasm,
-                    wasm_component_args,
-                    end_time,
-                };
+
+            // Set idle to false to prevent legacy heartbeat get task
+            client.heartbeat(false, finished_task_id).await?;
+
+            if let Some(task) = client.get_task(client.instance_id()?).await? {
                 task_rt.schedule(task)?
             }
 
