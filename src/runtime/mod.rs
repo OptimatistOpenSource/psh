@@ -61,7 +61,7 @@ impl TaskRuntime {
         })
     }
 
-    pub fn schedule(&mut self, task: Task) -> Result<()> {
+    pub fn schedule(&self, task: Task) -> Result<()> {
         self.len.fetch_add(1, Ordering::Release);
         self.tx.send(task)?;
         Ok(())
@@ -72,15 +72,15 @@ impl TaskRuntime {
         len == 0
     }
 
-    pub fn finished_task_id(&mut self) -> Option<String> {
+    pub fn finished_task_id(&self) -> Option<String> {
         self.finished_task_id.lock().unwrap().pop()
     }
-
+    #[allow(clippy::significant_drop_tightening)]
     pub fn spawn(&mut self, rpc_client: Option<RpcClient>) -> Result<JoinHandle<()>> {
-        let rx = match self.rx.take() {
-            Some(rx) => rx,
-            None => panic!("twice spawned"),
-        };
+        let rx = self
+            .rx
+            .take()
+            .map_or_else(|| panic!("twice spawned"), |rx| rx);
 
         let envs: Vec<(String, String)> = std::env::vars().collect();
 
@@ -95,6 +95,7 @@ impl TaskRuntime {
                 };
                 envs.push(("TASK_TIME_SLICE".to_string(), task_time_slice.to_string()));
 
+                #[expect(clippy::significant_drop_in_scrutinee)]
                 let ctx = match (rpc_client.clone(), task.id.clone()) {
                     (Some(rpc_client), Some(task_id)) => Some(Ctx {
                         task_id,

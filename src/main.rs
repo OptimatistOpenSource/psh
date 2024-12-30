@@ -81,7 +81,7 @@ fn main() -> Result<()> {
         }
     };
 
-    let mut task_rt = TaskRuntime::new()?;
+    let task_rt = TaskRuntime::new()?;
 
     if let Some(args) = wasm_with_args {
         let task = Task {
@@ -105,6 +105,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
+#[expect(clippy::significant_drop_tightening)]
 async fn async_tasks(remote_cfg: RemoteConfig, mut task_rt: TaskRuntime) -> Result<()> {
     let token_cloned = remote_cfg.token.clone();
     let rpc_task = async move {
