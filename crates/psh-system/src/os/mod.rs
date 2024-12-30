@@ -19,7 +19,6 @@ use std::fmt::Display;
 
 pub use handle::OsHandle;
 
-#[allow(dead_code)]
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct KernelVersion {
     pub major: u8,
@@ -43,7 +42,6 @@ impl Display for KernelVersion {
     }
 }
 
-#[allow(dead_code)]
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum DistroKind {
     Arch,
@@ -83,14 +81,12 @@ impl Display for DistroKind {
     }
 }
 
-#[allow(dead_code)]
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct DistroVersion {
     pub distro: DistroKind,
     pub version: Option<String>,
 }
 
-#[allow(dead_code)]
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct OsInfo {
     pub distro: DistroVersion,

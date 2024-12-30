@@ -75,7 +75,6 @@ pub fn get_kernel_version() -> anyhow::Result<KernelVersion> {
     Ok(version.into())
 }
 
-#[allow(unused_macros)]
 macro_rules! parse_distro_version {
     ($path:expr) => {
         crate::os::raw::parse_distro_version_impl($path)
