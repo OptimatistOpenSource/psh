@@ -12,29 +12,34 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use std::fs::File;
-use std::io::{self, BufRead};
-
-use anyhow::bail;
+use std::{
+    fs::File,
+    io::{self, BufRead},
+    str::FromStr,
+};
 
 use super::{DistroKind, DistroVersion, KernelVersion};
 
-pub fn parse_distro_name(name: &str) -> DistroKind {
-    match name {
-        "Arch Linux" => DistroKind::Arch,
-        "CentOS Linux" => DistroKind::CentOS,
-        "Debian GNU/Linux" => DistroKind::Debian,
-        "Fedora Linux" => DistroKind::Fedora,
-        "Gentoo" => DistroKind::Gentoo,
-        "Kali GNU/Linux" => DistroKind::Kali,
-        "Linux Mint" => DistroKind::Mint,
-        "Manjaro Linux" => DistroKind::Manjaro,
-        "NixOS" => DistroKind::NixOS,
-        "Pop!_OS" => DistroKind::PopOS,
-        "Red Hat Enterprise Linux" => DistroKind::RedHat,
-        "Slackware" => DistroKind::Slackware,
-        "Ubuntu" => DistroKind::Ubuntu,
-        distro => DistroKind::Other(distro.to_owned()),
+impl FromStr for DistroKind {
+    type Err = core::convert::Infallible;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "Arch Linux" => Self::Arch,
+            "CentOS Linux" => Self::CentOS,
+            "Debian GNU/Linux" => Self::Debian,
+            "Fedora Linux" => Self::Fedora,
+            "Gentoo" => Self::Gentoo,
+            "Kali GNU/Linux" => Self::Kali,
+            "Linux Mint" => Self::Mint,
+            "Manjaro Linux" => Self::Manjaro,
+            "NixOS" => Self::NixOS,
+            "Pop!_OS" => Self::PopOS,
+            "Red Hat Enterprise Linux" => Self::RedHat,
+            "Slackware" => Self::Slackware,
+            "Ubuntu" => Self::Ubuntu,
+            distro => Self::Other(distro.to_owned()),
+        })
     }
 }
 
@@ -50,40 +55,26 @@ pub fn parse_distro_version_impl(path: &str) -> anyhow::Result<DistroVersion> {
         if let Some((key, value)) = line.split_once('=') {
             if key == "VERSION" {
                 version.version = Some(value.trim_matches('"').to_string());
-            }
-            if key == "NAME" {
-                version.distro = parse_distro_name(value.trim_matches('"'));
+            } else if key == "NAME" {
+                let name = value.trim_matches('"');
+                // NOTE:
+                // The parsing is `Infallible`.
+                // At 1.82 it can be written as `let Ok(distro) = name.parse();`
+                let distro = unsafe { name.parse().unwrap_unchecked() };
+                version.distro = distro;
             }
         }
     }
     Ok(version)
 }
 
-fn parse_kernel_version(version: &str) -> anyhow::Result<KernelVersion> {
-    // brute force here
-    let mut parts = version.split('.');
-    let (major, minor, patch) = (parts.next(), parts.next(), parts.next());
-    let version = match (major, minor, patch) {
-        (Some(major), Some(minor), Some(patch)) => KernelVersion {
-            major: major.parse()?,
-            minor: minor.parse()?,
-            patch: match patch.find(|c: char| !c.is_ascii_digit()) {
-                // patch often follows some extra versioning string
-                Some(pos) => patch[..pos].parse()?,
-                None => patch.parse()?,
-            },
-        },
-        _ => bail!("Invalid version string: {}", version),
-    };
-    Ok(version)
-}
-
 pub fn get_kernel_version() -> anyhow::Result<KernelVersion> {
+    use procfs::sys::kernel::Version;
     let info = uname::uname()?;
-    parse_kernel_version(&info.release)
+    let version: Version = info.release.parse().map_err(|e: &str| anyhow::anyhow!(e))?;
+    Ok(version.into())
 }
 
-#[allow(unused_macros)]
 macro_rules! parse_distro_version {
     ($path:expr) => {
         crate::os::raw::parse_distro_version_impl($path)
@@ -97,32 +88,7 @@ pub(crate) use parse_distro_version;
 
 #[cfg(test)]
 mod test {
-    use super::{parse_kernel_version, DistroKind, DistroVersion, KernelVersion};
-
-    #[test]
-    fn test_parse_kernel_version() {
-        macro_rules! kver {
-            ($major: literal, $minor: literal, $patch: literal) => {
-                KernelVersion {
-                    major: $major,
-                    minor: $minor,
-                    patch: $patch,
-                }
-            };
-        }
-        assert_eq!(parse_kernel_version("3.4.4-xxx").unwrap(), kver!(3, 4, 4));
-        assert_eq!(
-            parse_kernel_version("6.0.100-some-distro").unwrap(),
-            kver!(6, 0, 100)
-        );
-        assert!(parse_kernel_version("6").is_err());
-        assert!(parse_kernel_version("6.0").is_err());
-        assert!(parse_kernel_version("6.0.a").is_err());
-        assert!(parse_kernel_version("a.0.12").is_err());
-        assert!(parse_kernel_version("6.a.12").is_err());
-        assert!(parse_kernel_version("6.-1.12").is_err());
-        assert!(parse_kernel_version("1000.1.12").is_err());
-    }
+    use super::{DistroKind, DistroVersion};
 
     macro_rules! distro_other {
         ($name: literal, $version: literal) => {
