@@ -19,7 +19,7 @@ mod raw;
 
 pub use handle::MemoryHandle;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct MemoryModule {
     pub array_handle: u32,
     pub error_info_handle: Option<u32>,
@@ -60,8 +60,8 @@ pub struct MemoryModule {
 }
 
 impl MemoryModule {
-    fn new() -> MemoryModule {
-        MemoryModule {
+    const fn new() -> Self {
+        Self {
             array_handle: 0,
             error_info_handle: None,
             total_width: None,
@@ -156,8 +156,8 @@ pub struct MemInfo {
 }
 
 impl MemInfo {
-    fn new() -> MemInfo {
-        MemInfo {
+    const fn new() -> Self {
+        Self {
             mem_total: 0,
             mem_free: 0,
             mem_available: 0,

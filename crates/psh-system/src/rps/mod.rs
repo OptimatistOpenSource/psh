@@ -20,7 +20,7 @@ pub use handle::RpsHandle;
 use crate::cpu::CpuMask;
 
 #[allow(dead_code)]
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct RpsQueue {
     pub name: String,
     // FIXME: better to use more expressive type than raw string
@@ -29,7 +29,7 @@ pub struct RpsQueue {
 }
 
 #[allow(dead_code)]
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct RpsDetails {
     pub dev: String,
     pub queues: Vec<RpsQueue>,

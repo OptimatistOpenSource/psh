@@ -19,7 +19,7 @@ use anyhow::bail;
 
 use super::{DistroKind, DistroVersion, KernelVersion};
 
-pub(crate) fn parse_distro_name(name: &str) -> DistroKind {
+pub fn parse_distro_name(name: &str) -> DistroKind {
     match name {
         "Arch Linux" => DistroKind::Arch,
         "CentOS Linux" => DistroKind::CentOS,
@@ -38,7 +38,7 @@ pub(crate) fn parse_distro_name(name: &str) -> DistroKind {
     }
 }
 
-pub(crate) fn parse_distro_version_impl(path: &str) -> anyhow::Result<DistroVersion> {
+pub fn parse_distro_version_impl(path: &str) -> anyhow::Result<DistroVersion> {
     let file = File::open(path)?;
     let reader = io::BufReader::new(file);
     let mut version = DistroVersion {
@@ -78,7 +78,7 @@ fn parse_kernel_version(version: &str) -> anyhow::Result<KernelVersion> {
     Ok(version)
 }
 
-pub(crate) fn get_kernel_version() -> anyhow::Result<KernelVersion> {
+pub fn get_kernel_version() -> anyhow::Result<KernelVersion> {
     let info = uname::uname()?;
     parse_kernel_version(&info.release)
 }

@@ -54,7 +54,7 @@ impl<T, F> ResourceInner<T, F> {
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct Resource<T, F>(Arc<Mutex<ResourceInner<T, F>>>);
+pub struct Resource<T, F>(Arc<Mutex<ResourceInner<T, F>>>);
 
 impl<T, F> Resource<T, F>
 where
@@ -75,10 +75,7 @@ where
         let Ok(mut guard) = self.0.lock() else {
             return Err(Error::Sync);
         };
-        let is_outdated = match interval {
-            Some(interval) => (now - guard.timestamp) * 10 > interval,
-            None => true,
-        };
+        let is_outdated = interval.map_or(true, |interval| (now - guard.timestamp) * 10 > interval);
 
         if is_outdated || guard.resource.is_none() {
             guard.update()?;
@@ -87,4 +84,4 @@ where
     }
 }
 
-pub(crate) type Handle<T, E = Error> = Resource<T, fn() -> Result<T, E>>;
+pub type Handle<T, E = Error> = Resource<T, fn() -> Result<T, E>>;

@@ -253,7 +253,7 @@ pub fn do_parse_cpuinfo(path: &str, arch: &str) -> io::Result<CpuInfo> {
             let aarch64_cpu_info = parse_aarch64_cpu_info(reader)?;
             CpuInfo::Arm64(aarch64_cpu_info)
         }
-        _ => CpuInfo::Unsupported(format!("unsupported architecture {}", arch).to_string()),
+        _ => CpuInfo::Unsupported(format!("unsupported architecture {}", arch)),
     };
 
     Ok(cpu_info)

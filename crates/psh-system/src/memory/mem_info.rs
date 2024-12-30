@@ -114,6 +114,7 @@ mod tests {
     use std::path::PathBuf;
 
     #[test]
+    #[expect(clippy::cognitive_complexity, reason = "test fn")]
     fn test_parse_meminfo_hed_off_cma_on() {
         let mut meminfo_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         meminfo_path.push("./test_resources/memory/meminfo-hed-off-cma-on");
@@ -186,6 +187,7 @@ mod tests {
     }
 
     #[test]
+    #[expect(clippy::cognitive_complexity, reason = "test fn")]
     fn test_parse_meminfo_hed_on_cma_off() {
         let mut meminfo_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         meminfo_path.push("./test_resources/memory/meminfo-hed-on-cma-off");

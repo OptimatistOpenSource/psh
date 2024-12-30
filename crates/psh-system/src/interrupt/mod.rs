@@ -19,7 +19,7 @@ mod stat;
 
 pub use handle::InterruptHandle;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum InterruptType {
     Common(u32),
     ArchSpecific(String),
@@ -33,7 +33,7 @@ pub struct InterruptDetails {
 }
 
 impl InterruptDetails {
-    fn new(cpu_counts: Vec<u64>, interrupt_type: InterruptType, description: String) -> Self {
+    const fn new(cpu_counts: Vec<u64>, interrupt_type: InterruptType, description: String) -> Self {
         Self {
             cpu_counts,
             interrupt_type,
@@ -54,7 +54,7 @@ pub struct IrqDetails {
 
 #[allow(dead_code)]
 impl IrqDetails {
-    fn new(irq_number: u32) -> Self {
+    const fn new(irq_number: u32) -> Self {
         Self {
             irq_number,
             smp_affinity: None,

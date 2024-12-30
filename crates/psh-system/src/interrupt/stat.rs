@@ -47,7 +47,7 @@ fn parse_interrupts_line(reader: BufReader<File>) -> io::Result<Vec<InterruptDet
             let interrupt_type = name
                 .parse::<u32>()
                 .map(InterruptType::Common)
-                .unwrap_or(InterruptType::ArchSpecific(name.to_owned()));
+                .unwrap_or_else(|_| InterruptType::ArchSpecific(name.to_owned()));
 
             Ok(InterruptDetails::new(counts, interrupt_type, description))
         })
@@ -93,6 +93,7 @@ mod tests {
     }
 
     #[test]
+    #[expect(clippy::cognitive_complexity, reason = "test fn")]
     fn test_parse_interrupts_x86_64_intel() {
         let mut interrupts_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         interrupts_path.push("./test_resources/arch/x86_64/intel/interrupts");
@@ -3619,6 +3620,7 @@ mod tests {
     }
 
     #[test]
+    #[expect(clippy::cognitive_complexity, reason = "test fn")]
     fn test_parse_interrupts_riscv64_thead() {
         let mut interrupts_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         interrupts_path.push("./test_resources/arch/riscv64/t-head/interrupts");
