@@ -13,6 +13,7 @@
 // see <https://www.gnu.org/licenses/>.
 
 pub mod pb {
+    #![expect(clippy::nursery, reason = "bindgen code")]
     tonic::include_proto!("psh.proto.instance");
 }
 pub mod host_info;
