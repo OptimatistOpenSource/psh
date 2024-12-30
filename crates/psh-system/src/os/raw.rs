@@ -20,22 +20,26 @@ use std::{
 
 use super::{DistroKind, DistroVersion, KernelVersion};
 
-pub fn parse_distro_name(name: &str) -> DistroKind {
-    match name {
-        "Arch Linux" => DistroKind::Arch,
-        "CentOS Linux" => DistroKind::CentOS,
-        "Debian GNU/Linux" => DistroKind::Debian,
-        "Fedora Linux" => DistroKind::Fedora,
-        "Gentoo" => DistroKind::Gentoo,
-        "Kali GNU/Linux" => DistroKind::Kali,
-        "Linux Mint" => DistroKind::Mint,
-        "Manjaro Linux" => DistroKind::Manjaro,
-        "NixOS" => DistroKind::NixOS,
-        "Pop!_OS" => DistroKind::PopOS,
-        "Red Hat Enterprise Linux" => DistroKind::RedHat,
-        "Slackware" => DistroKind::Slackware,
-        "Ubuntu" => DistroKind::Ubuntu,
-        distro => DistroKind::Other(distro.to_owned()),
+impl FromStr for DistroKind {
+    type Err = core::convert::Infallible;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "Arch Linux" => Self::Arch,
+            "CentOS Linux" => Self::CentOS,
+            "Debian GNU/Linux" => Self::Debian,
+            "Fedora Linux" => Self::Fedora,
+            "Gentoo" => Self::Gentoo,
+            "Kali GNU/Linux" => Self::Kali,
+            "Linux Mint" => Self::Mint,
+            "Manjaro Linux" => Self::Manjaro,
+            "NixOS" => Self::NixOS,
+            "Pop!_OS" => Self::PopOS,
+            "Red Hat Enterprise Linux" => Self::RedHat,
+            "Slackware" => Self::Slackware,
+            "Ubuntu" => Self::Ubuntu,
+            distro => Self::Other(distro.to_owned()),
+        })
     }
 }
 
@@ -51,9 +55,13 @@ pub fn parse_distro_version_impl(path: &str) -> anyhow::Result<DistroVersion> {
         if let Some((key, value)) = line.split_once('=') {
             if key == "VERSION" {
                 version.version = Some(value.trim_matches('"').to_string());
-            }
-            if key == "NAME" {
-                version.distro = parse_distro_name(value.trim_matches('"'));
+            } else if key == "NAME" {
+                let name = value.trim_matches('"');
+                // NOTE:
+                // The parsing is `Infallible`.
+                // At 1.82 it can be written as `let Ok(distro) = name.parse();`
+                let distro = unsafe { name.parse().unwrap_unchecked() };
+                version.distro = distro;
             }
         }
     }
