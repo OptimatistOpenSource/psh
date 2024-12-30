@@ -12,10 +12,11 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use std::fs::File;
-use std::io::{self, BufRead};
-
-use anyhow::bail;
+use std::{
+    fs::File,
+    io::{self, BufRead},
+    str::FromStr,
+};
 
 use super::{DistroKind, DistroVersion, KernelVersion};
 
@@ -59,28 +60,11 @@ pub fn parse_distro_version_impl(path: &str) -> anyhow::Result<DistroVersion> {
     Ok(version)
 }
 
-fn parse_kernel_version(version: &str) -> anyhow::Result<KernelVersion> {
-    // brute force here
-    let mut parts = version.split('.');
-    let (major, minor, patch) = (parts.next(), parts.next(), parts.next());
-    let version = match (major, minor, patch) {
-        (Some(major), Some(minor), Some(patch)) => KernelVersion {
-            major: major.parse()?,
-            minor: minor.parse()?,
-            patch: match patch.find(|c: char| !c.is_ascii_digit()) {
-                // patch often follows some extra versioning string
-                Some(pos) => patch[..pos].parse()?,
-                None => patch.parse()?,
-            },
-        },
-        _ => bail!("Invalid version string: {}", version),
-    };
-    Ok(version)
-}
-
 pub fn get_kernel_version() -> anyhow::Result<KernelVersion> {
+    use procfs::sys::kernel::Version;
     let info = uname::uname()?;
-    parse_kernel_version(&info.release)
+    let version: Version = info.release.parse().map_err(|e: &str| anyhow::anyhow!(e))?;
+    Ok(version.into())
 }
 
 #[allow(unused_macros)]
@@ -97,32 +81,7 @@ pub(crate) use parse_distro_version;
 
 #[cfg(test)]
 mod test {
-    use super::{parse_kernel_version, DistroKind, DistroVersion, KernelVersion};
-
-    #[test]
-    fn test_parse_kernel_version() {
-        macro_rules! kver {
-            ($major: literal, $minor: literal, $patch: literal) => {
-                KernelVersion {
-                    major: $major,
-                    minor: $minor,
-                    patch: $patch,
-                }
-            };
-        }
-        assert_eq!(parse_kernel_version("3.4.4-xxx").unwrap(), kver!(3, 4, 4));
-        assert_eq!(
-            parse_kernel_version("6.0.100-some-distro").unwrap(),
-            kver!(6, 0, 100)
-        );
-        assert!(parse_kernel_version("6").is_err());
-        assert!(parse_kernel_version("6.0").is_err());
-        assert!(parse_kernel_version("6.0.a").is_err());
-        assert!(parse_kernel_version("a.0.12").is_err());
-        assert!(parse_kernel_version("6.a.12").is_err());
-        assert!(parse_kernel_version("6.-1.12").is_err());
-        assert!(parse_kernel_version("1000.1.12").is_err());
-    }
+    use super::{DistroKind, DistroVersion};
 
     macro_rules! distro_other {
         ($name: literal, $version: literal) => {

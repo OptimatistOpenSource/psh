@@ -27,6 +27,16 @@ pub struct KernelVersion {
     pub patch: u16,
 }
 
+impl From<procfs::KernelVersion> for KernelVersion {
+    fn from(value: procfs::KernelVersion) -> Self {
+        Self {
+            major: value.major,
+            minor: value.minor,
+            patch: value.patch,
+        }
+    }
+}
+
 impl Display for KernelVersion {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         format!("{}.{}.{}", self.major, self.minor, self.patch).fmt(f)
