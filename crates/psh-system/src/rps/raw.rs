@@ -46,7 +46,7 @@ fn parse_device_impl(dir: fs::DirEntry) -> Option<RpsDetails> {
     }
 }
 
-pub(crate) fn parse_rps_impl(path: &str) -> Vec<RpsDetails> {
+pub fn parse_rps_impl(path: &str) -> Vec<RpsDetails> {
     fs::read_dir(path).map_or(vec![], |folder| {
         folder
             .filter_map(|dev| dev.ok().and_then(parse_device_impl))

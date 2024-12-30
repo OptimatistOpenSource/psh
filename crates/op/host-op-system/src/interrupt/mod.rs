@@ -22,8 +22,8 @@ use crate::SysCtx;
 impl From<&InterruptType> for interrupt::InterruptType {
     fn from(value: &InterruptType) -> Self {
         match value {
-            InterruptType::Common(irq) => interrupt::InterruptType::Common(*irq),
-            InterruptType::ArchSpecific(irq) => interrupt::InterruptType::ArchSpecific(irq.clone()),
+            InterruptType::Common(irq) => Self::Common(*irq),
+            InterruptType::ArchSpecific(irq) => Self::ArchSpecific(irq.clone()),
         }
     }
 }
@@ -31,8 +31,8 @@ impl From<&InterruptType> for interrupt::InterruptType {
 impl From<InterruptType> for interrupt::InterruptType {
     fn from(value: InterruptType) -> Self {
         match value {
-            InterruptType::Common(irq) => interrupt::InterruptType::Common(irq),
-            InterruptType::ArchSpecific(irq) => interrupt::InterruptType::ArchSpecific(irq),
+            InterruptType::Common(irq) => Self::Common(irq),
+            InterruptType::ArchSpecific(irq) => Self::ArchSpecific(irq),
         }
     }
 }

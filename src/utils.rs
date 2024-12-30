@@ -11,32 +11,11 @@
 //
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
-
-use std::env;
-use std::path::{Path, PathBuf};
-
 use nix::unistd::geteuid;
 
 pub fn check_root_privilege() -> bool {
     let euid = geteuid();
     euid.is_root()
-}
-
-#[allow(dead_code)]
-pub fn which<P>(exe_name: P) -> Option<PathBuf>
-where
-    P: AsRef<Path>,
-{
-    env::var_os("PATH").and_then(|paths| {
-        env::split_paths(&paths).find_map(|dir| {
-            let full_path = dir.join(&exe_name);
-            if full_path.is_file() {
-                Some(full_path)
-            } else {
-                None
-            }
-        })
-    })
 }
 
 #[cfg(test)]
@@ -52,11 +31,5 @@ mod tests {
         // You can modify this test case to simulate a non-root user
         // by returning a non-root euid from geteuid() function
         // assert_eq!(check_root_privilege(), false);
-    }
-
-    #[test]
-    fn test_which() {
-        use super::which;
-        println!("{:?}", which("ls").unwrap());
     }
 }

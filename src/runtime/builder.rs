@@ -157,12 +157,12 @@ impl PshEngineBuilder {
         self
     }
 
-    pub fn allow_perf_op(mut self, enable: bool) -> Self {
+    pub const fn allow_perf_op(mut self, enable: bool) -> Self {
         self.use_perf_op = enable;
         self
     }
 
-    pub fn allow_system_op(mut self, enable: bool) -> Self {
+    pub const fn allow_system_op(mut self, enable: bool) -> Self {
         self.use_system_op = enable;
         self
     }

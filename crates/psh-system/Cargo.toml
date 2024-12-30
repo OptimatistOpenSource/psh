@@ -13,3 +13,6 @@ which = { workspace = true }
 
 [dev-dependencies]
 num_cpus = { workspace = true }
+
+[lints]
+workspace = true

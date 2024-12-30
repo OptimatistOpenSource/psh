@@ -52,6 +52,9 @@ local-ip-address = { workspace = true }
 [build-dependencies]
 tonic-build = { workspace = true }
 
+[lints]
+workspace = true
+
 [workspace.dependencies]
 host-op-perf = { path = "crates/op/host-op-perf" }
 host-op-system = { path = "crates/op/host-op-system" }
@@ -85,3 +88,12 @@ uname = "^0.1"
 which = "^6"
 num_cpus = "^1"
 local-ip-address = "^0.6"
+
+[workspace.lints.rust]
+
+[workspace.lints.clippy]
+perf = { level = "deny", priority = -1 }
+
+### nursery group
+nursery = { level = "warn", priority = -1 }
+trivial_regex = "allow" # see: https://github.com/rust-lang/rust-clippy/issues/6690

@@ -13,4 +13,4 @@
 // see <https://www.gnu.org/licenses/>.
 
 pub(crate) use super::mem_info::parse_meminfo;
-pub(crate) use super::memory_module::parse_memory_module;
+pub use super::memory_module::parse_memory_module;

@@ -180,11 +180,9 @@ impl From<HostX86_64CpuInfo> for GuestX64CpuInfo {
 impl From<&HostCpuInfo> for GuestCpuInfo {
     fn from(value: &HostCpuInfo) -> Self {
         match value {
-            HostCpuInfo::X86_64(x64) => GuestCpuInfo::X64(x64.iter().map(Into::into).collect()),
-            HostCpuInfo::Arm64(arm64) => {
-                GuestCpuInfo::Arm64(arm64.iter().map(Into::into).collect())
-            }
-            HostCpuInfo::Unsupported(unsupported) => GuestCpuInfo::Unsupported(unsupported.clone()),
+            HostCpuInfo::X86_64(x64) => Self::X64(x64.iter().map(Into::into).collect()),
+            HostCpuInfo::Arm64(arm64) => Self::Arm64(arm64.iter().map(Into::into).collect()),
+            HostCpuInfo::Unsupported(unsupported) => Self::Unsupported(unsupported.clone()),
         }
     }
 }
@@ -192,13 +190,9 @@ impl From<&HostCpuInfo> for GuestCpuInfo {
 impl From<HostCpuInfo> for GuestCpuInfo {
     fn from(value: HostCpuInfo) -> Self {
         match value {
-            HostCpuInfo::X86_64(x64) => {
-                GuestCpuInfo::X64(x64.into_iter().map(Into::into).collect())
-            }
-            HostCpuInfo::Arm64(arm64) => {
-                GuestCpuInfo::Arm64(arm64.into_iter().map(Into::into).collect())
-            }
-            HostCpuInfo::Unsupported(unsupported) => GuestCpuInfo::Unsupported(unsupported),
+            HostCpuInfo::X86_64(x64) => Self::X64(x64.into_iter().map(Into::into).collect()),
+            HostCpuInfo::Arm64(arm64) => Self::Arm64(arm64.into_iter().map(Into::into).collect()),
+            HostCpuInfo::Unsupported(unsupported) => Self::Unsupported(unsupported),
         }
     }
 }

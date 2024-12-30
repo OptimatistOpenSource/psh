@@ -20,7 +20,7 @@ use std::fmt::Display;
 pub use handle::OsHandle;
 
 #[allow(dead_code)]
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct KernelVersion {
     pub major: u8,
     pub minor: u8,
@@ -34,7 +34,7 @@ impl Display for KernelVersion {
 }
 
 #[allow(dead_code)]
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum DistroKind {
     Arch,
     CentOS,
@@ -55,33 +55,33 @@ pub enum DistroKind {
 impl Display for DistroKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            DistroKind::Arch => f.write_str("Arch Linux"),
-            DistroKind::CentOS => f.write_str("CentOS Linux"),
-            DistroKind::Debian => f.write_str("Debian GNU/Linux"),
-            DistroKind::Fedora => f.write_str("Fedora Linux"),
-            DistroKind::Gentoo => f.write_str("Gentoo"),
-            DistroKind::Kali => f.write_str("Kali GNU/Linux"),
-            DistroKind::Manjaro => f.write_str("Manjaro Linux"),
-            DistroKind::Mint => f.write_str("Linux Mint"),
-            DistroKind::NixOS => f.write_str("NixOS"),
-            DistroKind::PopOS => f.write_str("Pop!_OS"),
-            DistroKind::RedHat => f.write_str("Red Hat Enterprise Linux"),
-            DistroKind::Slackware => f.write_str("Slackware"),
-            DistroKind::Ubuntu => f.write_str("Ubuntu"),
-            DistroKind::Other(s) => f.write_str(s),
+            Self::Arch => f.write_str("Arch Linux"),
+            Self::CentOS => f.write_str("CentOS Linux"),
+            Self::Debian => f.write_str("Debian GNU/Linux"),
+            Self::Fedora => f.write_str("Fedora Linux"),
+            Self::Gentoo => f.write_str("Gentoo"),
+            Self::Kali => f.write_str("Kali GNU/Linux"),
+            Self::Manjaro => f.write_str("Manjaro Linux"),
+            Self::Mint => f.write_str("Linux Mint"),
+            Self::NixOS => f.write_str("NixOS"),
+            Self::PopOS => f.write_str("Pop!_OS"),
+            Self::RedHat => f.write_str("Red Hat Enterprise Linux"),
+            Self::Slackware => f.write_str("Slackware"),
+            Self::Ubuntu => f.write_str("Ubuntu"),
+            Self::Other(s) => f.write_str(s),
         }
     }
 }
 
 #[allow(dead_code)]
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct DistroVersion {
     pub distro: DistroKind,
     pub version: Option<String>,
 }
 
 #[allow(dead_code)]
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct OsInfo {
     pub distro: DistroVersion,
     pub kernel: KernelVersion,

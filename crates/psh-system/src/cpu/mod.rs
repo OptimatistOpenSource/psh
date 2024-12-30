@@ -32,7 +32,7 @@ pub struct CpuMask(pub Vec<bool>);
 impl FromStr for CpuMask {
     type Err = Error;
 
-    fn from_str(mask: &str) -> Result<CpuMask> {
+    fn from_str(mask: &str) -> Result<Self> {
         #[allow(clippy::identity_op)]
         let num_to_mask = |num: u32| {
             // num is guaranteed in range [0, 16)
@@ -54,17 +54,17 @@ impl FromStr for CpuMask {
                 _ => Err(Error::InvalidCpuMask(mask.to_string())),
             })
             .collect::<Result<Vec<u32>>>()
-            .map(|masks| CpuMask(masks.iter().flat_map(|&bits| num_to_mask(bits)).collect()))
+            .map(|masks| Self(masks.iter().flat_map(|&bits| num_to_mask(bits)).collect()))
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct TlbSize {
     pub count: u32,
     pub unit: u32,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct AddressSizes {
     pub phy: u8,  // physical bits.
     pub virt: u8, // virtual bits.
@@ -84,8 +84,8 @@ pub struct Arm64CpuInfo {
 }
 
 impl Arm64CpuInfo {
-    fn new() -> Arm64CpuInfo {
-        Arm64CpuInfo {
+    const fn new() -> Self {
+        Self {
             processor: 0,
             bogomips: 0.0,
             features: Vec::<String>::new(),
@@ -131,8 +131,8 @@ pub struct X86_64CpuInfo {
 }
 
 impl X86_64CpuInfo {
-    fn new() -> X86_64CpuInfo {
-        X86_64CpuInfo {
+    const fn new() -> Self {
+        Self {
             processor: 0,
             vendor_id: String::new(),
             model_name: String::new(),
@@ -174,9 +174,9 @@ pub enum CpuInfo {
 impl Display for CpuInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            CpuInfo::X86_64(_) => f.write_str("X86_64"),
-            CpuInfo::Arm64(_) => f.write_str("arm64"),
-            CpuInfo::Unsupported(s) => f.write_str(s),
+            Self::X86_64(_) => f.write_str("X86_64"),
+            Self::Arm64(_) => f.write_str("arm64"),
+            Self::Unsupported(s) => f.write_str(s),
         }
     }
 }
