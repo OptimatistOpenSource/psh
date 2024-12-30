@@ -120,11 +120,10 @@ async fn async_tasks(remote_cfg: RemoteConfig, mut task_rt: TaskRuntime) -> Resu
         task_rt.spawn(Some(client.clone()))?;
         client.send_info().await?;
         loop {
-            let finished_task_id = task_rt.finished_task_id();
             let idle = task_rt.is_idle();
 
             // Set idle to false to prevent legacy heartbeat get task
-            client.heartbeat(false, finished_task_id).await?;
+            client.heartbeat(false, None).await?;
 
             if let Some(task) = client.get_task(client.instance_id()?).await? {
                 task_rt.schedule(task)?
@@ -136,6 +135,8 @@ async fn async_tasks(remote_cfg: RemoteConfig, mut task_rt: TaskRuntime) -> Resu
                     idle,
                 })
                 .await?;
+
+            task_rt.finished_task_id().map(|it| client.task_done(it));
 
             tokio::time::sleep(duration).await;
         }

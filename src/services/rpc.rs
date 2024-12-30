@@ -18,7 +18,7 @@ use chrono::{TimeZone, Utc};
 use tonic::transport::{Channel, ClientTlsConfig, Endpoint};
 use tonic::Request;
 
-use super::pb::{self, DataRequest, InstanceState};
+use super::pb::{self, DataRequest, InstanceState, TaskDoneReq};
 use crate::config::RpcConfig;
 use crate::runtime::Task;
 use crate::services::host_info::RawInfo;
@@ -146,5 +146,18 @@ impl RpcClient {
         };
 
         Ok(Some(task))
+    }
+
+    pub async fn task_done(&mut self, task_id: String) -> Result<()> {
+        let req = {
+            let mut req = Request::new(TaskDoneReq { task_id });
+            req.metadata_mut()
+                .insert("authorization", format!("Bearer {}", self.token).parse()?);
+            req
+        };
+
+        self.client.task_done(req).await?;
+
+        Ok(())
     }
 }
