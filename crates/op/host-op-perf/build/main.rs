@@ -40,17 +40,18 @@ fn main() {
         }
     };
 
-    let linux_headers_path = if let Ok(path) = env::var("LINUX_HEADERS_PATH") {
-        let path = format!("{}/include", path);
-        let path = Path::new(&path).canonicalize().unwrap();
-        path.to_str().unwrap().to_string()
-    } else {
+    let linux_headers_path = env::var("LINUX_HEADERS_PATH").map_or_else(
         // TODO: get the right location of libc in the building system.
         // as different linux distros have different locations of libc header files.
         // on Ubuntu or Fedora, the default location is `/usr/include`
         // while on other distros like nix, they may have different locations.
-        "/usr/include".to_string()
-    };
+        |_| "/usr/include".to_string(),
+        |path| {
+            let path = format!("{}/include", path);
+            let path = Path::new(&path).canonicalize().unwrap();
+            path.to_str().unwrap().to_string()
+        },
+    );
 
     let linux_version_h_path = format!("{}/{}", linux_headers_path, "linux/version.h");
     let (major, patch_level, sub_level) = parse_linux_version_h(&linux_version_h_path);

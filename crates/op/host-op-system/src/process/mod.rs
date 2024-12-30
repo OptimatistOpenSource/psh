@@ -135,18 +135,15 @@ impl process::Host for SysCtx {
             Err(err) => return Ok(Err(err.to_string())),
         };
 
-        let processes: Vec<_> = procs
-            .into_iter()
-            .filter_map(|proc| {
-                let (Ok(stat), Ok(io), Ok(mem)) = (proc.stat(), proc.io(), proc.statm()) else {
-                    return None;
-                };
-                let Ok(state) = stat.state() else {
-                    return None;
-                };
-                Some((proc, stat, io, mem, state))
-            })
-            .collect();
+        let processes = procs.into_iter().filter_map(|proc| {
+            let (Ok(stat), Ok(io), Ok(mem)) = (proc.stat(), proc.io(), proc.statm()) else {
+                return None;
+            };
+            let Ok(state) = stat.state() else {
+                return None;
+            };
+            Some((proc, stat, io, mem, state))
+        });
 
         let processes: Vec<_> = processes
             .into_iter()

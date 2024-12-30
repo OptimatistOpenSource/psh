@@ -26,20 +26,20 @@ use crate::SysCtx;
 impl From<&HostDistroKind> for GuestDistroKind {
     fn from(value: &HostDistroKind) -> Self {
         match value {
-            HostDistroKind::Arch => GuestDistroKind::Arch,
-            HostDistroKind::CentOS => GuestDistroKind::CentOs,
-            HostDistroKind::Debian => GuestDistroKind::Debian,
-            HostDistroKind::Fedora => GuestDistroKind::Fedora,
-            HostDistroKind::Gentoo => GuestDistroKind::Gentoo,
-            HostDistroKind::Kali => GuestDistroKind::Kali,
-            HostDistroKind::Manjaro => GuestDistroKind::Manjaro,
-            HostDistroKind::Mint => GuestDistroKind::Mint,
-            HostDistroKind::NixOS => GuestDistroKind::NixOs,
-            HostDistroKind::Other(distro) => GuestDistroKind::Other(distro.clone()),
-            HostDistroKind::PopOS => GuestDistroKind::PopOs,
-            HostDistroKind::RedHat => GuestDistroKind::RedHat,
-            HostDistroKind::Slackware => GuestDistroKind::Slackware,
-            HostDistroKind::Ubuntu => GuestDistroKind::Ubuntu,
+            HostDistroKind::Arch => Self::Arch,
+            HostDistroKind::CentOS => Self::CentOs,
+            HostDistroKind::Debian => Self::Debian,
+            HostDistroKind::Fedora => Self::Fedora,
+            HostDistroKind::Gentoo => Self::Gentoo,
+            HostDistroKind::Kali => Self::Kali,
+            HostDistroKind::Manjaro => Self::Manjaro,
+            HostDistroKind::Mint => Self::Mint,
+            HostDistroKind::NixOS => Self::NixOs,
+            HostDistroKind::Other(distro) => Self::Other(distro.clone()),
+            HostDistroKind::PopOS => Self::PopOs,
+            HostDistroKind::RedHat => Self::RedHat,
+            HostDistroKind::Slackware => Self::Slackware,
+            HostDistroKind::Ubuntu => Self::Ubuntu,
         }
     }
 }
@@ -47,20 +47,20 @@ impl From<&HostDistroKind> for GuestDistroKind {
 impl From<HostDistroKind> for GuestDistroKind {
     fn from(value: HostDistroKind) -> Self {
         match value {
-            HostDistroKind::Arch => GuestDistroKind::Arch,
-            HostDistroKind::CentOS => GuestDistroKind::CentOs,
-            HostDistroKind::Debian => GuestDistroKind::Debian,
-            HostDistroKind::Fedora => GuestDistroKind::Fedora,
-            HostDistroKind::Gentoo => GuestDistroKind::Gentoo,
-            HostDistroKind::Kali => GuestDistroKind::Kali,
-            HostDistroKind::Manjaro => GuestDistroKind::Manjaro,
-            HostDistroKind::Mint => GuestDistroKind::Mint,
-            HostDistroKind::NixOS => GuestDistroKind::NixOs,
-            HostDistroKind::Other(distro) => GuestDistroKind::Other(distro),
-            HostDistroKind::PopOS => GuestDistroKind::PopOs,
-            HostDistroKind::RedHat => GuestDistroKind::RedHat,
-            HostDistroKind::Slackware => GuestDistroKind::Slackware,
-            HostDistroKind::Ubuntu => GuestDistroKind::Ubuntu,
+            HostDistroKind::Arch => Self::Arch,
+            HostDistroKind::CentOS => Self::CentOs,
+            HostDistroKind::Debian => Self::Debian,
+            HostDistroKind::Fedora => Self::Fedora,
+            HostDistroKind::Gentoo => Self::Gentoo,
+            HostDistroKind::Kali => Self::Kali,
+            HostDistroKind::Manjaro => Self::Manjaro,
+            HostDistroKind::Mint => Self::Mint,
+            HostDistroKind::NixOS => Self::NixOs,
+            HostDistroKind::Other(distro) => Self::Other(distro),
+            HostDistroKind::PopOS => Self::PopOs,
+            HostDistroKind::RedHat => Self::RedHat,
+            HostDistroKind::Slackware => Self::Slackware,
+            HostDistroKind::Ubuntu => Self::Ubuntu,
         }
     }
 }

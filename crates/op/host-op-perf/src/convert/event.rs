@@ -44,7 +44,7 @@ impl TryFrom<&FromT> for Wrap<IntoT> {
 }
 
 #[rustfmt::skip]
-fn into_raw_cache_op(val: &CacheOp) -> RawCacheOp {
+const fn into_raw_cache_op(val: &CacheOp) -> RawCacheOp {
     match val {
         CacheOp::Read     => RawCacheOp::Read,
         CacheOp::Write    => RawCacheOp::Write,
@@ -53,14 +53,14 @@ fn into_raw_cache_op(val: &CacheOp) -> RawCacheOp {
 }
 
 #[rustfmt::skip]
-fn into_raw_cache_op_result(val: &CacheOpResult) -> RawCacheOpResult {
+const fn into_raw_cache_op_result(val: &CacheOpResult) -> RawCacheOpResult {
     match val {
         CacheOpResult::Access => RawCacheOpResult::Access,
         CacheOpResult::Miss   => RawCacheOpResult::Miss,
     }
 }
 
-fn into_raw_bp_len(val: &BpLen) -> Result<RawBpLen, Error> {
+const fn into_raw_bp_len(val: &BpLen) -> Result<RawBpLen, Error> {
     #[allow(dead_code)]
     #[inline]
     fn err(info: &str) -> Result<RawBpLen, Error> {
