@@ -12,7 +12,6 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use std::borrow::Cow;
 use std::time::Duration;
 
 use opentelemetry::metrics::{Meter, ObservableGauge};
@@ -34,130 +33,57 @@ pub fn start(
                 return;
             };
             for stat in disks {
-                // TODO
-                let name = Cow::from(stat.name);
+                let name = stat.name;
 
-                let gauges = [
-                    (
-                        stat.reads,
-                        [
-                            KeyValue::new("disk", name.clone()),
-                            KeyValue::new("stat", "reads"),
-                        ],
-                    ),
-                    (
-                        stat.merged,
-                        [
-                            KeyValue::new("disk", name.clone()),
-                            KeyValue::new("stat", "merged"),
-                        ],
-                    ),
-                    (
-                        stat.sectors_read,
-                        [
-                            KeyValue::new("disk", name.clone()),
-                            KeyValue::new("stat", "sectors_read"),
-                        ],
-                    ),
-                    (
-                        stat.time_reading,
-                        [
-                            KeyValue::new("disk", name.clone()),
-                            KeyValue::new("stat", "time_reading"),
-                        ],
-                    ),
-                    (
-                        stat.writes,
-                        [
-                            KeyValue::new("disk", name.clone()),
-                            KeyValue::new("stat", "writes"),
-                        ],
-                    ),
-                    (
-                        stat.writes_merged,
-                        [
-                            KeyValue::new("disk", name.clone()),
-                            KeyValue::new("stat", "writes_merged"),
-                        ],
-                    ),
-                    (
-                        stat.sectors_written,
-                        [
-                            KeyValue::new("disk", name.clone()),
-                            KeyValue::new("stat", "sectors_written"),
-                        ],
-                    ),
-                    (
-                        stat.time_writing,
-                        [
-                            KeyValue::new("disk", name.clone()),
-                            KeyValue::new("stat", "time_writing"),
-                        ],
-                    ),
-                    (
-                        stat.in_progress,
-                        [
-                            KeyValue::new("disk", name.clone()),
-                            KeyValue::new("stat", "in_progress"),
-                        ],
-                    ),
-                    (
-                        stat.time_in_progress,
-                        [
-                            KeyValue::new("disk", name.clone()),
-                            KeyValue::new("stat", "time_in_progress"),
-                        ],
-                    ),
-                    (
-                        stat.weighted_time_in_progress,
-                        [
-                            KeyValue::new("disk", name.clone()),
-                            KeyValue::new("stat", "weighted_time_in_progress"),
-                        ],
-                    ),
-                    (
-                        stat.discards.unwrap_or(0),
-                        [
-                            KeyValue::new("disk", name.clone()),
-                            KeyValue::new("stat", "discards"),
-                        ],
-                    ),
-                    (
-                        stat.discards_merged.unwrap_or(0),
-                        [
-                            KeyValue::new("disk", name.clone()),
-                            KeyValue::new("stat", "discards_merged"),
-                        ],
-                    ),
-                    (
-                        stat.sectors_discarded.unwrap_or(0),
-                        [
-                            KeyValue::new("disk", name.clone()),
-                            KeyValue::new("stat", "sectors_discarded"),
-                        ],
-                    ),
-                    (
-                        stat.time_discarding.unwrap_or(0),
-                        [
-                            KeyValue::new("disk", name.clone()),
-                            KeyValue::new("stat", "time_discarding"),
-                        ],
-                    ),
-                    (
-                        stat.flushes.unwrap_or(0),
-                        [
-                            KeyValue::new("disk", name.clone()),
-                            KeyValue::new("stat", "flushes"),
-                        ],
-                    ),
-                    (
-                        stat.time_flushing.unwrap_or(0),
-                        [
-                            KeyValue::new("disk", name.clone()),
-                            KeyValue::new("stat", "time_flushing"),
-                        ],
-                    ),
-                ];
+                macro_rules! gauges_disk {
+                    ($($stat:ident), *,) => {
+                        [$((
+                            stat.$stat,
+                            [
+                                KeyValue::new("disk", name.clone()),
+                                KeyValue::new("stat", stringify!($stat)),
+                            ],
+                        ),)*]
+                    };
+                }
+                let gauges = gauges_disk!(
+                    reads,
+                    merged,
+                    sectors_read,
+                    time_reading,
+                    writes,
+                    writes_merged,
+                    sectors_written,
+                    time_writing,
+                    in_progress,
+                    time_in_progress,
+                    weighted_time_in_progress,
+                );
+
+                gauges.into_iter().for_each(|(m, [kv1, kv2])| {
+                    let a = &[KeyValue::new("token", token.clone()), kv1, kv2];
+                    gauge.observe(m, a);
+                });
+
+                macro_rules! gauges_disk_ {
+                    ($($stat:ident), *,) => {
+                        [$((
+                            stat.$stat.unwrap_or(0),
+                            [
+                                KeyValue::new("disk", name.clone()),
+                                KeyValue::new("stat", stringify!($stat)),
+                            ],
+                        ),)*]
+                    };
+                }
+                let gauges = gauges_disk_!(
+                    discards,
+                    discards_merged,
+                    sectors_discarded,
+                    time_discarding,
+                    flushes,
+                    time_flushing,
+                );
 
                 gauges.into_iter().for_each(|(m, [kv1, kv2])| {
                     let a = &[KeyValue::new("token", token.clone()), kv1, kv2];
