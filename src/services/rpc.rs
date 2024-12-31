@@ -18,7 +18,7 @@ use chrono::{TimeZone, Utc};
 use tonic::transport::{Channel, ClientTlsConfig, Endpoint};
 use tonic::Request;
 
-use super::pb::{self, DataRequest, InstanceState, TaskDoneReq};
+use super::pb::{self, DataRequest, InstanceState, TaskDoneReq, Unit};
 use crate::config::RpcConfig;
 use crate::runtime::Task;
 use crate::services::host_info::RawInfo;
@@ -34,8 +34,8 @@ pub struct RpcClient {
 }
 
 impl RpcClient {
-    pub async fn new(config: RpcConfig, token: String) -> Result<Self> {
-        let ep = Endpoint::from_shared(config.addr)?
+    pub async fn new(config: &RpcConfig, token: String) -> Result<Self> {
+        let ep = Endpoint::from_shared(config.addr.clone())?
             .tls_config(ClientTlsConfig::new().with_native_roots())?;
         let client: PshServiceClient<Channel> = PshServiceClient::connect(ep).await?;
         let raw_info = RawInfo::new(&config.instance_id_file);
@@ -43,7 +43,7 @@ impl RpcClient {
             token,
             client,
             raw_info,
-            instance_id_file: config.instance_id_file,
+            instance_id_file: config.instance_id_file.clone(),
         })
     }
 
@@ -85,9 +85,10 @@ impl RpcClient {
         &mut self,
         idle: bool,
         finished_task_id: Option<String>,
+        instance_id: String,
     ) -> Result<Option<pb::Task>> {
         let req: Request<HostInfoRequest> = {
-            let raw_info = self.raw_info.to_heartbeat();
+            let raw_info = self.raw_info.to_heartbeat(instance_id);
             let mut req: HostInfoRequest = raw_info.into();
             req.idle = idle;
             req.task_id = finished_task_id;
@@ -159,5 +160,18 @@ impl RpcClient {
         self.client.task_done(req).await?;
 
         Ok(())
+    }
+
+    pub async fn new_instance_id(&mut self) -> Result<String> {
+        let req = {
+            let mut req = Request::new(Unit {});
+            req.metadata_mut()
+                .insert("authorization", format!("Bearer {}", self.token).parse()?);
+            req
+        };
+
+        let resp = self.client.new_instance_id(req).await?;
+
+        Ok(resp.into_inner().instance_id)
     }
 }

@@ -117,22 +117,32 @@ async fn async_tasks(remote_cfg: RemoteConfig, mut task_rt: TaskRuntime) -> Resu
         }
 
         let duration = Duration::from_secs(remote_cfg.rpc.heartbeat_interval);
-        let mut client = RpcClient::new(remote_cfg.rpc, token_cloned).await?;
+        let mut client = RpcClient::new(&remote_cfg.rpc, token_cloned).await?;
+
+        let instance_id = match fs::read_to_string(&remote_cfg.rpc.instance_id_file).ok() {
+            Some(s) => s,
+            None => {
+                let instance_id = client.new_instance_id().await?;
+                fs::write(&remote_cfg.rpc.instance_id_file, &instance_id)?;
+                instance_id
+            }
+        };
+
         task_rt.spawn(Some(client.clone()))?;
         client.send_info().await?;
         loop {
             let idle = task_rt.is_idle();
 
             // Set idle to false to prevent legacy heartbeat get task
-            client.heartbeat(false, None).await?;
+            client.heartbeat(false, None, instance_id.clone()).await?;
 
-            if let Some(task) = client.get_task(client.instance_id()?).await? {
+            if let Some(task) = client.get_task(instance_id.clone()).await? {
                 task_rt.schedule(task)?
             }
 
             client
                 .heartbeat_v2(InstanceState {
-                    instance_id: client.instance_id()?,
+                    instance_id: instance_id.clone(),
                     idle,
                 })
                 .await?;
