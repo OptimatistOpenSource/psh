@@ -154,7 +154,7 @@ impl RawInfo {
         Ok(())
     }
 
-    pub fn to_heartbeat(&self) -> Self {
+    pub const fn to_heartbeat(&self, instance_id: String) -> Self {
         Self {
             ipv4: None,
             ipv6: None,
@@ -162,7 +162,7 @@ impl RawInfo {
             arch: None,
             kernel_version: None,
             hostname: None,
-            instance_id: self.instance_id.clone(),
+            instance_id: Some(instance_id),
             idle: false,
             task_id: None,
         }
