@@ -18,7 +18,7 @@ use chrono::{TimeZone, Utc};
 use tonic::transport::{Channel, ClientTlsConfig, Endpoint};
 use tonic::Request;
 
-use super::pb::{self, DataRequest, InstanceState, TaskDoneReq, Unit};
+use super::pb::{DataRequest, InstanceState, TaskDoneReq, Unit};
 use crate::config::RpcConfig;
 use crate::runtime::Task;
 use crate::services::host_info::RawInfo;
@@ -29,7 +29,6 @@ use crate::services::pb::{GetTaskReq, HostInfoRequest};
 pub struct RpcClient {
     token: String,
     client: PshServiceClient<Channel>,
-    raw_info: RawInfo,
     instance_id_file: String,
 }
 
@@ -38,11 +37,9 @@ impl RpcClient {
         let ep = Endpoint::from_shared(config.addr.clone())?
             .tls_config(ClientTlsConfig::new().with_native_roots())?;
         let client: PshServiceClient<Channel> = PshServiceClient::connect(ep).await?;
-        let raw_info = RawInfo::new(&config.instance_id_file);
         Ok(Self {
             token,
             client,
-            raw_info,
             instance_id_file: config.instance_id_file.clone(),
         })
     }
@@ -51,9 +48,18 @@ impl RpcClient {
         Ok(std::fs::read_to_string(&self.instance_id_file)?)
     }
 
-    pub async fn send_info(&mut self) -> Result<()> {
+    pub async fn send_info(&mut self, instance_id: String) -> Result<()> {
         let req: Request<HostInfoRequest> = {
-            let req: HostInfoRequest = (&self.raw_info).into();
+            let raw_info = RawInfo::new();
+            let req = HostInfoRequest {
+                instance_id,
+                os: raw_info.os,
+                architecture: raw_info.arch,
+                hostname: raw_info.hostname,
+                kernel_version: raw_info.kernel_version,
+                local_ipv4_addr: raw_info.ipv4.map(|it| it.to_bits().to_be()),
+                local_ipv6_addr: raw_info.ipv6.map(|it| it.into()),
+            };
             let mut req = Request::new(req);
             req.metadata_mut()
                 .insert("authorization", format!("Bearer {}", self.token).parse()?);
@@ -63,10 +69,6 @@ impl RpcClient {
         let resp = self.client.send_host_info(req).await?;
 
         let resp = resp.get_ref();
-        if let Some(id) = &resp.instance_id {
-            self.raw_info
-                .set_instance_id(id.clone(), &self.instance_id_file);
-        };
 
         tracing::trace!("{:?}", resp);
 
@@ -81,36 +83,7 @@ impl RpcClient {
         Ok(())
     }
 
-    pub async fn heartbeat(
-        &mut self,
-        idle: bool,
-        finished_task_id: Option<String>,
-        instance_id: String,
-    ) -> Result<Option<pb::Task>> {
-        let req: Request<HostInfoRequest> = {
-            let raw_info = self.raw_info.to_heartbeat(instance_id);
-            let mut req: HostInfoRequest = raw_info.into();
-            req.idle = idle;
-            req.task_id = finished_task_id;
-            let mut req = Request::new(req);
-            req.metadata_mut()
-                .insert("authorization", format!("Bearer {}", self.token).parse()?);
-            req
-        };
-
-        let resp = self.client.send_host_info(req).await?;
-        let resp = resp.into_inner();
-        tracing::trace!("{:?}", &resp);
-
-        if let Some(id) = &resp.instance_id {
-            self.raw_info
-                .set_instance_id(id.clone(), &self.instance_id_file);
-        }
-
-        Ok(resp.task)
-    }
-
-    pub async fn heartbeat_v2(&mut self, state: InstanceState) -> Result<()> {
+    pub async fn heartbeat(&mut self, state: InstanceState) -> Result<()> {
         let req = {
             let mut req = Request::new(state);
             req.metadata_mut()
