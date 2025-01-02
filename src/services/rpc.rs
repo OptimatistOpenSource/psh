@@ -81,36 +81,7 @@ impl RpcClient {
         Ok(())
     }
 
-    pub async fn heartbeat(
-        &mut self,
-        idle: bool,
-        finished_task_id: Option<String>,
-        instance_id: String,
-    ) -> Result<Option<pb::Task>> {
-        let req: Request<HostInfoRequest> = {
-            let raw_info = self.raw_info.to_heartbeat(instance_id);
-            let mut req: HostInfoRequest = raw_info.into();
-            req.idle = idle;
-            req.task_id = finished_task_id;
-            let mut req = Request::new(req);
-            req.metadata_mut()
-                .insert("authorization", format!("Bearer {}", self.token).parse()?);
-            req
-        };
-
-        let resp = self.client.send_host_info(req).await?;
-        let resp = resp.into_inner();
-        tracing::trace!("{:?}", &resp);
-
-        if let Some(id) = &resp.instance_id {
-            self.raw_info
-                .set_instance_id(id.clone(), &self.instance_id_file);
-        }
-
-        Ok(resp.task)
-    }
-
-    pub async fn heartbeat_v2(&mut self, state: InstanceState) -> Result<()> {
+    pub async fn heartbeat(&mut self, state: InstanceState) -> Result<()> {
         let req = {
             let mut req = Request::new(state);
             req.metadata_mut()
