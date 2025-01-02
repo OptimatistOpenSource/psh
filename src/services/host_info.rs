@@ -12,15 +12,12 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use std::fs::File;
-use std::io::prelude::Write;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
-use std::path::Path;
 
 use psh_system::cpu::CpuHandle;
 use psh_system::os::OsHandle;
 
-use super::pb::{HostInfoRequest, Ipv6Addr as PbIpv6};
+use super::pb::Ipv6Addr as PbIpv6;
 
 impl From<Ipv6Addr> for PbIpv6 {
     fn from(value: Ipv6Addr) -> Self {
@@ -45,56 +42,18 @@ impl From<&Ipv6Addr> for PbIpv6 {
     }
 }
 
-impl From<RawInfo> for HostInfoRequest {
-    fn from(value: RawInfo) -> Self {
-        Self {
-            os: value.os,
-            hostname: value.hostname,
-            architecture: value.arch,
-            kernel_version: value.kernel_version,
-            local_ipv4_addr: value.ipv4.map(|v| v.to_bits().to_be()),
-            local_ipv6_addr: value.ipv6.map(|v| v.into()),
-            instance_id: value.instance_id,
-            idle: value.idle,
-            task_id: value.task_id,
-        }
-    }
-}
-
-impl From<&RawInfo> for HostInfoRequest {
-    fn from(value: &RawInfo) -> Self {
-        Self {
-            os: value.os.clone(),
-            hostname: value.hostname.clone(),
-            architecture: value.arch.clone(),
-            kernel_version: value.kernel_version.clone(),
-            local_ipv4_addr: value.ipv4.map(|v| v.to_bits().to_be()),
-            local_ipv6_addr: value.ipv6.map(|v| v.into()),
-            instance_id: value.instance_id.clone(),
-            idle: value.idle,
-            task_id: value.task_id.clone(),
-        }
-    }
-}
-
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RawInfo {
-    ipv4: Option<Ipv4Addr>,
-    ipv6: Option<Ipv6Addr>,
-    os: Option<String>,
-    arch: Option<String>,
-    kernel_version: Option<String>,
-    hostname: Option<String>,
-    instance_id: Option<String>,
-    idle: bool,
-    task_id: Option<String>,
+    pub ipv4: Option<Ipv4Addr>,
+    pub ipv6: Option<Ipv6Addr>,
+    pub os: Option<String>,
+    pub arch: Option<String>,
+    pub kernel_version: Option<String>,
+    pub hostname: Option<String>,
 }
 
 impl RawInfo {
-    pub fn new<P>(instance_id_file: P) -> Self
-    where
-        P: AsRef<Path>,
-    {
+    pub fn new() -> Self {
         let hostname = nix::unistd::gethostname()
             .ok()
             .map(|v| v.to_string_lossy().to_string());
@@ -107,7 +66,6 @@ impl RawInfo {
             Ok(IpAddr::V6(v6)) => Some(v6),
             _ => None, // `local_ip_address::local_ipv6()` get v6
         };
-        let instance_id = Self::get_instance_id(instance_id_file).ok();
 
         let mut raw_info = Self {
             ipv4,
@@ -116,9 +74,6 @@ impl RawInfo {
             hostname,
             arch: None,
             kernel_version: None,
-            instance_id,
-            idle: false,
-            task_id: None,
         };
 
         let cpu_hd = CpuHandle::new();

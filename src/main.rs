@@ -129,7 +129,7 @@ async fn async_tasks(remote_cfg: RemoteConfig, mut task_rt: TaskRuntime) -> Resu
         };
 
         task_rt.spawn(Some(client.clone()))?;
-        client.send_info().await?;
+        client.send_info(instance_id.clone()).await?;
         loop {
             let idle = task_rt.is_idle();
 
