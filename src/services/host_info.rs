@@ -89,62 +89,11 @@ impl RawInfo {
 
         raw_info
     }
-
-    pub fn get_instance_id<P>(path: P) -> anyhow::Result<String>
-    where
-        P: AsRef<Path>,
-    {
-        let s = std::fs::read_to_string(path)?;
-        Ok(s)
-    }
-
-    pub fn write_instance_id<P>(id: &str, path: P) -> anyhow::Result<()>
-    where
-        P: AsRef<Path>,
-    {
-        std::fs::create_dir_all(path.as_ref().parent().expect("No parent dir"))?;
-        let mut f = File::create(path)?;
-        f.write_all(id.as_bytes())?;
-
-        Ok(())
-    }
-
-    pub const fn to_heartbeat(&self, instance_id: String) -> Self {
-        Self {
-            ipv4: None,
-            ipv6: None,
-            os: None,
-            arch: None,
-            kernel_version: None,
-            hostname: None,
-            instance_id: Some(instance_id),
-            idle: false,
-            task_id: None,
-        }
-    }
-
-    /// Update instance_id when get a new instance_id
-    pub fn set_instance_id<P>(&mut self, instance_id: String, instance_id_file: P)
-    where
-        P: AsRef<Path>,
-    {
-        if Some(&instance_id) != self.instance_id.as_ref() {
-            _ = Self::write_instance_id(&instance_id, instance_id_file);
-            self.instance_id = Some(instance_id);
-        }
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_get_info() {
-        let info = RawInfo::new(String::new());
-        let info: HostInfoRequest = info.into();
-        dbg!(&info);
-    }
 
     #[test]
     fn ip_transform() {
