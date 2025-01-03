@@ -12,17 +12,18 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use std::process::Command;
-use std::time::Duration;
+use std::{process::Command, time::Duration};
 
 use once_cell::sync::Lazy;
+use procfs::Meminfo;
 
-use super::raw::{parse_meminfo, parse_memory_module};
-use super::{MemInfo, MemoryModule};
-use crate::error::Result;
-use crate::utils::Handle;
+use super::{
+    raw::{parse_meminfo, parse_memory_module},
+    MemoryModule,
+};
+use crate::{error::Result, utils::Handle};
 
-static STAT_GLOBAL: Lazy<Handle<MemInfo>> =
+static STAT_GLOBAL: Lazy<Handle<Meminfo>> =
     Lazy::new(|| Handle::new(|| parse_meminfo!().map_err(Into::into)));
 
 static INFO_GLOBAL: Lazy<Handle<Vec<MemoryModule>>> = Lazy::new(|| {
@@ -41,7 +42,7 @@ static INFO_GLOBAL: Lazy<Handle<Vec<MemoryModule>>> = Lazy::new(|| {
 #[derive(Debug, Clone)]
 pub struct MemoryHandle {
     info: Handle<Vec<MemoryModule>>,
-    stat: Handle<MemInfo>,
+    stat: Handle<Meminfo>,
 }
 
 impl Default for MemoryHandle {
@@ -62,7 +63,7 @@ impl MemoryHandle {
         self.info.get(None)
     }
 
-    pub fn stat(&self, interval: Option<Duration>) -> Result<MemInfo> {
+    pub fn stat(&self, interval: Option<Duration>) -> Result<Meminfo> {
         self.stat.get(interval)
     }
 }
