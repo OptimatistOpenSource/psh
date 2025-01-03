@@ -18,12 +18,12 @@ use chrono::{TimeZone, Utc};
 use tonic::transport::{Channel, ClientTlsConfig, Endpoint};
 use tonic::Request;
 
-use super::pb::{DataRequest, InstanceState, TaskDoneReq, Unit};
+use super::pb::{ExportDataReq, HeartbeatReq, TaskDoneReq, Unit};
 use crate::config::RpcConfig;
 use crate::runtime::Task;
 use crate::services::host_info::RawInfo;
 use crate::services::pb::psh_service_client::PshServiceClient;
-use crate::services::pb::{GetTaskReq, HostInfoRequest};
+use crate::services::pb::{GetTaskReq, SendHostInfoReq};
 
 #[derive(Clone)]
 pub struct RpcClient {
@@ -48,10 +48,10 @@ impl RpcClient {
         Ok(std::fs::read_to_string(&self.instance_id_file)?)
     }
 
-    pub async fn send_info(&mut self, instance_id: String) -> Result<()> {
-        let req: Request<HostInfoRequest> = {
+    pub async fn send_host_info(&mut self, instance_id: String) -> Result<()> {
+        let req = {
             let raw_info = RawInfo::new();
-            let req = HostInfoRequest {
+            let req = SendHostInfoReq {
                 instance_id,
                 os: raw_info.os,
                 architecture: raw_info.arch,
@@ -75,17 +75,17 @@ impl RpcClient {
         Ok(())
     }
 
-    pub async fn send_data(&mut self, req: DataRequest) -> Result<()> {
+    pub async fn export_data(&mut self, req: ExportDataReq) -> Result<()> {
         let mut req = Request::new(req);
         req.metadata_mut()
             .insert("authorization", format!("Bearer {}", self.token).parse()?);
-        self.client.send_data(req).await?;
+        self.client.export_data(req).await?;
         Ok(())
     }
 
-    pub async fn heartbeat(&mut self, state: InstanceState) -> Result<()> {
+    pub async fn heartbeat(&mut self, req: HeartbeatReq) -> Result<()> {
         let req = {
-            let mut req = Request::new(state);
+            let mut req = Request::new(req);
             req.metadata_mut()
                 .insert("authorization", format!("Bearer {}", self.token).parse()?);
             req

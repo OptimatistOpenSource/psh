@@ -35,7 +35,7 @@ use daemon::{get_daemon_wasm_args, spawn_daemon};
 use log::log_init;
 use opentelemetry_otlp::ExportConfig;
 use runtime::{Task, TaskRuntime};
-use services::pb::InstanceState;
+use services::pb::HeartbeatReq;
 use services::rpc::RpcClient;
 use tokio::try_join;
 use utils::check_root_privilege;
@@ -129,7 +129,7 @@ async fn async_tasks(remote_cfg: RemoteConfig, mut task_rt: TaskRuntime) -> Resu
         };
 
         task_rt.spawn(Some(client.clone()))?;
-        client.send_info(instance_id.clone()).await?;
+        client.send_host_info(instance_id.clone()).await?;
         loop {
             let idle = task_rt.is_idle();
 
@@ -138,7 +138,7 @@ async fn async_tasks(remote_cfg: RemoteConfig, mut task_rt: TaskRuntime) -> Resu
             }
 
             client
-                .heartbeat(InstanceState {
+                .heartbeat(HeartbeatReq {
                     instance_id: instance_id.clone(),
                     idle,
                 })
