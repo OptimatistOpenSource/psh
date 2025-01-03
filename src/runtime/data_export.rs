@@ -19,8 +19,10 @@ use profiling::data_export::types::FieldValue as WitFieldValue;
 use rinfluxdb::line_protocol::{FieldValue, LineBuilder};
 use wasmtime::component::Linker;
 
-use crate::services::pb::{DataRequest, Metadata, MetricMeta};
-use crate::services::rpc::RpcClient;
+use crate::services::{
+    pb::{DataType, ExportDataReq},
+    rpc::RpcClient,
+};
 
 wasmtime::component::bindgen!({
     path: "psh-sdk-wit/wit/deps/data-export",
@@ -64,18 +66,13 @@ impl profiling::data_export::file::Host for DataExportCtx {
         let Some(ctx) = &mut self.ctx else {
             return Ok(Ok(()));
         };
-        let metadata = Metadata {
-            r#type: "file".to_string(),
-            size: bytes.len() as _,
-            metric_meta: None,
-        };
-        let req = DataRequest {
+        let req = ExportDataReq {
             task_id: ctx.task_id.clone(),
-            metadata: Some(metadata),
+            ty: DataType::File as _,
             payload: bytes,
         };
         let rt = tokio::runtime::Runtime::new()?;
-        rt.block_on(ctx.rpc_client.send_data(req))?;
+        rt.block_on(ctx.rpc_client.export_data(req))?;
         Ok(Ok(()))
     }
 }
@@ -99,21 +96,13 @@ impl profiling::data_export::metric::Host for DataExportCtx {
             }
             lb.build().to_string().into_bytes()
         };
-        let metadata = Metadata {
-            r#type: "metric".to_string(),
-            size: payload.len() as _,
-            metric_meta: Some(MetricMeta {
-                start_time: sample.ns_ts.unwrap_or(0),
-                end_time: sample.ns_ts.unwrap_or(0),
-            }),
-        };
-        let req = DataRequest {
+        let req = ExportDataReq {
             task_id: ctx.task_id.clone(),
-            metadata: Some(metadata),
+            ty: DataType::LineProtocol as _,
             payload,
         };
         let rt = tokio::runtime::Runtime::new()?;
-        rt.block_on(ctx.rpc_client.send_data(req))?;
+        rt.block_on(ctx.rpc_client.export_data(req))?;
         Ok(Ok(()))
     }
 }
@@ -140,18 +129,13 @@ impl profiling::data_export::measurement::Host for DataExportCtx {
             }
             lb.build().to_string().into_bytes()
         };
-        let metadata = Metadata {
-            r#type: "measurement".to_string(),
-            size: payload.len() as _,
-            metric_meta: None,
-        };
-        let req = DataRequest {
+        let req = ExportDataReq {
             task_id: ctx.task_id.clone(),
-            metadata: Some(metadata),
+            ty: DataType::LineProtocol as _,
             payload,
         };
         let rt = tokio::runtime::Runtime::new()?;
-        rt.block_on(ctx.rpc_client.send_data(req))?;
+        rt.block_on(ctx.rpc_client.export_data(req))?;
         Ok(Ok(()))
     }
 }
