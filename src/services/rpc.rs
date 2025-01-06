@@ -21,7 +21,6 @@ use tonic::Request;
 use super::pb::{ExportDataReq, HeartbeatReq, TaskDoneReq, Unit};
 use crate::config::RpcConfig;
 use crate::runtime::Task;
-use crate::services::host_info::RawInfo;
 use crate::services::pb::psh_service_client::PshServiceClient;
 use crate::services::pb::{GetTaskReq, SendHostInfoReq};
 
@@ -41,16 +40,7 @@ impl RpcClient {
 
     pub async fn send_host_info(&mut self, instance_id: String) -> Result<()> {
         let req = {
-            let raw_info = RawInfo::new();
-            let req = SendHostInfoReq {
-                instance_id,
-                os: raw_info.os,
-                architecture: raw_info.arch,
-                hostname: raw_info.hostname,
-                kernel_version: raw_info.kernel_version,
-                local_ipv4_addr: raw_info.ipv4.map(|it| it.to_bits().to_be()),
-                local_ipv6_addr: raw_info.ipv6.map(|it| it.into()),
-            };
+            let req = SendHostInfoReq::new(instance_id);
             let mut req = Request::new(req);
             req.metadata_mut()
                 .insert("authorization", format!("Bearer {}", self.token).parse()?);

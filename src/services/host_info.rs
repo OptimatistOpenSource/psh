@@ -12,12 +12,12 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+use std::net::{IpAddr, Ipv6Addr};
 
 use psh_system::cpu::CpuHandle;
 use psh_system::os::OsHandle;
 
-use super::pb::Ipv6Addr as PbIpv6;
+use super::pb::{Ipv6Addr as PbIpv6, SendHostInfoReq};
 
 impl From<Ipv6Addr> for PbIpv6 {
     fn from(value: Ipv6Addr) -> Self {
@@ -30,64 +30,41 @@ impl From<Ipv6Addr> for PbIpv6 {
         }
     }
 }
-impl From<&Ipv6Addr> for PbIpv6 {
-    fn from(value: &Ipv6Addr) -> Self {
-        let ip = value.to_bits().to_be();
-        let high = (ip >> 64) as u64;
-        let low = ip as u64;
-        Self {
-            hi_64_bits: high,
-            lo_64_bits: low,
-        }
-    }
-}
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub struct RawInfo {
-    pub ipv4: Option<Ipv4Addr>,
-    pub ipv6: Option<Ipv6Addr>,
-    pub os: Option<String>,
-    pub arch: Option<String>,
-    pub kernel_version: Option<String>,
-    pub hostname: Option<String>,
-}
-
-impl RawInfo {
-    pub fn new() -> Self {
+impl SendHostInfoReq {
+    pub fn new(instance_id: String) -> Self {
         let hostname = nix::unistd::gethostname()
             .ok()
             .map(|v| v.to_string_lossy().to_string());
-        let ipv4 = match local_ip_address::local_ip() {
-            Ok(IpAddr::V4(v4)) => Some(v4),
+
+        let local_ipv4_addr = match local_ip_address::local_ip() {
+            Ok(IpAddr::V4(it)) => Some(it.to_bits().to_be()),
             _ => None, // `local_ip_address::local_ip()` get v4
         };
 
-        let ipv6 = match local_ip_address::local_ipv6() {
-            Ok(IpAddr::V6(v6)) => Some(v6),
+        let local_ipv6_addr = match local_ip_address::local_ipv6() {
+            Ok(IpAddr::V6(it)) => Some(it.into()),
             _ => None, // `local_ip_address::local_ipv6()` get v6
         };
 
-        let mut raw_info = Self {
-            ipv4,
-            ipv6,
+        let architecture = CpuHandle::new().info().ok().map(|it| it.to_string());
+
+        let mut req = Self {
+            local_ipv4_addr,
+            local_ipv6_addr,
             os: None,
             hostname,
-            arch: None,
+            architecture,
             kernel_version: None,
+            instance_id,
         };
 
-        let cpu_hd = CpuHandle::new();
-        if let Ok(cpu) = cpu_hd.info() {
-            raw_info.arch = Some(cpu.to_string());
+        if let Ok(it) = OsHandle::new().info() {
+            req.os = Some(it.distro.distro.to_string());
+            req.kernel_version = Some(it.kernel.to_string());
         }
 
-        let os_hd = OsHandle::new();
-        if let Ok(info) = os_hd.info() {
-            raw_info.os = Some(info.distro.distro.to_string());
-            raw_info.kernel_version = Some(info.kernel.to_string());
-        }
-
-        raw_info
+        req
     }
 }
 
