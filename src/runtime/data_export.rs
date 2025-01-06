@@ -38,6 +38,7 @@ wasmtime::component::bindgen!({
 #[derive(Clone)]
 pub struct Ctx {
     pub task_id: String,
+    pub instance_id: String,
     pub rpc_client: RpcClient,
 }
 
@@ -83,11 +84,9 @@ impl profiling::data_export::metric::Host for DataExportCtx {
             return Ok(Ok(()));
         };
 
-        let instance_id = ctx
-            .rpc_client
-            .instance_id()
-            .unwrap_or_else(|_| "unknown".to_string());
-        sample.tags.push(("instance_id".to_string(), instance_id));
+        sample
+            .tags
+            .push(("instance_id".to_string(), ctx.instance_id.clone()));
 
         let payload = {
             let mut lb = LineBuilder::new(sample.name).insert_field("value", sample.value);
@@ -119,11 +118,9 @@ impl profiling::data_export::measurement::Host for DataExportCtx {
             return Ok(Ok(()));
         };
 
-        let instance_id = ctx
-            .rpc_client
-            .instance_id()
-            .unwrap_or_else(|_| "unknown".to_string());
-        point.tags.push(("instance_id".to_string(), instance_id));
+        point
+            .tags
+            .push(("instance_id".to_string(), ctx.instance_id.clone()));
 
         let payload = {
             let mut lb = LineBuilder::new(point.name);

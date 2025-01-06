@@ -29,7 +29,6 @@ use crate::services::pb::{GetTaskReq, SendHostInfoReq};
 pub struct RpcClient {
     token: String,
     client: PshServiceClient<Channel>,
-    instance_id_file: String,
 }
 
 impl RpcClient {
@@ -37,15 +36,7 @@ impl RpcClient {
         let ep = Endpoint::from_shared(config.addr.clone())?
             .tls_config(ClientTlsConfig::new().with_native_roots())?;
         let client: PshServiceClient<Channel> = PshServiceClient::connect(ep).await?;
-        Ok(Self {
-            token,
-            client,
-            instance_id_file: config.instance_id_file.clone(),
-        })
-    }
-
-    pub fn instance_id(&self) -> Result<String> {
-        Ok(std::fs::read_to_string(&self.instance_id_file)?)
+        Ok(Self { token, client })
     }
 
     pub async fn send_host_info(&mut self, instance_id: String) -> Result<()> {

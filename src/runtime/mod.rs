@@ -76,7 +76,11 @@ impl TaskRuntime {
         self.finished_task_id.lock().unwrap().pop()
     }
     #[allow(clippy::significant_drop_tightening)]
-    pub fn spawn(&mut self, rpc_client: Option<RpcClient>) -> Result<JoinHandle<()>> {
+    pub fn spawn(
+        &mut self,
+        rpc_client: Option<RpcClient>,
+        instance_id: String,
+    ) -> Result<JoinHandle<()>> {
         let rx = self
             .rx
             .take()
@@ -100,6 +104,7 @@ impl TaskRuntime {
                     (Some(rpc_client), Some(task_id)) => Some(Ctx {
                         task_id,
                         rpc_client,
+                        instance_id: instance_id.clone(),
                     }),
                     _ => None,
                 };
