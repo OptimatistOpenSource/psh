@@ -14,7 +14,7 @@
 
 use std::net::{IpAddr, Ipv6Addr};
 
-use psh_system::cpu::CpuHandle;
+use psh_system::cpu::{CpuHandle, CpuInfo};
 use psh_system::os::OsHandle;
 
 use super::pb::{self, SendHostInfoReq};
@@ -62,7 +62,11 @@ impl SendHostInfoReq {
             _ => None, // `local_ip_address::local_ipv6()` get v6
         };
 
-        let architecture = CpuHandle::new().info().ok().map(|it| it.to_string());
+        let architecture = CpuHandle::new().info().ok().map(|it| match it {
+            CpuInfo::X86_64(_) => "x86_64".to_string(),
+            CpuInfo::Arm64(_) => "aarch64".to_string(),
+            CpuInfo::Unsupported(u) => u,
+        });
 
         let mut req = Self {
             local_ipv4_addr,
