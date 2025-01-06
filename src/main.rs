@@ -22,7 +22,6 @@ mod services;
 mod utils;
 
 use std::process::exit;
-use std::result::Result::Ok;
 use std::time::Duration;
 use std::{fs, thread};
 
