@@ -19,7 +19,6 @@ mod log;
 mod otlp;
 mod runtime;
 mod services;
-mod utils;
 
 use std::time::Duration;
 use std::{fs, thread};
@@ -31,17 +30,17 @@ use clap::Parser;
 use config::RemoteConfig;
 use daemon::{get_daemon_wasm_args, spawn_daemon};
 use log::log_init;
+use nix::unistd::geteuid;
 use opentelemetry_otlp::ExportConfig;
 use runtime::{Task, TaskRuntime};
 use services::pb::HeartbeatReq;
 use services::rpc::RpcClient;
 use tokio::try_join;
-use utils::check_root_privilege;
 
 fn main() -> Result<()> {
     log_init();
 
-    if !check_root_privilege() {
+    if !geteuid().is_root() {
         bail!("Insufficient privileges. Please run psh with root permissions.");
     }
 
