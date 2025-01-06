@@ -17,9 +17,9 @@ use std::net::{IpAddr, Ipv6Addr};
 use psh_system::cpu::CpuHandle;
 use psh_system::os::OsHandle;
 
-use super::pb::{Ipv6Addr as PbIpv6, SendHostInfoReq};
+use super::pb::{self, SendHostInfoReq};
 
-impl From<Ipv6Addr> for PbIpv6 {
+impl From<Ipv6Addr> for pb::Ipv6Addr {
     fn from(value: Ipv6Addr) -> Self {
         let ip = value.to_bits().to_be();
         let high = (ip >> 64) as u64;
@@ -29,6 +29,21 @@ impl From<Ipv6Addr> for PbIpv6 {
             lo_64_bits: low,
         }
     }
+}
+
+#[test]
+fn test_ipv6_into_pb_repr() {
+    let var: u128 = 1;
+
+    let raw = Ipv6Addr::from_bits(var);
+
+    let pb_repr: pb::Ipv6Addr = raw.into();
+
+    let hi = (pb_repr.hi_64_bits as u128) << 64;
+    let lo = pb_repr.lo_64_bits as u128;
+    let ip = Ipv6Addr::from_bits(u128::from_be(hi | lo));
+
+    assert_eq!(ip, Ipv6Addr::from_bits(1));
 }
 
 impl SendHostInfoReq {
@@ -65,25 +80,5 @@ impl SendHostInfoReq {
         }
 
         req
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn ip_transform() {
-        let var: u128 = 1;
-
-        let raw = Ipv6Addr::from_bits(var);
-
-        let pb_ip: PbIpv6 = raw.into();
-
-        let hi = (pb_ip.hi_64_bits as u128) << 64;
-        let lo = pb_ip.lo_64_bits as u128;
-        let ip = Ipv6Addr::from_bits(u128::from_be(hi | lo));
-
-        assert_eq!(ip, Ipv6Addr::from_bits(1));
     }
 }
