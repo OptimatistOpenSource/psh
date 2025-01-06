@@ -112,7 +112,11 @@ pub fn start(
                 page_tables,
                 nfs_unstable,
                 bounce,
+                z_swap,
+                z_swapped,
+                secondary_page_tables,
             ];
+
             gauges.into_iter().for_each(|(m, kv)| {
                 gauge.observe(m, &[KeyValue::new("token", token.clone()), kv]);
             })
