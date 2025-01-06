@@ -21,7 +21,6 @@ mod runtime;
 mod services;
 mod utils;
 
-use std::process::exit;
 use std::time::Duration;
 use std::{fs, thread};
 
@@ -43,8 +42,7 @@ fn main() -> Result<()> {
     log_init();
 
     if !check_root_privilege() {
-        tracing::error!("Insufficient privileges. Please run psh with root permissions.");
-        exit(1);
+        bail!("Insufficient privileges. Please run psh with root permissions.");
     }
 
     let args = Args::parse();
