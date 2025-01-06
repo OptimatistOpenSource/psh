@@ -19,10 +19,7 @@ mod log;
 mod otlp;
 mod runtime;
 mod services;
-mod utils;
 
-use std::process::exit;
-use std::result::Result::Ok;
 use std::time::Duration;
 use std::{fs, thread};
 
@@ -33,19 +30,18 @@ use clap::Parser;
 use config::RemoteConfig;
 use daemon::{get_daemon_wasm_args, spawn_daemon};
 use log::log_init;
+use nix::unistd::geteuid;
 use opentelemetry_otlp::ExportConfig;
 use runtime::{Task, TaskRuntime};
 use services::pb::HeartbeatReq;
 use services::rpc::RpcClient;
 use tokio::try_join;
-use utils::check_root_privilege;
 
 fn main() -> Result<()> {
     log_init();
 
-    if !check_root_privilege() {
-        tracing::error!("Insufficient privileges. Please run psh with root permissions.");
-        exit(1);
+    if !geteuid().is_root() {
+        bail!("Insufficient privileges. Please run psh with root permissions.");
     }
 
     let args = Args::parse();
@@ -110,7 +106,7 @@ async fn async_tasks(remote_cfg: RemoteConfig, mut task_rt: TaskRuntime) -> Resu
     let token_cloned = remote_cfg.token.clone();
     let rpc_task = async move {
         if !remote_cfg.rpc.enable {
-            let handle = task_rt.spawn(None)?;
+            let handle = task_rt.spawn(None, "unknown".to_string())?;
             drop(task_rt);
             handle.join().expect("TaskRuntime has panicked");
             return Ok(());
@@ -128,11 +124,9 @@ async fn async_tasks(remote_cfg: RemoteConfig, mut task_rt: TaskRuntime) -> Resu
             }
         };
 
-        task_rt.spawn(Some(client.clone()))?;
+        task_rt.spawn(Some(client.clone()), instance_id.clone())?;
         client.send_host_info(instance_id.clone()).await?;
         loop {
-            let idle = task_rt.is_idle();
-
             if let Some(task) = client.get_task(instance_id.clone()).await? {
                 task_rt.schedule(task)?
             }
@@ -140,7 +134,7 @@ async fn async_tasks(remote_cfg: RemoteConfig, mut task_rt: TaskRuntime) -> Resu
             client
                 .heartbeat(HeartbeatReq {
                     instance_id: instance_id.clone(),
-                    idle,
+                    idle: task_rt.is_idle(),
                 })
                 .await?;
 

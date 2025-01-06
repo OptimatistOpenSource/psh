@@ -34,8 +34,8 @@ pub fn start(
             };
             let desc = "The amount of time, measured in ticks, the CPU has been in specific states";
             for (cpu, cpu_time) in cpus.per_cpu.into_iter().enumerate() {
-                macro_rules! cpu_gauges {
-                    ( $($item:ident), *,) => {
+                macro_rules! gauges {
+                    ($($item:ident,)+) => {
                         [
                             $((
                                 cpu_time.$item,
@@ -48,15 +48,14 @@ pub fn start(
                         ]
                     };
                 }
-
-                let gauges = cpu_gauges!(system, idle, user, nice,);
+                let gauges = gauges![system, idle, user, nice,];
                 gauges.into_iter().for_each(|(m, [kv1, kv2, kv3])| {
                     let a = &[KeyValue::new("token", token.clone()), kv1, kv2, kv3];
                     gauge.observe(m, a);
                 });
 
-                macro_rules! cpu_gauges_ms {
-                    ( $($item:ident), *,) => {
+                macro_rules! gauges {
+                    ($($item:ident,)+) => {
                         [
                             $((
                                 cpu_time.$item(),
@@ -69,15 +68,14 @@ pub fn start(
                         ]
                     };
                 }
-
-                let gauges = cpu_gauges_ms!(user_ms, nice_ms, system_ms, idle_ms,);
+                let gauges = gauges![user_ms, nice_ms, system_ms, idle_ms,];
                 gauges.into_iter().for_each(|(m, [kv1, kv2, kv3])| {
                     let a = &[KeyValue::new("token", token.clone()), kv1, kv2, kv3];
                     gauge.observe(m, a);
                 });
 
-                macro_rules! cpu_gauges_ {
-                    ($($item_o:ident), *,) => {
+                macro_rules! gauges {
+                    ($($item_o:ident,)+) => {
                         [
                             $((
                                 cpu_time.$item_o.unwrap_or(0),
@@ -90,14 +88,14 @@ pub fn start(
                         ]
                     };
                 }
-                let gauges = cpu_gauges_!(iowait, irq, softirq, steal, guest, guest_nice,);
+                let gauges = gauges![iowait, irq, softirq, steal, guest, guest_nice,];
                 gauges.into_iter().for_each(|(m, [kv1, kv2, kv3])| {
                     let a = &[KeyValue::new("token", token.clone()), kv1, kv2, kv3];
                     gauge.observe(m, a);
                 });
 
-                macro_rules! cpu_gauges_ms_ {
-                    ($($item_o:ident), *,) => {
+                macro_rules! gauges {
+                    ($($item_o:ident,)+) => {
                         [
                             $((
                                 cpu_time.$item_o().unwrap_or(0),
@@ -110,14 +108,14 @@ pub fn start(
                         ]
                     };
                 }
-                let gauges = cpu_gauges_ms_!(
+                let gauges = gauges![
                     iowait_ms,
                     irq_ms,
                     softirq_ms,
                     steal_ms,
                     guest_ms,
                     guest_nice_ms,
-                );
+                ];
                 gauges.into_iter().for_each(|(m, [kv1, kv2, kv3])| {
                     let a = &[KeyValue::new("token", token.clone()), kv1, kv2, kv3];
                     gauge.observe(m, a);

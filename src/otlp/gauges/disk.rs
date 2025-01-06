@@ -35,8 +35,8 @@ pub fn start(
             for stat in disks {
                 let name = stat.name;
 
-                macro_rules! gauges_disk {
-                    ($($stat:ident), *,) => {
+                macro_rules! gauges {
+                    ($($stat:ident,)+) => {
                         [$((
                             stat.$stat,
                             [
@@ -46,7 +46,7 @@ pub fn start(
                         ),)*]
                     };
                 }
-                let gauges = gauges_disk!(
+                let gauges = gauges![
                     reads,
                     merged,
                     sectors_read,
@@ -58,15 +58,14 @@ pub fn start(
                     in_progress,
                     time_in_progress,
                     weighted_time_in_progress,
-                );
-
+                ];
                 gauges.into_iter().for_each(|(m, [kv1, kv2])| {
                     let a = &[KeyValue::new("token", token.clone()), kv1, kv2];
                     gauge.observe(m, a);
                 });
 
-                macro_rules! gauges_disk_ {
-                    ($($stat:ident), *,) => {
+                macro_rules! gauges {
+                    ($($stat:ident,)+) => {
                         [$((
                             stat.$stat.unwrap_or(0),
                             [
@@ -76,15 +75,14 @@ pub fn start(
                         ),)*]
                     };
                 }
-                let gauges = gauges_disk_!(
+                let gauges = gauges![
                     discards,
                     discards_merged,
                     sectors_discarded,
                     time_discarding,
                     flushes,
                     time_flushing,
-                );
-
+                ];
                 gauges.into_iter().for_each(|(m, [kv1, kv2])| {
                     let a = &[KeyValue::new("token", token.clone()), kv1, kv2];
                     gauge.observe(m, a);

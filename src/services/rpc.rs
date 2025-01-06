@@ -21,7 +21,6 @@ use tonic::Request;
 use super::pb::{ExportDataReq, HeartbeatReq, TaskDoneReq, Unit};
 use crate::config::RpcConfig;
 use crate::runtime::Task;
-use crate::services::host_info::RawInfo;
 use crate::services::pb::psh_service_client::PshServiceClient;
 use crate::services::pb::{GetTaskReq, SendHostInfoReq};
 
@@ -29,7 +28,13 @@ use crate::services::pb::{GetTaskReq, SendHostInfoReq};
 pub struct RpcClient {
     token: String,
     client: PshServiceClient<Channel>,
-    instance_id_file: String,
+}
+
+fn into_req<T>(message: T, token: &str) -> Result<Request<T>> {
+    let mut req = Request::new(message);
+    req.metadata_mut()
+        .insert("authorization", format!("Bearer {}", token).parse()?);
+    Ok(req)
 }
 
 impl RpcClient {
@@ -37,72 +42,30 @@ impl RpcClient {
         let ep = Endpoint::from_shared(config.addr.clone())?
             .tls_config(ClientTlsConfig::new().with_native_roots())?;
         let client: PshServiceClient<Channel> = PshServiceClient::connect(ep).await?;
-        Ok(Self {
-            token,
-            client,
-            instance_id_file: config.instance_id_file.clone(),
-        })
-    }
-
-    pub fn instance_id(&self) -> Result<String> {
-        Ok(std::fs::read_to_string(&self.instance_id_file)?)
+        Ok(Self { token, client })
     }
 
     pub async fn send_host_info(&mut self, instance_id: String) -> Result<()> {
-        let req = {
-            let raw_info = RawInfo::new();
-            let req = SendHostInfoReq {
-                instance_id,
-                os: raw_info.os,
-                architecture: raw_info.arch,
-                hostname: raw_info.hostname,
-                kernel_version: raw_info.kernel_version,
-                local_ipv4_addr: raw_info.ipv4.map(|it| it.to_bits().to_be()),
-                local_ipv6_addr: raw_info.ipv6.map(|it| it.into()),
-            };
-            let mut req = Request::new(req);
-            req.metadata_mut()
-                .insert("authorization", format!("Bearer {}", self.token).parse()?);
-            req
-        };
-
+        let req = into_req(SendHostInfoReq::new(instance_id), &self.token)?;
         let resp = self.client.send_host_info(req).await?;
-
-        let resp = resp.get_ref();
-
-        tracing::trace!("{:?}", resp);
-
+        tracing::trace!("{:?}", resp.get_ref());
         Ok(())
     }
 
-    pub async fn export_data(&mut self, req: ExportDataReq) -> Result<()> {
-        let mut req = Request::new(req);
-        req.metadata_mut()
-            .insert("authorization", format!("Bearer {}", self.token).parse()?);
+    pub async fn export_data(&mut self, message: ExportDataReq) -> Result<()> {
+        let req = into_req(message, &self.token)?;
         self.client.export_data(req).await?;
         Ok(())
     }
 
-    pub async fn heartbeat(&mut self, req: HeartbeatReq) -> Result<()> {
-        let req = {
-            let mut req = Request::new(req);
-            req.metadata_mut()
-                .insert("authorization", format!("Bearer {}", self.token).parse()?);
-            req
-        };
-
+    pub async fn heartbeat(&mut self, message: HeartbeatReq) -> Result<()> {
+        let req = into_req(message, &self.token)?;
         self.client.heartbeat(req).await?;
-
         Ok(())
     }
 
     pub async fn get_task(&mut self, instance_id: String) -> Result<Option<Task>> {
-        let req = {
-            let mut req = Request::new(GetTaskReq { instance_id });
-            req.metadata_mut()
-                .insert("authorization", format!("Bearer {}", self.token).parse()?);
-            req
-        };
+        let req = into_req(GetTaskReq { instance_id }, &self.token)?;
 
         let Some(task) = self.client.get_task(req).await?.into_inner().task else {
             return Ok(None);
@@ -123,28 +86,14 @@ impl RpcClient {
     }
 
     pub async fn task_done(&mut self, task_id: String) -> Result<()> {
-        let req = {
-            let mut req = Request::new(TaskDoneReq { task_id });
-            req.metadata_mut()
-                .insert("authorization", format!("Bearer {}", self.token).parse()?);
-            req
-        };
-
+        let req = into_req(TaskDoneReq { task_id }, &self.token)?;
         self.client.task_done(req).await?;
-
         Ok(())
     }
 
     pub async fn new_instance_id(&mut self) -> Result<String> {
-        let req = {
-            let mut req = Request::new(Unit {});
-            req.metadata_mut()
-                .insert("authorization", format!("Bearer {}", self.token).parse()?);
-            req
-        };
-
+        let req = into_req(Unit {}, &self.token)?;
         let resp = self.client.new_instance_id(req).await?;
-
         Ok(resp.into_inner().instance_id)
     }
 }

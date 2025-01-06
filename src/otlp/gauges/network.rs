@@ -33,8 +33,8 @@ pub fn start(
                 return;
             };
             for (dev, status) in stat {
-                macro_rules! gauges_net {
-                    ($($stat:ident), *,) => {
+                macro_rules! gauges {
+                    ($($stat:ident,)+) => {
                         [
                         $((
                             status.$stat,
@@ -46,7 +46,7 @@ pub fn start(
                         ]
                     };
                 }
-                let gauges = gauges_net!(
+                let gauges = gauges![
                     recv_bytes,
                     recv_packets,
                     recv_errs,
@@ -63,8 +63,7 @@ pub fn start(
                     sent_colls,
                     sent_carrier,
                     sent_compressed,
-                );
-
+                ];
                 gauges.into_iter().for_each(|(m, [kv1, kv2])| {
                     let a = [KeyValue::new("token", token.clone()), kv1, kv2];
                     gauge.observe(m, &a);
