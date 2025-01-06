@@ -33,6 +33,7 @@ pub fn start(
             let Ok(irqs) = interrupt.stat(Some(interval)) else {
                 return;
             };
+
             for int in irqs {
                 // TODO
                 let desc = Cow::from(int.description);

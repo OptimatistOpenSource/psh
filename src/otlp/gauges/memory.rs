@@ -33,8 +33,9 @@ pub fn start(
             let Ok(mem) = memory.stat(Some(interval)) else {
                 return;
             };
-            macro_rules! gauges_mem {
-                ($($stat:ident), *,) => {
+
+            macro_rules! gauges {
+                ($($stat:ident,)+) => {
                     [
                         $(
                         (mem.$stat, KeyValue::new("stat", stringify!($stat))),
@@ -42,7 +43,7 @@ pub fn start(
                     ]
                 };
             }
-            let gauges = gauges_mem!(
+            let gauges = gauges![
                 mem_total,
                 mem_free,
                 buffers,
@@ -60,14 +61,13 @@ pub fn start(
                 vmalloc_total,
                 vmalloc_used,
                 vmalloc_chunk,
-            );
-
+            ];
             gauges.into_iter().for_each(|(m, kv)| {
                 gauge.observe(m, &[KeyValue::new("token", token.clone()), kv]);
             });
 
-            macro_rules! gauges_mem_ {
-                ($($stat:ident), *,) => {
+            macro_rules! gauges {
+                ($($stat:ident,)+) => {
                     [
                         $(
                         (mem.$stat.unwrap_or(0), KeyValue::new("stat", stringify!($stat))),
@@ -75,7 +75,7 @@ pub fn start(
                     ]
                 };
             }
-            let gauges = gauges_mem_!(
+            let gauges = gauges![
                 cma_total,
                 cma_free,
                 hugepages_total,
@@ -112,8 +112,7 @@ pub fn start(
                 page_tables,
                 nfs_unstable,
                 bounce,
-            );
-
+            ];
             gauges.into_iter().for_each(|(m, kv)| {
                 gauge.observe(m, &[KeyValue::new("token", token.clone()), kv]);
             })
