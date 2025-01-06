@@ -84,4 +84,4 @@ where
     }
 }
 
-pub type Handle<T, E = Error> = Resource<T, fn() -> Result<T, E>>;
+pub type Handle<T> = Resource<T, fn() -> Result<T>>;
