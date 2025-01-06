@@ -94,6 +94,12 @@ impl profiling::data_export::metric::Host for DataExportCtx {
             for (k, v) in sample.tags.clone() {
                 lb = lb.insert_tag(k, v);
             }
+
+            if let Some(s) = sample.ns_ts {
+                let timestamp = Utc.timestamp_nanos(s as _);
+                lb = lb.set_timestamp(timestamp)
+            };
+
             lb.build().to_string().into_bytes()
         };
         let req = ExportDataReq {
@@ -127,6 +133,12 @@ impl profiling::data_export::measurement::Host for DataExportCtx {
             for (k, v) in point.fields {
                 lb = lb.insert_field(k, v);
             }
+
+            if let Some(s) = point.ns_ts {
+                let timestamp = Utc.timestamp_nanos(s as _);
+                lb = lb.set_timestamp(timestamp)
+            };
+
             lb.build().to_string().into_bytes()
         };
         let req = ExportDataReq {
