@@ -127,14 +127,17 @@ async fn async_tasks(remote_cfg: RemoteConfig, mut task_rt: TaskRuntime) -> Resu
         task_rt.spawn(Some(client.clone()), instance_id.clone())?;
         client.send_host_info(instance_id.clone()).await?;
         loop {
-            if let Some(task) = client.get_task(instance_id.clone()).await? {
-                task_rt.schedule(task)?
+            let idle = task_rt.is_idle();
+            if idle {
+                if let Some(task) = client.get_task(instance_id.clone()).await? {
+                    task_rt.schedule(task)?
+                }
             }
 
             client
                 .heartbeat(HeartbeatReq {
                     instance_id: instance_id.clone(),
-                    idle: task_rt.is_idle(),
+                    idle,
                 })
                 .await?;
 
