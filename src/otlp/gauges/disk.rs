@@ -27,7 +27,6 @@ pub fn start(
     let gauge = meter
         .u64_observable_gauge("DiskStat")
         .with_description("System profile disk statistics.")
-        // .with_unit(Unit::new("KiB"))
         .with_callback(move |gauge| {
             let Ok(disks) = disk.stat(Some(interval)) else {
                 return;

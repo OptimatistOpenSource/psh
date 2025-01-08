@@ -27,7 +27,6 @@ pub fn start(
     let gauge = meter
         .u64_observable_gauge("CpuStat")
         .with_description("System profile cpu statistics.")
-        // .with_unit(Unit::new("KiB"))
         .with_callback(move |gauge| {
             let Ok(cpus) = cpu.stat(Some(interval)) else {
                 return;

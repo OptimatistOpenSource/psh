@@ -28,7 +28,6 @@ pub fn start(
     let gauge = meter
         .u64_observable_gauge("MemoryStat")
         .with_description("System profile memory statistics.")
-        // .with_unit(Unit::new("KiB"))
         .with_callback(move |gauge| {
             let Ok(mem) = memory.stat(Some(interval)) else {
                 return;
