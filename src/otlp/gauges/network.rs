@@ -27,7 +27,6 @@ pub fn start(
     let gauge = meter
         .u64_observable_gauge("NetworkStat")
         .with_description("System profile network statistics.")
-        // .with_unit(Unit::new("KiB"))
         .with_callback(move |gauge| {
             let Ok(stat) = network.stat(Some(interval)) else {
                 return;

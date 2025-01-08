@@ -17,12 +17,23 @@ mod irq;
 mod raw;
 mod stat;
 
+use std::fmt::Display;
+
 pub use handle::InterruptHandle;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum InterruptType {
     Common(u32),
     ArchSpecific(String),
+}
+
+impl Display for InterruptType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Common(c) => c.fmt(f),
+            Self::ArchSpecific(a) => a.fmt(f),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
