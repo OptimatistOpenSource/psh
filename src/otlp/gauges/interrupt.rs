@@ -35,13 +35,13 @@ pub fn start(
             };
 
             for int in irqs {
-                // TODO
                 let desc = Cow::from(int.description);
                 for (cpu, &cnt) in int.cpu_counts.iter().enumerate() {
                     let a = [
                         KeyValue::new("token", token.clone()),
                         KeyValue::new("desc", desc.clone()),
                         KeyValue::new("cpu", cpu as i64),
+                        KeyValue::new("type", int.interrupt_type.to_string()),
                     ];
                     gauge.observe(cnt, &a)
                 }
