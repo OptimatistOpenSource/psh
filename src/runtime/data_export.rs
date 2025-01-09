@@ -12,11 +12,15 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
+use std::{collections::VecDeque, sync::Arc};
+
 use chrono::{TimeZone, Utc};
 use profiling::data_export::measurement::Point;
 use profiling::data_export::metric::Sample;
 use profiling::data_export::types::FieldValue as WitFieldValue;
+use prost::Message;
 use rinfluxdb::line_protocol::{FieldValue, LineBuilder};
+use tokio::runtime::Runtime;
 use wasmtime::component::Linker;
 
 use crate::services::{
@@ -36,10 +40,76 @@ wasmtime::component::bindgen!({
 });
 
 #[derive(Clone)]
+pub struct DataExportBuf {
+    watermark: usize,
+    len: usize,
+    encoded_reqs: VecDeque<Vec<u8>>,
+}
+
+impl DataExportBuf {
+    pub fn new(len: usize) -> Self {
+        Self {
+            watermark: len,
+            len: 0,
+            encoded_reqs: VecDeque::with_capacity(len),
+        }
+    }
+
+    pub fn push_back(&mut self, req: &ExportDataReq) -> bool {
+        let enc_len = req.encoded_len();
+
+        if self.len + enc_len > self.watermark {
+            return false;
+        }
+
+        self.encoded_reqs.push_back(req.encode_to_vec());
+        self.len += enc_len;
+        true
+    }
+
+    pub fn pop_front(&mut self) -> Option<ExportDataReq> {
+        let encoded_req = self.encoded_reqs.pop_front()?;
+        self.len -= encoded_req.len();
+        let k = ExportDataReq::decode(encoded_req.as_slice()).unwrap();
+        Some(k)
+    }
+}
+
+fn schedule_message(ctx: &mut Ctx, message: ExportDataReq) {
+    if ctx.buf.push_back(&message) {
+        return;
+    }
+
+    ctx.exporter_rt.spawn({
+        let mut rpc_client = ctx.rpc_client.clone();
+        async move { rpc_client.export_data(message).await }
+    });
+    while let Some(req) = ctx.buf.pop_front() {
+        ctx.exporter_rt.spawn({
+            let mut rpc_client = ctx.rpc_client.clone();
+            async move { rpc_client.export_data(req).await }
+        });
+    }
+}
+
+#[derive(Clone)]
 pub struct Ctx {
     pub task_id: String,
     pub instance_id: String,
     pub rpc_client: RpcClient,
+    pub buf: DataExportBuf,
+    pub exporter_rt: Arc<Runtime>,
+}
+
+impl Drop for Ctx {
+    fn drop(&mut self) {
+        while let Some(req) = self.buf.pop_front() {
+            self.exporter_rt.spawn({
+                let mut rpc_client = self.rpc_client.clone();
+                async move { rpc_client.export_data(req).await }
+            });
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -67,13 +137,14 @@ impl profiling::data_export::file::Host for DataExportCtx {
         let Some(ctx) = &mut self.ctx else {
             return Ok(Ok(()));
         };
-        let req = ExportDataReq {
+
+        let message = ExportDataReq {
             task_id: ctx.task_id.clone(),
             ty: DataType::File as _,
             payload: bytes,
         };
-        let rt = tokio::runtime::Runtime::new()?;
-        rt.block_on(ctx.rpc_client.export_data(req))?;
+        schedule_message(ctx, message);
+
         Ok(Ok(()))
     }
 }
@@ -101,13 +172,13 @@ impl profiling::data_export::metric::Host for DataExportCtx {
 
             lb.build().to_string().into_bytes()
         };
-        let req = ExportDataReq {
+        let message = ExportDataReq {
             task_id: ctx.task_id.clone(),
             ty: DataType::LineProtocol as _,
             payload,
         };
-        let rt = tokio::runtime::Runtime::new()?;
-        rt.block_on(ctx.rpc_client.export_data(req))?;
+        schedule_message(ctx, message);
+
         Ok(Ok(()))
     }
 }
@@ -138,13 +209,13 @@ impl profiling::data_export::measurement::Host for DataExportCtx {
 
             lb.build().to_string().into_bytes()
         };
-        let req = ExportDataReq {
+        let message = ExportDataReq {
             task_id: ctx.task_id.clone(),
             ty: DataType::LineProtocol as _,
             payload,
         };
-        let rt = tokio::runtime::Runtime::new()?;
-        rt.block_on(ctx.rpc_client.export_data(req))?;
+        schedule_message(ctx, message);
+
         Ok(Ok(()))
     }
 }

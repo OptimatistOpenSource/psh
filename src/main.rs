@@ -106,7 +106,11 @@ async fn async_tasks(remote_cfg: RemoteConfig, mut task_rt: TaskRuntime) -> Resu
     let token_cloned = remote_cfg.token.clone();
     let rpc_task = async move {
         if !remote_cfg.rpc.enable {
-            let handle = task_rt.spawn(None, "unknown".to_string())?;
+            let handle = task_rt.spawn(
+                None,
+                remote_cfg.rpc.data_export.buf_size,
+                "unknown".to_string(),
+            )?;
             drop(task_rt);
             handle.join().expect("TaskRuntime has panicked");
             return Ok(());
@@ -124,7 +128,11 @@ async fn async_tasks(remote_cfg: RemoteConfig, mut task_rt: TaskRuntime) -> Resu
             }
         };
 
-        task_rt.spawn(Some(client.clone()), instance_id.clone())?;
+        task_rt.spawn(
+            Some(client.clone()),
+            remote_cfg.rpc.data_export.buf_size,
+            instance_id.clone(),
+        )?;
         client.send_host_info(instance_id.clone()).await?;
         loop {
             let idle = task_rt.is_idle();

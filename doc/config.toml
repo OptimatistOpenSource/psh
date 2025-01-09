@@ -19,6 +19,9 @@ addr = "https://rpc.optimatist.com"
 heartbeat_interval = 1
 instance_id_file = "/etc/psh/instance.id"
 
+[remote.rpc.data_export]
+buf_size = 4096
+
 [remote.otlp]
 enable = false
 addr = "https://otel-col.optimatist.com"
