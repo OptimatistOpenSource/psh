@@ -12,6 +12,8 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
+use std::{collections::VecDeque, sync::Arc};
+
 use chrono::{TimeZone, Utc};
 use profiling::data_export::measurement::Point;
 use profiling::data_export::metric::Sample;
@@ -35,6 +37,41 @@ wasmtime::component::bindgen!({
     trappable_imports: true,
 });
 
+#[derive(Clone)]
+pub struct DataExportBuf {
+    watermark: usize,
+    len: usize,
+    encoded_reqs: VecDeque<Vec<u8>>,
+}
+
+impl DataExportBuf {
+    pub fn new(len: usize) -> Self {
+        Self {
+            watermark: len,
+            len: 0,
+            encoded_reqs: VecDeque::with_capacity(len),
+        }
+    }
+
+    pub fn push_back(&mut self, req: &ExportDataReq) -> bool {
+        let enc_len = req.encoded_len();
+
+        if self.len + enc_len > self.watermark {
+            return false;
+        }
+
+        self.encoded_reqs.push_back(req.encode_to_vec());
+        self.len += enc_len;
+        true
+    }
+
+    pub fn pop_front(&mut self) -> Option<ExportDataReq> {
+        let encoded_req = self.encoded_reqs.pop_front()?;
+        self.len -= encoded_req.len();
+        let k = ExportDataReq::decode(encoded_req.as_slice()).unwrap();
+        Some(k)
+    }
+}
 #[derive(Clone)]
 pub struct Ctx {
     pub task_id: String,
