@@ -18,7 +18,9 @@ use chrono::{TimeZone, Utc};
 use profiling::data_export::measurement::Point;
 use profiling::data_export::metric::Sample;
 use profiling::data_export::types::FieldValue as WitFieldValue;
+use prost::Message;
 use rinfluxdb::line_protocol::{FieldValue, LineBuilder};
+use tokio::runtime::Runtime;
 use wasmtime::component::Linker;
 
 use crate::services::{
@@ -72,11 +74,42 @@ impl DataExportBuf {
         Some(k)
     }
 }
+
+fn schedule_message(ctx: &mut Ctx, message: ExportDataReq) {
+    if ctx.buf.push_back(&message) {
+        return;
+    }
+
+    ctx.exporter_rt.spawn({
+        let mut rpc_client = ctx.rpc_client.clone();
+        async move { rpc_client.export_data(message).await }
+    });
+    while let Some(req) = ctx.buf.pop_front() {
+        ctx.exporter_rt.spawn({
+            let mut rpc_client = ctx.rpc_client.clone();
+            async move { rpc_client.export_data(req).await }
+        });
+    }
+}
+
 #[derive(Clone)]
 pub struct Ctx {
     pub task_id: String,
     pub instance_id: String,
     pub rpc_client: RpcClient,
+    pub buf: DataExportBuf,
+    pub exporter_rt: Arc<Runtime>,
+}
+
+impl Drop for Ctx {
+    fn drop(&mut self) {
+        while let Some(req) = self.buf.pop_front() {
+            self.exporter_rt.spawn({
+                let mut rpc_client = self.rpc_client.clone();
+                async move { rpc_client.export_data(req).await }
+            });
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -104,13 +137,14 @@ impl profiling::data_export::file::Host for DataExportCtx {
         let Some(ctx) = &mut self.ctx else {
             return Ok(Ok(()));
         };
-        let req = ExportDataReq {
+
+        let message = ExportDataReq {
             task_id: ctx.task_id.clone(),
             ty: DataType::File as _,
             payload: bytes,
         };
-        let rt = tokio::runtime::Runtime::new()?;
-        rt.block_on(ctx.rpc_client.export_data(req))?;
+        schedule_message(ctx, message);
+
         Ok(Ok(()))
     }
 }
@@ -138,13 +172,13 @@ impl profiling::data_export::metric::Host for DataExportCtx {
 
             lb.build().to_string().into_bytes()
         };
-        let req = ExportDataReq {
+        let message = ExportDataReq {
             task_id: ctx.task_id.clone(),
             ty: DataType::LineProtocol as _,
             payload,
         };
-        let rt = tokio::runtime::Runtime::new()?;
-        rt.block_on(ctx.rpc_client.export_data(req))?;
+        schedule_message(ctx, message);
+
         Ok(Ok(()))
     }
 }
@@ -175,13 +209,13 @@ impl profiling::data_export::measurement::Host for DataExportCtx {
 
             lb.build().to_string().into_bytes()
         };
-        let req = ExportDataReq {
+        let message = ExportDataReq {
             task_id: ctx.task_id.clone(),
             ty: DataType::LineProtocol as _,
             payload,
         };
-        let rt = tokio::runtime::Runtime::new()?;
-        rt.block_on(ctx.rpc_client.export_data(req))?;
+        schedule_message(ctx, message);
+
         Ok(Ok(()))
     }
 }
