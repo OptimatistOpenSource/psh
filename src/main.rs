@@ -129,7 +129,13 @@ async fn async_tasks(remote_cfg: RemoteConfig, mut task_rt: TaskRuntime) -> Resu
         loop {
             let idle = task_rt.is_idle();
             if idle {
-                if let Some(task) = client.get_task(instance_id.clone()).await? {
+                if let Some(mut task) = client.get_task(instance_id.clone()).await? {
+                    let task_id = task
+                        .id
+                        .as_ref()
+                        .map(|it| it.to_string())
+                        .expect("No task id provided");
+                    task.wasm_component_args.insert(0, task_id);
                     task_rt.schedule(task)?
                 }
             }
