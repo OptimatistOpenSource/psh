@@ -55,12 +55,18 @@ pub struct RpcConfig {
     /// in seconds
     pub heartbeat_interval: u64,
     pub instance_id_file: String,
+    pub data_export: DataExportConfig,
 }
 
 #[derive(Deserialize)]
 pub struct OtlpConfig {
     pub enable: bool,
     pub addr: String,
+}
+
+#[derive(Deserialize)]
+pub struct DataExportConfig {
+    pub buf_size: usize,
 }
 
 pub fn read_or_gen<P>(path: P) -> Result<Config>
