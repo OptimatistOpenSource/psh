@@ -24,7 +24,7 @@ use tokio::runtime::Runtime;
 use wasmtime::component::Linker;
 
 use crate::services::{
-    pb::{DataType, ExportDataReq},
+    pb::{Data, DataType, ExportDataReq},
     rpc::RpcClient,
 };
 
@@ -80,16 +80,22 @@ fn schedule_message(ctx: &mut Ctx, message: ExportDataReq) {
         return;
     }
 
-    ctx.exporter_rt.spawn({
-        let mut rpc_client = ctx.rpc_client.clone();
-        async move { rpc_client.export_data(message).await }
-    });
-    while let Some(req) = ctx.buf.pop_front() {
-        ctx.exporter_rt.spawn({
-            let mut rpc_client = ctx.rpc_client.clone();
-            async move { rpc_client.export_data(req).await }
-        });
+    let mut task_id = None;
+    let mut data = Vec::with_capacity(ctx.buf.len);
+
+    while let Some(mut req) = ctx.buf.pop_front() {
+        task_id.get_or_insert(req.task_id);
+        data.append(&mut req.data);
     }
+
+    task_id.map(|task_id| {
+        let merged = ExportDataReq { task_id, data };
+        let mut rpc_client = ctx.rpc_client.clone();
+        ctx.exporter_rt
+            .spawn(async move { rpc_client.export_data(merged).await })
+    });
+
+    schedule_message(ctx, message)
 }
 
 #[derive(Clone)]
@@ -140,8 +146,10 @@ impl profiling::data_export::file::Host for DataExportCtx {
 
         let message = ExportDataReq {
             task_id: ctx.task_id.clone(),
-            ty: DataType::File as _,
-            payload: bytes,
+            data: vec![Data {
+                ty: DataType::File as _,
+                bytes,
+            }],
         };
         schedule_message(ctx, message);
 
@@ -159,7 +167,7 @@ impl profiling::data_export::metric::Host for DataExportCtx {
             .tags
             .push(("instance_id".to_string(), ctx.instance_id.clone()));
 
-        let payload = {
+        let bytes = {
             let mut lb = LineBuilder::new(sample.name).insert_field("value", sample.value);
             for (k, v) in sample.tags.clone() {
                 lb = lb.insert_tag(k, v);
@@ -174,8 +182,10 @@ impl profiling::data_export::metric::Host for DataExportCtx {
         };
         let message = ExportDataReq {
             task_id: ctx.task_id.clone(),
-            ty: DataType::LineProtocol as _,
-            payload,
+            data: vec![Data {
+                ty: DataType::LineProtocol as _,
+                bytes,
+            }],
         };
         schedule_message(ctx, message);
 
@@ -193,7 +203,7 @@ impl profiling::data_export::measurement::Host for DataExportCtx {
             .tags
             .push(("instance_id".to_string(), ctx.instance_id.clone()));
 
-        let payload = {
+        let bytes = {
             let mut lb = LineBuilder::new(point.name);
             for (k, v) in point.tags.clone() {
                 lb = lb.insert_tag(k, v);
@@ -211,8 +221,10 @@ impl profiling::data_export::measurement::Host for DataExportCtx {
         };
         let message = ExportDataReq {
             task_id: ctx.task_id.clone(),
-            ty: DataType::LineProtocol as _,
-            payload,
+            data: vec![Data {
+                ty: DataType::LineProtocol as _,
+                bytes,
+            }],
         };
         schedule_message(ctx, message);
 
