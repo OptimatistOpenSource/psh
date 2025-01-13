@@ -13,39 +13,40 @@
 // see <https://www.gnu.org/licenses/>.
 
 use std::borrow::Cow;
-use std::time::Duration;
 
-use opentelemetry::metrics::{Meter, ObservableGauge};
+use opentelemetry::metrics::ObservableGauge;
 use opentelemetry::KeyValue;
 use psh_system::interrupt::InterruptHandle;
 
-pub fn start(
-    token: String,
-    meter: Meter,
-    interval: Duration,
-) -> anyhow::Result<ObservableGauge<u64>> {
-    let interrupt = InterruptHandle::new();
-    let gauge = meter
-        .u64_observable_gauge("InterruptStat")
-        .with_description("System profile interrupt statistics.")
-        .with_callback(move |gauge| {
-            let Ok(irqs) = interrupt.stat(Some(interval)) else {
-                return;
-            };
+impl super::super::Otlp {
+    pub fn irq_gauges(&self) -> anyhow::Result<ObservableGauge<u64>> {
+        let token = self.token.clone();
+        let interval = self.interval;
+        let interrupt = InterruptHandle::new();
 
-            for int in irqs {
-                let desc = Cow::from(int.description);
-                for (cpu, &cnt) in int.cpu_counts.iter().enumerate() {
-                    let a = [
-                        KeyValue::new("token", token.clone()),
-                        KeyValue::new("desc", desc.clone()),
-                        KeyValue::new("cpu", cpu as i64),
-                        KeyValue::new("type", int.interrupt_type.to_string()),
-                    ];
-                    gauge.observe(cnt, &a)
+        let gauge = self
+            .meter
+            .u64_observable_gauge("InterruptStat")
+            .with_description("System profile interrupt statistics.")
+            .with_callback(move |gauge| {
+                let Ok(irqs) = interrupt.stat(Some(interval)) else {
+                    return;
+                };
+
+                for int in irqs {
+                    let desc = Cow::from(int.description);
+                    for (cpu, &cnt) in int.cpu_counts.iter().enumerate() {
+                        let a = [
+                            KeyValue::new("token", token.clone()),
+                            KeyValue::new("desc", desc.clone()),
+                            KeyValue::new("cpu", cpu as i64),
+                            KeyValue::new("type", int.interrupt_type.to_string()),
+                        ];
+                        gauge.observe(cnt, &a)
+                    }
                 }
-            }
-        })
-        .build();
-    Ok(gauge)
+            })
+            .build();
+        Ok(gauge)
+    }
 }

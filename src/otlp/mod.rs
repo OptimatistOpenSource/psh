@@ -17,7 +17,7 @@ pub mod gauges;
 use std::time::Duration;
 
 use anyhow::Result;
-use opentelemetry::metrics::MeterProvider;
+use opentelemetry::metrics::{Meter, MeterProvider};
 use opentelemetry::KeyValue;
 use opentelemetry_otlp::{ExportConfig, MetricExporter, WithExportConfig, WithTonicConfig};
 use opentelemetry_sdk::metrics::{PeriodicReader, SdkMeterProvider};
@@ -25,7 +25,52 @@ use opentelemetry_sdk::{runtime, Resource};
 use tonic::metadata::MetadataMap;
 use tonic::transport::ClientTlsConfig;
 
-pub fn meter_provider(export_config: ExportConfig, token: String) -> Result<SdkMeterProvider> {
+#[derive(Clone, Debug)]
+pub struct Otlp {
+    token: String,
+    interval: Duration,
+    meter: Meter,
+}
+
+impl Otlp {
+    pub fn new(token: String, interval: Duration, export_config: ExportConfig) -> Result<Self> {
+        let meter = meter_provider(export_config, token.clone())?.meter("SystemProfile");
+        Ok(Self {
+            token,
+            interval,
+            meter,
+        })
+    }
+
+    pub async fn otlp_tasks(&self) -> anyhow::Result<()> {
+        let interval = self.interval;
+
+        if let Err(e) = self.mem_gauges() {
+            tracing::error!("Otlp memory: {e}")
+        }
+        if let Err(e) = self.net_gauges() {
+            tracing::error!("Otlp network: {e}")
+        }
+        if let Err(e) = self.disk_gagues() {
+            tracing::error!("Otlp disk: {e}")
+        }
+        if let Err(e) = self.irq_gauges() {
+            tracing::error!("Otlp interrupt: {e}")
+        }
+        if let Err(e) = self.cpu_gauges() {
+            tracing::error!("Otlp cpu: {e}")
+        }
+        if let Err(e) = self.rps_gauges() {
+            tracing::error!("Otlp rps: {e}")
+        }
+
+        loop {
+            tokio::time::sleep(interval).await;
+        }
+    }
+}
+
+fn meter_provider(export_config: ExportConfig, token: String) -> Result<SdkMeterProvider> {
     let mut meta = MetadataMap::new();
     meta.insert("authorization", format!("Bearer {}", token).parse()?);
     let otlp_exporter = MetricExporter::builder()
@@ -45,19 +90,4 @@ pub fn meter_provider(export_config: ExportConfig, token: String) -> Result<SdkM
         .build();
 
     Ok(a)
-}
-
-pub async fn otlp_tasks(export_config: ExportConfig, token: String) -> anyhow::Result<()> {
-    let provider = meter_provider(export_config, token.clone())?;
-    let meter = provider.meter("SystemProfile");
-    let interval = Duration::from_secs(1);
-    let _ = gauges::memory::start(token.clone(), meter.clone(), interval)?;
-    let _ = gauges::network::start(token.clone(), meter.clone(), interval)?;
-    let _ = gauges::disk::start(token.clone(), meter.clone(), interval)?;
-    let _ = gauges::interrupt::start(token.clone(), meter.clone(), interval)?;
-    let _ = gauges::cpu::start(token.clone(), &meter, interval)?;
-    let _ = gauges::rps::start(token, &meter)?;
-    loop {
-        tokio::time::sleep(interval).await;
-    }
 }

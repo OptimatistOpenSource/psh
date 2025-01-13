@@ -12,27 +12,26 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use std::time::Duration;
-
-use opentelemetry::metrics::{Meter, ObservableGauge};
+use opentelemetry::metrics::ObservableGauge;
 use opentelemetry::KeyValue;
 use psh_system::network::NetworkHandle;
 
-pub fn start(
-    token: String,
-    meter: Meter,
-    interval: Duration,
-) -> anyhow::Result<ObservableGauge<u64>> {
-    let network = NetworkHandle::new();
-    let gauge = meter
-        .u64_observable_gauge("NetworkStat")
-        .with_description("System profile network statistics.")
-        .with_callback(move |gauge| {
-            let Ok(stat) = network.stat(Some(interval)) else {
-                return;
-            };
-            for (dev, status) in stat {
-                macro_rules! gauges {
+impl super::super::Otlp {
+    pub fn net_gauges(&self) -> anyhow::Result<ObservableGauge<u64>> {
+        let interval = self.interval;
+        let token = self.token.clone();
+        let network = NetworkHandle::new();
+
+        let gauge = self
+            .meter
+            .u64_observable_gauge("NetworkStat")
+            .with_description("System profile network statistics.")
+            .with_callback(move |gauge| {
+                let Ok(stat) = network.stat(Some(interval)) else {
+                    return;
+                };
+                for (dev, status) in stat {
+                    macro_rules! gauges {
                     ($($stat:ident,)+) => {
                         [
                         $((
@@ -45,30 +44,31 @@ pub fn start(
                         ]
                     };
                 }
-                let gauges = gauges![
-                    recv_bytes,
-                    recv_packets,
-                    recv_errs,
-                    recv_drop,
-                    recv_fifo,
-                    recv_frame,
-                    recv_compressed,
-                    recv_multicast,
-                    sent_bytes,
-                    sent_packets,
-                    sent_errs,
-                    sent_drop,
-                    sent_fifo,
-                    sent_colls,
-                    sent_carrier,
-                    sent_compressed,
-                ];
-                gauges.into_iter().for_each(|(m, [kv1, kv2])| {
-                    let a = [KeyValue::new("token", token.clone()), kv1, kv2];
-                    gauge.observe(m, &a);
-                })
-            }
-        })
-        .build();
-    Ok(gauge)
+                    let gauges = gauges![
+                        recv_bytes,
+                        recv_packets,
+                        recv_errs,
+                        recv_drop,
+                        recv_fifo,
+                        recv_frame,
+                        recv_compressed,
+                        recv_multicast,
+                        sent_bytes,
+                        sent_packets,
+                        sent_errs,
+                        sent_drop,
+                        sent_fifo,
+                        sent_colls,
+                        sent_carrier,
+                        sent_compressed,
+                    ];
+                    gauges.into_iter().for_each(|(m, [kv1, kv2])| {
+                        let a = [KeyValue::new("token", token.clone()), kv1, kv2];
+                        gauge.observe(m, &a);
+                    })
+                }
+            })
+            .build();
+        Ok(gauge)
+    }
 }
