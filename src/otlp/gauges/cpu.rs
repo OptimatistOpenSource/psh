@@ -34,19 +34,19 @@ impl super::super::Otlp {
                     "The amount of time, measured in ticks, the CPU has been in specific states";
                 for (cpu, cpu_time) in cpus.per_cpu.into_iter().enumerate() {
                     macro_rules! gauges {
-                    ($($item:ident,)+) => {
-                        [
-                            $((
-                                cpu_time.$item,
-                                [
-                                    KeyValue::new("cpu", cpu as i64),
-                                    KeyValue::new("stat", stringify!($item)),
-                                    KeyValue::new("desc", desc),
-                                ],
-                            ),)*
-                        ]
-                    };
-                }
+                        ($($item:ident,)+) => {
+                            [
+                                $((
+                                    cpu_time.$item,
+                                    [
+                                        KeyValue::new("cpu", cpu as i64),
+                                        KeyValue::new("stat", stringify!($item)),
+                                        KeyValue::new("desc", desc),
+                                    ],
+                                ),)*
+                            ]
+                        };
+                    }
                     let gauges = gauges![system, idle, user, nice,];
                     gauges.into_iter().for_each(|(m, [kv1, kv2, kv3])| {
                         let a = &[KeyValue::new("token", token.clone()), kv1, kv2, kv3];
@@ -54,19 +54,19 @@ impl super::super::Otlp {
                     });
 
                     macro_rules! gauges {
-                    ($($item:ident,)+) => {
-                        [
-                            $((
-                                cpu_time.$item(),
-                                [
-                                    KeyValue::new("cpu", cpu as i64),
-                                    KeyValue::new("stat", stringify!($item)),
-                                    KeyValue::new("desc", desc),
-                                ],
-                            ),)*
-                        ]
-                    };
-                }
+                        ($($item:ident,)+) => {
+                            [
+                                $((
+                                    cpu_time.$item(),
+                                    [
+                                        KeyValue::new("cpu", cpu as i64),
+                                        KeyValue::new("stat", stringify!($item)),
+                                        KeyValue::new("desc", desc),
+                                    ],
+                                ),)*
+                            ]
+                        };
+                    }
                     let gauges = gauges![user_ms, nice_ms, system_ms, idle_ms,];
                     gauges.into_iter().for_each(|(m, [kv1, kv2, kv3])| {
                         let a = &[KeyValue::new("token", token.clone()), kv1, kv2, kv3];
@@ -74,19 +74,19 @@ impl super::super::Otlp {
                     });
 
                     macro_rules! gauges {
-                    ($($item_o:ident,)+) => {
-                        [
-                            $((
-                                cpu_time.$item_o.unwrap_or(0),
-                                [
-                                    KeyValue::new("cpu", cpu as i64),
-                                    KeyValue::new("stat", stringify!($item_o)),
-                                    KeyValue::new("desc", desc),
-                                ],
-                            ),)*
-                        ]
-                    };
-                }
+                        ($($item_o:ident,)+) => {
+                            [
+                                $((
+                                    cpu_time.$item_o.unwrap_or(0),
+                                    [
+                                        KeyValue::new("cpu", cpu as i64),
+                                        KeyValue::new("stat", stringify!($item_o)),
+                                        KeyValue::new("desc", desc),
+                                    ],
+                                ),)*
+                            ]
+                        };
+                    }
                     let gauges = gauges![iowait, irq, softirq, steal, guest, guest_nice,];
                     gauges.into_iter().for_each(|(m, [kv1, kv2, kv3])| {
                         let a = &[KeyValue::new("token", token.clone()), kv1, kv2, kv3];
@@ -94,19 +94,19 @@ impl super::super::Otlp {
                     });
 
                     macro_rules! gauges {
-                    ($($item_o:ident,)+) => {
-                        [
-                            $((
-                                cpu_time.$item_o().unwrap_or(0),
-                                [
-                                    KeyValue::new("cpu", cpu as i64),
-                                    KeyValue::new("stat", stringify!($item_o)),
-                                    KeyValue::new("desc", desc),
-                                ],
-                            ),)*
-                        ]
-                    };
-                }
+                        ($($item_o:ident,)+) => {
+                            [
+                                $((
+                                    cpu_time.$item_o().unwrap_or(0),
+                                    [
+                                        KeyValue::new("cpu", cpu as i64),
+                                        KeyValue::new("stat", stringify!($item_o)),
+                                        KeyValue::new("desc", desc),
+                                    ],
+                                ),)*
+                            ]
+                        };
+                    }
                     let gauges = gauges![
                         iowait_ms,
                         irq_ms,
