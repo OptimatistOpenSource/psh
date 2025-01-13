@@ -13,5 +13,7 @@
 // see <https://www.gnu.org/licenses/>.
 
 pub(crate) mod handle;
+pub mod raw;
 pub use handle::NetworkHandle;
 pub use procfs::net::DeviceStatus;
+pub use raw::dev_speed;
