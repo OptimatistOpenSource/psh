@@ -15,9 +15,9 @@
 use std::{collections::VecDeque, sync::Arc};
 
 use chrono::{TimeZone, Utc};
+use profiling::data_export::common::FieldValue as WitFieldValue;
 use profiling::data_export::measurement::Point;
 use profiling::data_export::metric::Sample;
-use profiling::data_export::types::FieldValue as WitFieldValue;
 use prost::Message;
 use rinfluxdb::line_protocol::{FieldValue, LineBuilder};
 use tokio::runtime::Runtime;
@@ -75,11 +75,7 @@ impl DataExportBuf {
     }
 }
 
-fn schedule_message(ctx: &mut Ctx, message: ExportDataReq) {
-    if ctx.buf.push_back(&message) {
-        return;
-    }
-
+fn flush_buf(ctx: &mut Ctx) {
     let mut task_id = None;
     let mut data = Vec::with_capacity(ctx.buf.len);
 
@@ -94,6 +90,14 @@ fn schedule_message(ctx: &mut Ctx, message: ExportDataReq) {
         ctx.exporter_rt
             .spawn(async move { rpc_client.export_data(merged).await })
     });
+}
+
+fn schedule_message(ctx: &mut Ctx, message: ExportDataReq) {
+    if ctx.buf.push_back(&message) {
+        return;
+    }
+
+    flush_buf(ctx);
 
     schedule_message(ctx, message)
 }
@@ -136,7 +140,14 @@ impl From<WitFieldValue> for FieldValue {
     }
 }
 
-impl profiling::data_export::types::Host for DataExportCtx {}
+impl profiling::data_export::common::Host for DataExportCtx {
+    fn flush_buf(&mut self) -> wasmtime::Result<Result<(), String>> {
+        if let Some(ctx) = &mut self.ctx {
+            flush_buf(ctx);
+        }
+        Ok(Ok(()))
+    }
+}
 
 impl profiling::data_export::file::Host for DataExportCtx {
     fn export_bytes(&mut self, bytes: Vec<u8>) -> wasmtime::Result<Result<(), String>> {
