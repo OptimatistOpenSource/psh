@@ -167,12 +167,13 @@ async fn async_tasks(remote_cfg: RemoteConfig, mut task_rt: TaskRuntime) -> Resu
         if !remote_cfg.otlp.enable {
             return Ok(());
         }
-
         let export_conf = ExportConfig {
             endpoint: Some(remote_cfg.otlp.addr),
             ..Default::default()
         };
-        otlp::otlp_tasks(export_conf, remote_cfg.token).await?;
+        let otlp = otlp::Otlp::new(remote_cfg.token, Duration::from_secs(1), export_conf)?;
+
+        otlp.otlp_tasks().await?;
         Ok::<(), Error>(())
     };
 

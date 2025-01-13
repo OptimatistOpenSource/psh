@@ -12,29 +12,28 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use std::time::Duration;
-
-use opentelemetry::metrics::{Meter, ObservableGauge};
+use opentelemetry::metrics::ObservableGauge;
 use opentelemetry::KeyValue;
 use psh_system::disk::DiskHandle;
 
-pub fn start(
-    token: String,
-    meter: Meter,
-    interval: Duration,
-) -> anyhow::Result<ObservableGauge<u64>> {
-    let disk = DiskHandle::new();
-    let gauge = meter
-        .u64_observable_gauge("DiskStat")
-        .with_description("System profile disk statistics.")
-        .with_callback(move |gauge| {
-            let Ok(disks) = disk.stat(Some(interval)) else {
-                return;
-            };
-            for stat in disks {
-                let name = stat.name;
+impl super::super::Otlp {
+    pub fn disk_gagues(&self) -> anyhow::Result<ObservableGauge<u64>> {
+        let token = self.token.clone();
+        let interval = self.interval;
+        let disk = DiskHandle::new();
 
-                macro_rules! gauges {
+        let gauge = self
+            .meter
+            .u64_observable_gauge("DiskStat")
+            .with_description("System profile disk statistics.")
+            .with_callback(move |gauge| {
+                let Ok(disks) = disk.stat(Some(interval)) else {
+                    return;
+                };
+                for stat in disks {
+                    let name = stat.name;
+
+                    macro_rules! gauges {
                     ($($stat:ident,)+) => {
                         [$((
                             stat.$stat,
@@ -45,25 +44,25 @@ pub fn start(
                         ),)*]
                     };
                 }
-                let gauges = gauges![
-                    reads,
-                    merged,
-                    sectors_read,
-                    time_reading,
-                    writes,
-                    writes_merged,
-                    sectors_written,
-                    time_writing,
-                    in_progress,
-                    time_in_progress,
-                    weighted_time_in_progress,
-                ];
-                gauges.into_iter().for_each(|(m, [kv1, kv2])| {
-                    let a = &[KeyValue::new("token", token.clone()), kv1, kv2];
-                    gauge.observe(m, a);
-                });
+                    let gauges = gauges![
+                        reads,
+                        merged,
+                        sectors_read,
+                        time_reading,
+                        writes,
+                        writes_merged,
+                        sectors_written,
+                        time_writing,
+                        in_progress,
+                        time_in_progress,
+                        weighted_time_in_progress,
+                    ];
+                    gauges.into_iter().for_each(|(m, [kv1, kv2])| {
+                        let a = &[KeyValue::new("token", token.clone()), kv1, kv2];
+                        gauge.observe(m, a);
+                    });
 
-                macro_rules! gauges {
+                    macro_rules! gauges {
                     ($($stat:ident,)+) => {
                         [$((
                             stat.$stat.unwrap_or(0),
@@ -74,20 +73,21 @@ pub fn start(
                         ),)*]
                     };
                 }
-                let gauges = gauges![
-                    discards,
-                    discards_merged,
-                    sectors_discarded,
-                    time_discarding,
-                    flushes,
-                    time_flushing,
-                ];
-                gauges.into_iter().for_each(|(m, [kv1, kv2])| {
-                    let a = &[KeyValue::new("token", token.clone()), kv1, kv2];
-                    gauge.observe(m, a);
-                });
-            }
-        })
-        .build();
-    Ok(gauge)
+                    let gauges = gauges![
+                        discards,
+                        discards_merged,
+                        sectors_discarded,
+                        time_discarding,
+                        flushes,
+                        time_flushing,
+                    ];
+                    gauges.into_iter().for_each(|(m, [kv1, kv2])| {
+                        let a = &[KeyValue::new("token", token.clone()), kv1, kv2];
+                        gauge.observe(m, a);
+                    });
+                }
+            })
+            .build();
+        Ok(gauge)
+    }
 }

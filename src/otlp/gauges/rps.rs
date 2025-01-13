@@ -12,42 +12,44 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use opentelemetry::{
-    metrics::{Meter, ObservableGauge},
-    Array, KeyValue, Value,
-};
+use opentelemetry::{metrics::ObservableGauge, Array, KeyValue, Value};
 use psh_system::rps::RpsHandle;
 
-pub fn start(token: String, meter: &Meter) -> anyhow::Result<ObservableGauge<u64>> {
-    let rps = RpsHandle::new();
-    let gauge = meter
-        .u64_observable_gauge("RpsStat")
-        .with_description("System profile rps statistics.")
-        .with_callback(move |gauge| {
-            let Ok(rps_details) = rps.info() else {
-                return;
-            };
-            for detail in rps_details {
-                let dev = detail.dev;
-                for rps_queue in detail.queues {
-                    let gauges = [(
-                        rps_queue.flow_cnt.unwrap_or(0).into(),
-                        [
-                            KeyValue::new("dev", dev.clone()),
-                            KeyValue::new("name", rps_queue.name),
-                            KeyValue::new("cpu_mask", {
-                                let vec = rps_queue.cpus.map(|c| c.0).unwrap_or_default();
-                                Value::Array(Array::Bool(vec))
-                            }),
-                        ],
-                    )];
-                    gauges.into_iter().for_each(|(m, [kv1, kv2, kv3])| {
-                        let a = &[KeyValue::new("token", token.clone()), kv1, kv2, kv3];
-                        gauge.observe(m, a);
-                    });
+impl super::super::Otlp {
+    pub fn rps_gauges(&self) -> anyhow::Result<ObservableGauge<u64>> {
+        let token = self.token.clone();
+        let rps = RpsHandle::new();
+
+        let gauge = self
+            .meter
+            .u64_observable_gauge("RpsStat")
+            .with_description("System profile rps statistics.")
+            .with_callback(move |gauge| {
+                let Ok(rps_details) = rps.info() else {
+                    return;
+                };
+                for detail in rps_details {
+                    let dev = detail.dev;
+                    for rps_queue in detail.queues {
+                        let gauges = [(
+                            rps_queue.flow_cnt.unwrap_or(0).into(),
+                            [
+                                KeyValue::new("dev", dev.clone()),
+                                KeyValue::new("name", rps_queue.name),
+                                KeyValue::new("cpu_mask", {
+                                    let vec = rps_queue.cpus.map(|c| c.0).unwrap_or_default();
+                                    Value::Array(Array::Bool(vec))
+                                }),
+                            ],
+                        )];
+                        gauges.into_iter().for_each(|(m, [kv1, kv2, kv3])| {
+                            let a = &[KeyValue::new("token", token.clone()), kv1, kv2, kv3];
+                            gauge.observe(m, a);
+                        });
+                    }
                 }
-            }
-        })
-        .build();
-    Ok(gauge)
+            })
+            .build();
+        Ok(gauge)
+    }
 }
