@@ -14,18 +14,26 @@
 
 pub mod gauges;
 
-use std::time::Duration;
+use std::{sync::LazyLock, time::Duration};
 
 use anyhow::Result;
-use opentelemetry::metrics::{Meter, MeterProvider};
-use opentelemetry::KeyValue;
+use opentelemetry::{
+    metrics::{Meter, MeterProvider},
+    KeyValue,
+};
 use opentelemetry_otlp::{ExportConfig, MetricExporter, WithExportConfig, WithTonicConfig};
-use opentelemetry_sdk::metrics::{PeriodicReader, SdkMeterProvider};
-use opentelemetry_sdk::{runtime, Resource};
-use tonic::metadata::MetadataMap;
-use tonic::transport::ClientTlsConfig;
+use opentelemetry_sdk::{
+    metrics::{PeriodicReader, SdkMeterProvider},
+    runtime, Resource,
+};
+use tinyufo::TinyUfo;
+use tonic::{metadata::MetadataMap, transport::ClientTlsConfig};
 
-#[derive(Clone, Debug)]
+// TODO: Make size configurable
+static NET_DEV_SPEED: LazyLock<TinyUfo<String, Option<u32>>> =
+    LazyLock::new(|| TinyUfo::new_compact(15, 15));
+
+#[derive(Debug, Clone)]
 pub struct Otlp {
     token: String,
     interval: Duration,
@@ -40,6 +48,17 @@ impl Otlp {
             interval,
             meter,
         })
+    }
+
+    pub fn net_dev_speed(name: &String) -> Option<u32> {
+        if let Some(speed) = NET_DEV_SPEED.get(name) {
+            return speed;
+        }
+
+        let speed = psh_system::network::dev_speed(name);
+        NET_DEV_SPEED.put(name.clone(), speed, 1);
+
+        speed
     }
 
     pub async fn otlp_tasks(&self) -> anyhow::Result<()> {
