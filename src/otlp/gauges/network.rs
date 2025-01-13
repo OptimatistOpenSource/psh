@@ -31,9 +31,18 @@ impl super::super::Otlp {
                     return;
                 };
                 for (dev, status) in stat {
+                    let speed = Self::net_dev_speed(&dev).unwrap_or(0).into();
+
                     macro_rules! gauges {
                     ($($stat:ident,)+) => {
                         [
+                            (
+                                speed,
+                                [
+                                    KeyValue::new("interface", dev.clone()),
+                                    KeyValue::new("stat", "speed"),
+                                ]
+                            ),
                         $((
                             status.$stat,
                             [
