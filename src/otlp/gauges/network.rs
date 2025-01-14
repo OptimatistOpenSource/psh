@@ -34,25 +34,25 @@ impl super::super::Otlp {
                     let speed = Self::net_dev_speed(&dev).unwrap_or(0).into();
 
                     macro_rules! gauges {
-                    ($($stat:ident,)+) => {
-                        [
-                            (
-                                speed,
+                        ($($stat:ident,)+) => {
+                            [
+                                (
+                                    speed,
+                                    [
+                                        KeyValue::new("interface", dev.clone()),
+                                        KeyValue::new("stat", "speed"),
+                                    ]
+                                ),
+                            $((
+                                status.$stat,
                                 [
                                     KeyValue::new("interface", dev.clone()),
-                                    KeyValue::new("stat", "speed"),
-                                ]
-                            ),
-                        $((
-                            status.$stat,
-                            [
-                                KeyValue::new("interface", dev.clone()),
-                                KeyValue::new("stat", stringify!($stat)),
-                            ],
-                        ),)*
-                        ]
-                    };
-                }
+                                    KeyValue::new("stat", stringify!($stat)),
+                                ],
+                            ),)*
+                            ]
+                        };
+                    }
                     let gauges = gauges![
                         recv_bytes,
                         recv_packets,

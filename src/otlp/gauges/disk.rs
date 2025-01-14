@@ -34,16 +34,16 @@ impl super::super::Otlp {
                     let name = stat.name;
 
                     macro_rules! gauges {
-                    ($($stat:ident,)+) => {
-                        [$((
-                            stat.$stat,
-                            [
-                                KeyValue::new("disk", name.clone()),
-                                KeyValue::new("stat", stringify!($stat)),
-                            ],
-                        ),)*]
-                    };
-                }
+                        ($($stat:ident,)+) => {
+                            [$((
+                                stat.$stat,
+                                [
+                                    KeyValue::new("disk", name.clone()),
+                                    KeyValue::new("stat", stringify!($stat)),
+                                ],
+                            ),)*]
+                        };
+                    }
                     let gauges = gauges![
                         reads,
                         merged,
@@ -63,16 +63,16 @@ impl super::super::Otlp {
                     });
 
                     macro_rules! gauges {
-                    ($($stat:ident,)+) => {
-                        [$((
-                            stat.$stat.unwrap_or(0),
-                            [
-                                KeyValue::new("disk", name.clone()),
-                                KeyValue::new("stat", stringify!($stat)),
-                            ],
-                        ),)*]
-                    };
-                }
+                        ($($stat:ident,)+) => {
+                            [$((
+                                stat.$stat.unwrap_or(0),
+                                [
+                                    KeyValue::new("disk", name.clone()),
+                                    KeyValue::new("stat", stringify!($stat)),
+                                ],
+                            ),)*]
+                        };
+                    }
                     let gauges = gauges![
                         discards,
                         discards_merged,
