@@ -3,7 +3,7 @@ pub fn dev_speed(dev: &str) -> Option<u32> {
         None?
     };
 
-    parse_speed(&speed)
+    parse_speed(speed.trim())
 }
 
 /// return Mb/s
