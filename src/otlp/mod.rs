@@ -38,15 +38,19 @@ pub struct Otlp {
     token: String,
     interval: Duration,
     meter: Meter,
+    // NOTE: the field avoid provider early drop see: <https://github.com/open-telemetry/opentelemetry-rust/issues/1661>
+    _provider: SdkMeterProvider,
 }
 
 impl Otlp {
     pub fn new(token: String, interval: Duration, export_config: ExportConfig) -> Result<Self> {
-        let meter = meter_provider(export_config, token.clone())?.meter("SystemProfile");
+        let provider = meter_provider(export_config, token.clone())?;
+        let meter = provider.meter("SystemProfile");
         Ok(Self {
             token,
             interval,
             meter,
+            _provider: provider,
         })
     }
 
