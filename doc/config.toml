@@ -21,6 +21,7 @@ instance_id_file = "/etc/psh/instance.id"
 
 [remote.rpc.data_export]
 buf_size = 4096
+buf_watermark = 2048
 
 [remote.otlp]
 enable = false

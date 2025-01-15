@@ -67,6 +67,7 @@ pub struct OtlpConfig {
 #[derive(Deserialize)]
 pub struct DataExportConfig {
     pub buf_size: usize,
+    pub buf_watermark: usize,
 }
 
 pub fn read_or_gen<P>(path: P) -> Result<Config>
