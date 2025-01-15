@@ -41,43 +41,47 @@ wasmtime::component::bindgen!({
 
 #[derive(Clone)]
 pub struct DataExportBuf {
-    watermark: usize,
-    len: usize,
-    encoded_reqs: VecDeque<Vec<u8>>,
+    bytes_watermark: usize,
+    bytes_len: usize,
+    reqs: VecDeque<ExportDataReq>,
 }
 
 impl DataExportBuf {
-    pub fn new(len: usize, watermark: usize) -> Self {
+    pub const fn new(bytes_capacity: usize, bytes_watermark: usize) -> Self {
+        // TODO: `bytes_capacity` is not used because we not have a static allocation
+        // for `ExportDataReq::data`, maybe we will remove this in the future
+        let _ = bytes_capacity;
         Self {
-            watermark,
-            len: 0,
-            encoded_reqs: VecDeque::with_capacity(len),
+            bytes_watermark,
+            bytes_len: 0,
+            reqs: VecDeque::new(),
         }
     }
 
-    pub fn push_back(&mut self, req: &ExportDataReq) -> bool {
-        let enc_len = req.encoded_len();
+    pub fn len(&self) -> usize {
+        self.reqs.len()
+    }
 
-        if self.len + enc_len > self.watermark {
-            return false;
-        }
+    pub const fn watermark_reached(&self) -> bool {
+        self.bytes_len >= self.bytes_watermark
+    }
 
-        self.encoded_reqs.push_back(req.encode_to_vec());
-        self.len += enc_len;
-        true
+    pub fn push_back(&mut self, req: ExportDataReq) {
+        let encoded_len = req.encoded_len();
+        self.reqs.push_back(req);
+        self.bytes_len += encoded_len;
     }
 
     pub fn pop_front(&mut self) -> Option<ExportDataReq> {
-        let encoded_req = self.encoded_reqs.pop_front()?;
-        self.len -= encoded_req.len();
-        let k = ExportDataReq::decode(encoded_req.as_slice()).unwrap();
-        Some(k)
+        let req = self.reqs.pop_front()?;
+        self.bytes_len -= req.encoded_len();
+        Some(req)
     }
 }
 
 fn flush_buf(ctx: &mut Ctx) {
     let mut task_id = None;
-    let mut data = Vec::with_capacity(ctx.buf.len);
+    let mut data = Vec::with_capacity(ctx.buf.len());
 
     while let Some(mut req) = ctx.buf.pop_front() {
         task_id.get_or_insert(req.task_id);
@@ -93,13 +97,11 @@ fn flush_buf(ctx: &mut Ctx) {
 }
 
 fn schedule_message(ctx: &mut Ctx, message: ExportDataReq) {
-    if ctx.buf.push_back(&message) {
-        return;
+    ctx.buf.push_back(message);
+
+    if ctx.buf.watermark_reached() {
+        flush_buf(ctx);
     }
-
-    flush_buf(ctx);
-
-    schedule_message(ctx, message)
 }
 
 #[derive(Clone)]
