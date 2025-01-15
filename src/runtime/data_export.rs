@@ -43,7 +43,7 @@ wasmtime::component::bindgen!({
 pub struct DataExportBuf {
     bytes_watermark: usize,
     bytes_len: usize,
-    reqs: VecDeque<ExportDataReq>,
+    reqs: VecDeque<Data>,
 }
 
 impl DataExportBuf {
@@ -66,38 +66,37 @@ impl DataExportBuf {
         self.bytes_len >= self.bytes_watermark
     }
 
-    pub fn push_back(&mut self, req: ExportDataReq) {
-        let encoded_len = req.encoded_len();
-        self.reqs.push_back(req);
+    pub fn push_back(&mut self, data: Data) {
+        let encoded_len = data.encoded_len();
+        self.reqs.push_back(data);
         self.bytes_len += encoded_len;
     }
 
-    pub fn pop_front(&mut self) -> Option<ExportDataReq> {
-        let req = self.reqs.pop_front()?;
-        self.bytes_len -= req.encoded_len();
-        Some(req)
+    pub fn pop_front(&mut self) -> Option<Data> {
+        let data = self.reqs.pop_front()?;
+        self.bytes_len -= data.encoded_len();
+        Some(data)
     }
 }
 
 fn flush_buf(ctx: &mut Ctx) {
-    let mut task_id = None;
     let mut data = Vec::with_capacity(ctx.buf.len());
 
-    while let Some(mut req) = ctx.buf.pop_front() {
-        task_id.get_or_insert(req.task_id);
-        data.append(&mut req.data);
+    while let Some(it) = ctx.buf.pop_front() {
+        data.push(it);
     }
 
-    task_id.map(|task_id| {
-        let merged = ExportDataReq { task_id, data };
-        let mut rpc_client = ctx.rpc_client.clone();
-        ctx.exporter_rt
-            .spawn(async move { rpc_client.export_data(merged).await })
-    });
+    let merged = ExportDataReq {
+        task_id: ctx.task_id.clone(),
+        data,
+    };
+    let mut rpc_client = ctx.rpc_client.clone();
+    ctx.exporter_rt
+        .spawn(async move { rpc_client.export_data(merged).await });
 }
 
-fn schedule_message(ctx: &mut Ctx, message: ExportDataReq) {
-    ctx.buf.push_back(message);
+fn schedule_data(ctx: &mut Ctx, data: Data) {
+    ctx.buf.push_back(data);
 
     if ctx.buf.watermark_reached() {
         flush_buf(ctx);
@@ -115,12 +114,7 @@ pub struct Ctx {
 
 impl Drop for Ctx {
     fn drop(&mut self) {
-        while let Some(req) = self.buf.pop_front() {
-            self.exporter_rt.spawn({
-                let mut rpc_client = self.rpc_client.clone();
-                async move { rpc_client.export_data(req).await }
-            });
-        }
+        flush_buf(self)
     }
 }
 
@@ -157,14 +151,11 @@ impl profiling::data_export::file::Host for DataExportCtx {
             return Ok(Ok(()));
         };
 
-        let message = ExportDataReq {
-            task_id: ctx.task_id.clone(),
-            data: vec![Data {
-                ty: DataType::File as _,
-                bytes,
-            }],
+        let data = Data {
+            ty: DataType::File as _,
+            bytes,
         };
-        schedule_message(ctx, message);
+        schedule_data(ctx, data);
 
         Ok(Ok(()))
     }
@@ -193,14 +184,11 @@ impl profiling::data_export::metric::Host for DataExportCtx {
 
             lb.build().to_string().into_bytes()
         };
-        let message = ExportDataReq {
-            task_id: ctx.task_id.clone(),
-            data: vec![Data {
-                ty: DataType::LineProtocol as _,
-                bytes,
-            }],
+        let data = Data {
+            ty: DataType::LineProtocol as _,
+            bytes,
         };
-        schedule_message(ctx, message);
+        schedule_data(ctx, data);
 
         Ok(Ok(()))
     }
@@ -232,14 +220,11 @@ impl profiling::data_export::measurement::Host for DataExportCtx {
 
             lb.build().to_string().into_bytes()
         };
-        let message = ExportDataReq {
-            task_id: ctx.task_id.clone(),
-            data: vec![Data {
-                ty: DataType::LineProtocol as _,
-                bytes,
-            }],
+        let data = Data {
+            ty: DataType::LineProtocol as _,
+            bytes,
         };
-        schedule_message(ctx, message);
+        schedule_data(ctx, data);
 
         Ok(Ok(()))
     }
