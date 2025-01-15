@@ -81,6 +81,7 @@ impl TaskRuntime {
         &mut self,
         rpc_client: Option<RpcClient>,
         data_export_buf_size: usize,
+        data_export_buf_watermark: usize,
         instance_id: String,
     ) -> Result<JoinHandle<()>> {
         let rx = self
@@ -108,7 +109,7 @@ impl TaskRuntime {
                         task_id,
                         rpc_client,
                         instance_id: instance_id.clone(),
-                        buf: DataExportBuf::new(data_export_buf_size),
+                        buf: DataExportBuf::new(data_export_buf_size, data_export_buf_watermark),
                         exporter_rt: exporter_rt.clone(),
                     }),
                     _ => None,

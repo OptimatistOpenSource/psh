@@ -47,9 +47,9 @@ pub struct DataExportBuf {
 }
 
 impl DataExportBuf {
-    pub fn new(len: usize) -> Self {
+    pub fn new(len: usize, watermark: usize) -> Self {
         Self {
-            watermark: len,
+            watermark,
             len: 0,
             encoded_reqs: VecDeque::with_capacity(len),
         }

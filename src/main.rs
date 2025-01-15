@@ -109,6 +109,7 @@ async fn async_tasks(remote_cfg: RemoteConfig, mut task_rt: TaskRuntime) -> Resu
             let handle = task_rt.spawn(
                 None,
                 remote_cfg.rpc.data_export.buf_size,
+                remote_cfg.rpc.data_export.buf_watermark,
                 "unknown".to_string(),
             )?;
             drop(task_rt);
@@ -131,6 +132,7 @@ async fn async_tasks(remote_cfg: RemoteConfig, mut task_rt: TaskRuntime) -> Resu
         task_rt.spawn(
             Some(client.clone()),
             remote_cfg.rpc.data_export.buf_size,
+            remote_cfg.rpc.data_export.buf_watermark,
             instance_id.clone(),
         )?;
         client.send_host_info(instance_id.clone()).await?;
