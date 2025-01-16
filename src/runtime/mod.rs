@@ -29,10 +29,9 @@ use std::thread::JoinHandle;
 use anyhow::{Context, Result};
 pub use builder::PshEngineBuilder;
 use chrono::{DateTime, Utc};
-use data_export::{Ctx, DataExportBuf, DataExportCtx};
+use data_export::{Ctx, DataExportCtx, DataExporter};
 pub use engine::PshEngine;
 pub use state::PshState;
-use tokio::runtime::Runtime;
 
 use crate::services::rpc::RpcClient;
 
@@ -94,7 +93,6 @@ impl TaskRuntime {
         let len = self.len.clone();
         let finished_task_id = self.finished_task_id.clone();
         let handle = thread::spawn(move || {
-            let exporter_rt = Arc::new(Runtime::new().expect("Failed to create exporter runtime"));
             while let Ok(task) = rx.recv() {
                 let mut envs = envs.clone();
                 let task_time_slice = {
@@ -106,11 +104,13 @@ impl TaskRuntime {
                 #[expect(clippy::significant_drop_in_scrutinee)]
                 let ctx = match (rpc_client.clone(), task.id.clone()) {
                     (Some(rpc_client), Some(task_id)) => Some(Ctx {
-                        task_id,
-                        rpc_client,
                         instance_id: instance_id.clone(),
-                        buf: DataExportBuf::new(data_export_buf_size, data_export_buf_watermark),
-                        exporter_rt: exporter_rt.clone(),
+                        exporter: Arc::new(DataExporter::new(
+                            data_export_buf_size,
+                            data_export_buf_watermark,
+                            task_id,
+                            rpc_client,
+                        )),
                     }),
                     _ => None,
                 };

@@ -12,7 +12,14 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use std::{collections::VecDeque, sync::Arc};
+use std::{
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        mpsc::{channel, SendError, Sender, TryRecvError},
+        Arc,
+    },
+    thread::{self, JoinHandle},
+};
 
 use chrono::{TimeZone, Utc};
 use profiling::data_export::common::FieldValue as WitFieldValue;
@@ -39,83 +46,99 @@ wasmtime::component::bindgen!({
     trappable_imports: true,
 });
 
-#[derive(Clone)]
-pub struct DataExportBuf {
+pub struct DataExporter {
+    bytes_len: Arc<AtomicUsize>,
     bytes_watermark: usize,
-    bytes_len: usize,
-    reqs: VecDeque<Data>,
+    data_tx: Option<Sender<Data>>,
+    exporter: JoinHandle<()>,
 }
 
-impl DataExportBuf {
-    pub const fn new(bytes_capacity: usize, bytes_watermark: usize) -> Self {
+impl DataExporter {
+    pub fn new(
+        bytes_capacity: usize,
+        bytes_watermark: usize,
+        task_id: String,
+        rpc_client: RpcClient,
+    ) -> Self {
         // TODO: `bytes_capacity` is not used because we not have a static allocation
-        // for `ExportDataReq::data`, maybe we will remove this in the future
+        // for `Data`, maybe we will remove this in the future
         let _ = bytes_capacity;
+        let (data_tx, data_rx) = channel::<Data>();
+        let bytes_len = Arc::new(AtomicUsize::new(0));
+
+        let exporter = thread::spawn({
+            let bytes_len = Arc::clone(&bytes_len);
+            move || {
+                let rt = Runtime::new().expect("Failed to init exporter runtime");
+                let mut data = Vec::new();
+                loop {
+                    match data_rx.try_recv() {
+                        Ok(o) => {
+                            // No critical section, relaxed ordering is fine.
+                            bytes_len.fetch_sub(o.encoded_len(), Ordering::Relaxed);
+                            data.push(o);
+                        }
+                        Err(e) => {
+                            if !data.is_empty() {
+                                let merged = ExportDataReq {
+                                    task_id: task_id.clone(),
+                                    data: data.clone(),
+                                };
+
+                                let mut rpc_client = rpc_client.clone();
+                                rt.block_on(async move {
+                                    let _ = rpc_client.export_data(merged).await;
+                                });
+                                data.clear();
+                            }
+                            match e {
+                                TryRecvError::Empty => thread::park(),
+                                TryRecvError::Disconnected => break,
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
         Self {
+            bytes_len,
             bytes_watermark,
-            bytes_len: 0,
-            reqs: VecDeque::new(),
+            data_tx: Some(data_tx),
+            exporter,
         }
     }
 
-    pub fn len(&self) -> usize {
-        self.reqs.len()
+    pub fn flush(&self) {
+        self.exporter.thread().unpark();
     }
 
-    pub const fn watermark_reached(&self) -> bool {
-        self.bytes_len >= self.bytes_watermark
-    }
-
-    pub fn push_back(&mut self, data: Data) {
+    pub fn schedule(&self, data: Data) -> Result<(), SendError<Data>> {
         let encoded_len = data.encoded_len();
-        self.reqs.push_back(data);
-        self.bytes_len += encoded_len;
-    }
-
-    pub fn pop_front(&mut self) -> Option<Data> {
-        let data = self.reqs.pop_front()?;
-        self.bytes_len -= data.encoded_len();
-        Some(data)
+        // Never failes since we only take it in `Drop`.
+        let data_tx = self.data_tx.as_ref().expect("unreachable");
+        data_tx.send(data)?;
+        // No critical section, relaxed ordering is fine.
+        let prev = self.bytes_len.fetch_add(encoded_len, Ordering::Relaxed);
+        if prev > self.bytes_watermark {
+            self.exporter.thread().unpark();
+        }
+        Ok(())
     }
 }
 
-fn flush_buf(ctx: &mut Ctx) {
-    let mut data = Vec::with_capacity(ctx.buf.len());
-
-    while let Some(it) = ctx.buf.pop_front() {
-        data.push(it);
-    }
-
-    let merged = ExportDataReq {
-        task_id: ctx.task_id.clone(),
-        data,
-    };
-    let mut rpc_client = ctx.rpc_client.clone();
-    ctx.exporter_rt
-        .spawn(async move { rpc_client.export_data(merged).await });
-}
-
-fn schedule_data(ctx: &mut Ctx, data: Data) {
-    ctx.buf.push_back(data);
-
-    if ctx.buf.watermark_reached() {
-        flush_buf(ctx);
+impl Drop for DataExporter {
+    fn drop(&mut self) {
+        // Drop sender early to prevent the exporter thread from being parked forever.
+        drop(self.data_tx.take());
+        self.exporter.thread().unpark();
     }
 }
 
 #[derive(Clone)]
 pub struct Ctx {
-    pub task_id: String,
     pub instance_id: String,
-    pub rpc_client: RpcClient,
-    pub buf: DataExportBuf,
-    pub exporter_rt: Arc<Runtime>,
-}
-
-impl Drop for Ctx {
-    fn drop(&mut self) {
-        flush_buf(self)
-    }
+    pub exporter: Arc<DataExporter>,
 }
 
 #[derive(Clone)]
@@ -139,7 +162,7 @@ impl From<WitFieldValue> for FieldValue {
 impl profiling::data_export::common::Host for DataExportCtx {
     fn flush_buf(&mut self) -> wasmtime::Result<Result<(), String>> {
         if let Some(ctx) = &mut self.ctx {
-            flush_buf(ctx);
+            ctx.exporter.flush();
         }
         Ok(Ok(()))
     }
@@ -155,7 +178,7 @@ impl profiling::data_export::file::Host for DataExportCtx {
             ty: DataType::File as _,
             bytes,
         };
-        schedule_data(ctx, data);
+        ctx.exporter.schedule(data)?;
 
         Ok(Ok(()))
     }
@@ -188,7 +211,7 @@ impl profiling::data_export::metric::Host for DataExportCtx {
             ty: DataType::LineProtocol as _,
             bytes,
         };
-        schedule_data(ctx, data);
+        ctx.exporter.schedule(data)?;
 
         Ok(Ok(()))
     }
@@ -224,7 +247,7 @@ impl profiling::data_export::measurement::Host for DataExportCtx {
             ty: DataType::LineProtocol as _,
             bytes,
         };
-        schedule_data(ctx, data);
+        ctx.exporter.schedule(data)?;
 
         Ok(Ok(()))
     }
