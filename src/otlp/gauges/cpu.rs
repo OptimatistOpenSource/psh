@@ -30,9 +30,63 @@ impl super::super::Otlp {
                 let Ok(cpus) = cpu.stat(Some(interval)) else {
                     return;
                 };
+
                 let desc =
                     "The amount of time, measured in ticks, the CPU has been in specific states";
                 for (cpu, cpu_time) in cpus.per_cpu.into_iter().enumerate() {
+                    let gauges = [
+                        (
+                            cpus.ctxt,
+                            [
+                                KeyValue::new("cpu", cpu as i64),
+                                KeyValue::new("stat", "ctxt"),
+                                KeyValue::new("desc", "context switches that the system underwent"),
+                            ],
+                        ),
+                        (
+                            cpus.btime,
+                            [
+                                KeyValue::new("cpu", cpu as i64),
+                                KeyValue::new("stat", "btime"),
+                                KeyValue::new(
+                                    "desc",
+                                    "Boot time, in number of seconds since the Epoch",
+                                ),
+                            ],
+                        ),
+                        (
+                            cpus.processes,
+                            [
+                                KeyValue::new("cpu", cpu as i64),
+                                KeyValue::new("stat", "processes"),
+                                KeyValue::new("desc", "Number of forks since boot"),
+                            ],
+                        ),
+                        (
+                            cpus.procs_running.unwrap_or(0).into(),
+                            [
+                                KeyValue::new("cpu", cpu as i64),
+                                KeyValue::new("stat", "procs_running"),
+                                KeyValue::new("desc", "Number of processes in runnable state"),
+                            ],
+                        ),
+                        (
+                            cpus.procs_blocked.unwrap_or(0).into(),
+                            [
+                                KeyValue::new("cpu", cpu as i64),
+                                KeyValue::new("stat", "procs_blocked"),
+                                KeyValue::new(
+                                    "desc",
+                                    "Number of processes blocked waiting for I/O",
+                                ),
+                            ],
+                        ),
+                    ];
+                    gauges.into_iter().for_each(|(m, [kv1, kv2, kv3])| {
+                        let a = &[KeyValue::new("token", token.clone()), kv1, kv2, kv3];
+                        gauge.observe(m, a);
+                    });
+
                     macro_rules! gauges {
                         ($($item:ident,)+) => {
                             [
