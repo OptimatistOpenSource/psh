@@ -12,20 +12,20 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use std::time::Duration;
-
-use once_cell::sync::Lazy;
+use std::{sync::LazyLock, time::Duration};
 
 use super::{InterruptDetails, IrqDetails};
-use crate::error::Result;
-use crate::interrupt::raw::{parse_interrupts, parse_irq};
-use crate::utils::Handle;
+use crate::{
+    error::Result,
+    interrupt::raw::{parse_interrupts, parse_irq},
+    utils::Handle,
+};
 
-static INFO_GLOBAL: Lazy<Handle<Vec<IrqDetails>>> =
-    Lazy::new(|| Handle::new(|| parse_irq!().map_err(Into::into)));
+static INFO_GLOBAL: LazyLock<Handle<Vec<IrqDetails>>> =
+    LazyLock::new(|| Handle::new(|| parse_irq!().map_err(Into::into)));
 
-static STAT_GLOBAL: Lazy<Handle<Vec<InterruptDetails>>> =
-    Lazy::new(|| Handle::new(|| parse_interrupts!().map_err(Into::into)));
+static STAT_GLOBAL: LazyLock<Handle<Vec<InterruptDetails>>> =
+    LazyLock::new(|| Handle::new(|| parse_interrupts!().map_err(Into::into)));
 
 #[derive(Debug, Clone)]
 pub struct InterruptHandle {

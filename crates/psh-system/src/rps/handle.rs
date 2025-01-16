@@ -12,14 +12,16 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 
-use crate::error::Result;
-use crate::rps::raw::parse_rps;
-use crate::rps::RpsDetails;
-use crate::utils::Handle;
+use crate::{
+    error::Result,
+    rps::{raw::parse_rps, RpsDetails},
+    utils::Handle,
+};
 
-static INFO_GLOBAL: Lazy<Handle<Vec<RpsDetails>>> = Lazy::new(|| Handle::new(|| Ok(parse_rps!())));
+static INFO_GLOBAL: LazyLock<Handle<Vec<RpsDetails>>> =
+    LazyLock::new(|| Handle::new(|| Ok(parse_rps!())));
 
 #[derive(Debug, Clone)]
 pub struct RpsHandle(Handle<Vec<RpsDetails>>);

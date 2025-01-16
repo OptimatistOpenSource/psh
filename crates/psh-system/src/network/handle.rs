@@ -12,17 +12,14 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use std::collections::HashMap;
-use std::time::Duration;
+use std::{collections::HashMap, sync::LazyLock, time::Duration};
 
-use once_cell::sync::Lazy;
 use procfs::net::{self, DeviceStatus};
 
-use crate::error::Result;
-use crate::utils::Handle;
+use crate::{error::Result, utils::Handle};
 
-static STAT_GLOBAL: Lazy<Handle<HashMap<String, DeviceStatus>>> =
-    Lazy::new(|| Handle::new(|| net::dev_status().map_err(Into::into)));
+static STAT_GLOBAL: LazyLock<Handle<HashMap<String, DeviceStatus>>> =
+    LazyLock::new(|| Handle::new(|| net::dev_status().map_err(Into::into)));
 
 #[derive(Debug, Clone)]
 pub struct NetworkHandle(Handle<HashMap<String, DeviceStatus>>);

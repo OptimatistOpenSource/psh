@@ -12,19 +12,19 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use std::sync::Arc;
-use std::time::Duration;
+use std::{
+    sync::{Arc, LazyLock},
+    time::Duration,
+};
 
-use once_cell::sync::Lazy;
 use procfs::process::Process;
 
-use crate::error::Result;
-use crate::utils::Handle;
+use crate::{error::Result, utils::Handle};
 
-static INFO_SELF_GLOBAL: Lazy<Handle<Arc<Process>>> =
-    Lazy::new(|| Handle::new(|| Process::myself().map(Arc::new).map_err(Into::into)));
+static INFO_SELF_GLOBAL: LazyLock<Handle<Arc<Process>>> =
+    LazyLock::new(|| Handle::new(|| Process::myself().map(Arc::new).map_err(Into::into)));
 
-static STAT_ALL_GLOBAL: Lazy<Handle<Vec<Arc<Process>>>> = Lazy::new(|| {
+static STAT_ALL_GLOBAL: LazyLock<Handle<Vec<Arc<Process>>>> = LazyLock::new(|| {
     Handle::new(|| {
         procfs::process::all_processes()
             .map_err(Into::into)

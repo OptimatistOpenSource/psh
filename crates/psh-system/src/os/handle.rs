@@ -12,14 +12,18 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 
-use super::raw::{get_kernel_version, parse_distro_version};
-use super::OsInfo;
-use crate::error::{Error, Result};
-use crate::utils::Handle;
+use super::{
+    raw::{get_kernel_version, parse_distro_version},
+    OsInfo,
+};
+use crate::{
+    error::{Error, Result},
+    utils::Handle,
+};
 
-static INFO_GLOBAL: Lazy<Handle<OsInfo>> = Lazy::new(|| {
+static INFO_GLOBAL: LazyLock<Handle<OsInfo>> = LazyLock::new(|| {
     Handle::new(|| match (parse_distro_version!(), get_kernel_version()) {
         (Ok(distro), Ok(kernel)) => Ok(OsInfo { distro, kernel }),
         _ => Err(Error::EmptyValue),
