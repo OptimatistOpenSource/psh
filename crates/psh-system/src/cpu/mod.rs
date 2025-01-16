@@ -174,14 +174,16 @@ pub enum CpuInfo {
 pub struct CpuStats {
     pub total: CpuTime,
     pub per_cpu: Vec<CpuTime>,
+    pub ctxt: u64,
+    pub btime: u64,
+    pub processes: u64,
+    pub procs_running: Option<u32>,
+    pub procs_blocked: Option<u32>,
 }
 
 impl From<&KernelStats> for CpuStats {
     fn from(value: &KernelStats) -> Self {
-        Self {
-            total: value.total.clone(),
-            per_cpu: value.cpu_time.clone(),
-        }
+        value.clone().into()
     }
 }
 
@@ -190,6 +192,11 @@ impl From<KernelStats> for CpuStats {
         Self {
             total: value.total,
             per_cpu: value.cpu_time,
+            ctxt: value.ctxt,
+            btime: value.btime,
+            processes: value.processes,
+            procs_running: value.procs_running,
+            procs_blocked: value.procs_blocked,
         }
     }
 }
