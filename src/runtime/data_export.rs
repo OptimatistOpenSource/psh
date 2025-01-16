@@ -12,7 +12,15 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use std::{collections::VecDeque, sync::Arc};
+use std::{
+    collections::VecDeque,
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        mpsc::{channel, SendError, Sender, TryRecvError},
+        Arc,
+    },
+    thread::{self, JoinHandle},
+};
 
 use chrono::{TimeZone, Utc};
 use profiling::data_export::common::FieldValue as WitFieldValue;
@@ -38,6 +46,91 @@ wasmtime::component::bindgen!({
     // previous implementations.
     trappable_imports: true,
 });
+
+pub struct DataExporter {
+    bytes_len: Arc<AtomicUsize>,
+    bytes_watermark: usize,
+    data_tx: Option<Sender<Data>>,
+    exporter: JoinHandle<()>,
+}
+
+impl DataExporter {
+    pub fn new(
+        bytes_capacity: usize,
+        bytes_watermark: usize,
+        task_id: String,
+        rpc_client: RpcClient,
+    ) -> Self {
+        // TODO: `bytes_capacity` is not used because we not have a static allocation
+        // for `Data`, maybe we will remove this in the future
+        let _ = bytes_capacity;
+        let (data_tx, data_rx) = channel::<Data>();
+        let bytes_len = Arc::new(AtomicUsize::new(0));
+
+        let exporter = thread::spawn({
+            let bytes_len = Arc::clone(&bytes_len);
+            move || {
+                let rt = Runtime::new().expect("Failed to init exporter runtime");
+                let mut data = Vec::new();
+                loop {
+                    match data_rx.try_recv() {
+                        Ok(o) => {
+                            // No critical section, relaxed ordering is fine.
+                            bytes_len.fetch_sub(o.encoded_len(), Ordering::Relaxed);
+                            data.push(o);
+                        }
+                        Err(e) => {
+                            if !data.is_empty() {
+                                let merged = ExportDataReq {
+                                    task_id: task_id.clone(),
+                                    data: data.clone(),
+                                };
+
+                                let mut rpc_client = rpc_client.clone();
+                                rt.block_on(async move {
+                                    let _ = rpc_client.export_data(merged).await;
+                                });
+                                data.clear();
+                            }
+                            match e {
+                                TryRecvError::Empty => thread::park(),
+                                TryRecvError::Disconnected => break,
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        Self {
+            bytes_len,
+            bytes_watermark,
+            data_tx: Some(data_tx),
+            exporter,
+        }
+    }
+
+    pub fn schedule(&self, data: Data) -> Result<(), SendError<Data>> {
+        let encoded_len = data.encoded_len();
+        // Never failes since we only take it in `Drop`.
+        let data_tx = self.data_tx.as_ref().expect("unreachable");
+        data_tx.send(data)?;
+        // No critical section, relaxed ordering is fine.
+        let prev = self.bytes_len.fetch_add(encoded_len, Ordering::Relaxed);
+        if prev > self.bytes_watermark {
+            self.exporter.thread().unpark();
+        }
+        Ok(())
+    }
+}
+
+impl Drop for DataExporter {
+    fn drop(&mut self) {
+        // Drop sender early to prevent the exporter thread from being parked forever.
+        drop(self.data_tx.take());
+        self.exporter.thread().unpark();
+    }
+}
 
 #[derive(Clone)]
 pub struct DataExportBuf {
