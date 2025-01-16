@@ -12,20 +12,17 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use std::time::Duration;
+use std::{sync::LazyLock, time::Duration};
 
-use once_cell::sync::Lazy;
 use procfs::CurrentSI;
 
-use super::raw::parse_cpuinfo;
-use super::{CpuInfo, CpuStats};
-use crate::error::Result;
-use crate::utils::Handle;
+use super::{raw::parse_cpuinfo, CpuInfo, CpuStats};
+use crate::{error::Result, utils::Handle};
 
-static INFO_GLOBAL: Lazy<Handle<CpuInfo>> =
-    Lazy::new(|| Handle::new(|| parse_cpuinfo!().map_err(Into::into)));
+static INFO_GLOBAL: LazyLock<Handle<CpuInfo>> =
+    LazyLock::new(|| Handle::new(|| parse_cpuinfo!().map_err(Into::into)));
 
-static STAT_GLOBAL: Lazy<Handle<CpuStats>> = Lazy::new(|| {
+static STAT_GLOBAL: LazyLock<Handle<CpuStats>> = LazyLock::new(|| {
     Handle::new(|| {
         procfs::KernelStats::current()
             .map(Into::into)

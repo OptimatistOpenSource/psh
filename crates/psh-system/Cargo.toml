@@ -5,7 +5,6 @@ edition.workspace = true
 
 [dependencies]
 anyhow = { workspace = true }
-once_cell = { workspace = true }
 procfs = { workspace = true }
 thiserror = { workspace = true }
 uname = { workspace = true }

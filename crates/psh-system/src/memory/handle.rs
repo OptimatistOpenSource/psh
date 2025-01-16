@@ -12,9 +12,8 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use std::{process::Command, time::Duration};
+use std::{process::Command, sync::LazyLock, time::Duration};
 
-use once_cell::sync::Lazy;
 use procfs::Meminfo;
 
 use super::{
@@ -23,10 +22,10 @@ use super::{
 };
 use crate::{error::Result, utils::Handle};
 
-static STAT_GLOBAL: Lazy<Handle<Meminfo>> =
-    Lazy::new(|| Handle::new(|| parse_meminfo!().map_err(Into::into)));
+static STAT_GLOBAL: LazyLock<Handle<Meminfo>> =
+    LazyLock::new(|| Handle::new(|| parse_meminfo!().map_err(Into::into)));
 
-static INFO_GLOBAL: Lazy<Handle<Vec<MemoryModule>>> = Lazy::new(|| {
+static INFO_GLOBAL: LazyLock<Handle<Vec<MemoryModule>>> = LazyLock::new(|| {
     Handle::new(|| {
         let dmidecode_exe = which::which("dmidecode")?;
         let output = Command::new(dmidecode_exe).arg("-t").arg("17").output()?;

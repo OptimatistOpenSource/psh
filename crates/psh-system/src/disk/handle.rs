@@ -12,16 +12,14 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use std::time::Duration;
+use std::{sync::LazyLock, time::Duration};
 
-use once_cell::sync::Lazy;
 use procfs::DiskStat;
 
-use crate::error::Result;
-use crate::utils::Handle;
+use crate::{error::Result, utils::Handle};
 
-static STAT_GLOBAL: Lazy<Handle<Vec<DiskStat>>> =
-    Lazy::new(|| Handle::new(|| procfs::diskstats().map_err(Into::into)));
+static STAT_GLOBAL: LazyLock<Handle<Vec<DiskStat>>> =
+    LazyLock::new(|| Handle::new(|| procfs::diskstats().map_err(Into::into)));
 
 #[derive(Debug, Clone)]
 pub struct DiskHandle(Handle<Vec<DiskStat>>);

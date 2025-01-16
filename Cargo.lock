@@ -2419,7 +2419,6 @@ version = "0.0.0"
 dependencies = [
  "anyhow",
  "num_cpus",
- "once_cell",
  "procfs",
  "thiserror",
  "uname",
