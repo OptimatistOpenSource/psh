@@ -233,10 +233,7 @@ impl From<HostCpuStat> for GuestCpuStat {
 
 impl From<&HostCpuStats> for GuestCpuStats {
     fn from(value: &HostCpuStats) -> Self {
-        Self {
-            total: (&value.total).into(),
-            per_cpu: value.per_cpu.iter().map(Into::into).collect(),
-        }
+        value.clone().into()
     }
 }
 
@@ -245,6 +242,11 @@ impl From<HostCpuStats> for GuestCpuStats {
         Self {
             total: (&value.total).into(),
             per_cpu: value.per_cpu.iter().map(Into::into).collect(),
+            ctxt: value.ctxt,
+            btime: value.btime,
+            processes: value.processes,
+            procs_running: value.procs_running,
+            procs_blocked: value.procs_blocked,
         }
     }
 }
