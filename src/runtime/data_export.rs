@@ -13,7 +13,6 @@
 // see <https://www.gnu.org/licenses/>.
 
 use std::{
-    collections::VecDeque,
     sync::{
         atomic::{AtomicUsize, Ordering},
         mpsc::{channel, SendError, Sender, TryRecvError},
@@ -110,6 +109,10 @@ impl DataExporter {
         }
     }
 
+    pub fn flush(&self) {
+        self.exporter.thread().unpark();
+    }
+
     pub fn schedule(&self, data: Data) -> Result<(), SendError<Data>> {
         let encoded_len = data.encoded_len();
         // Never failes since we only take it in `Drop`.
@@ -133,82 +136,9 @@ impl Drop for DataExporter {
 }
 
 #[derive(Clone)]
-pub struct DataExportBuf {
-    bytes_watermark: usize,
-    bytes_len: usize,
-    reqs: VecDeque<Data>,
-}
-
-impl DataExportBuf {
-    pub const fn new(bytes_capacity: usize, bytes_watermark: usize) -> Self {
-        // TODO: `bytes_capacity` is not used because we not have a static allocation
-        // for `ExportDataReq::data`, maybe we will remove this in the future
-        let _ = bytes_capacity;
-        Self {
-            bytes_watermark,
-            bytes_len: 0,
-            reqs: VecDeque::new(),
-        }
-    }
-
-    pub fn len(&self) -> usize {
-        self.reqs.len()
-    }
-
-    pub const fn watermark_reached(&self) -> bool {
-        self.bytes_len >= self.bytes_watermark
-    }
-
-    pub fn push_back(&mut self, data: Data) {
-        let encoded_len = data.encoded_len();
-        self.reqs.push_back(data);
-        self.bytes_len += encoded_len;
-    }
-
-    pub fn pop_front(&mut self) -> Option<Data> {
-        let data = self.reqs.pop_front()?;
-        self.bytes_len -= data.encoded_len();
-        Some(data)
-    }
-}
-
-fn flush_buf(ctx: &mut Ctx) {
-    let mut data = Vec::with_capacity(ctx.buf.len());
-
-    while let Some(it) = ctx.buf.pop_front() {
-        data.push(it);
-    }
-
-    let merged = ExportDataReq {
-        task_id: ctx.task_id.clone(),
-        data,
-    };
-    let mut rpc_client = ctx.rpc_client.clone();
-    ctx.exporter_rt
-        .spawn(async move { rpc_client.export_data(merged).await });
-}
-
-fn schedule_data(ctx: &mut Ctx, data: Data) {
-    ctx.buf.push_back(data);
-
-    if ctx.buf.watermark_reached() {
-        flush_buf(ctx);
-    }
-}
-
-#[derive(Clone)]
 pub struct Ctx {
-    pub task_id: String,
     pub instance_id: String,
-    pub rpc_client: RpcClient,
-    pub buf: DataExportBuf,
-    pub exporter_rt: Arc<Runtime>,
-}
-
-impl Drop for Ctx {
-    fn drop(&mut self) {
-        flush_buf(self)
-    }
+    pub exporter: Arc<DataExporter>,
 }
 
 #[derive(Clone)]
@@ -232,7 +162,7 @@ impl From<WitFieldValue> for FieldValue {
 impl profiling::data_export::common::Host for DataExportCtx {
     fn flush_buf(&mut self) -> wasmtime::Result<Result<(), String>> {
         if let Some(ctx) = &mut self.ctx {
-            flush_buf(ctx);
+            ctx.exporter.flush();
         }
         Ok(Ok(()))
     }
@@ -248,7 +178,7 @@ impl profiling::data_export::file::Host for DataExportCtx {
             ty: DataType::File as _,
             bytes,
         };
-        schedule_data(ctx, data);
+        ctx.exporter.schedule(data)?;
 
         Ok(Ok(()))
     }
@@ -281,7 +211,7 @@ impl profiling::data_export::metric::Host for DataExportCtx {
             ty: DataType::LineProtocol as _,
             bytes,
         };
-        schedule_data(ctx, data);
+        ctx.exporter.schedule(data)?;
 
         Ok(Ok(()))
     }
@@ -317,7 +247,7 @@ impl profiling::data_export::measurement::Host for DataExportCtx {
             ty: DataType::LineProtocol as _,
             bytes,
         };
-        schedule_data(ctx, data);
+        ctx.exporter.schedule(data)?;
 
         Ok(Ok(()))
     }
