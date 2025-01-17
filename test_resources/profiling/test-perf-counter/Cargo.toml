@@ -16,4 +16,4 @@ strip = true
 codegen-units = 1
 
 [dependencies]
-wit-bindgen = { version = "0.19.1", default-features = false, features = ["realloc"] }
+wit-bindgen = { version = "0.37.0", default-features = false, features = ["realloc"] }

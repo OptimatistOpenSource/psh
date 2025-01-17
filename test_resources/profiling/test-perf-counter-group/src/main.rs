@@ -13,10 +13,12 @@
 // see <https://www.gnu.org/licenses/>.
 
 #[allow(dead_code)]
-mod bindings;
+mod imports;
 
-use crate::bindings::profiling;
-use profiling::perf::config::{Config, Cpu, Event, EventScope, ExtraConfig, HardwareEvent, Process};
+use crate::imports::profiling;
+use profiling::perf::config::{
+    Config, Cpu, Event, EventScope, ExtraConfig, HardwareEvent, Process,
+};
 use profiling::perf::counter_group::CounterGroup;
 
 fn main() {
