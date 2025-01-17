@@ -12,21 +12,25 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use std::fs;
-use std::ops::Not;
-use std::process::Command;
+use std::{fs, ops::Not, process::Command};
 
 fn main() {
-    let _ = fs::remove_file("src/bindings.rs");
+    let _ = fs::remove_file("src/imports.rs");
     let mut cmd = Command::new("wit-bindgen");
-    cmd.args(["rust", "--out-dir", "src", "wit"]);
+    cmd.args([
+        "rust",
+        "--stubs",
+        "--out-dir",
+        "src/",
+        "../../../psh-sdk-wit/wit/deps/perf",
+    ]);
 
     let output = cmd
         .output()
-        .unwrap_or_else(|it| panic!("Failed to generate bindings: \n{}", it));
+        .unwrap_or_else(|it| panic!("Failed to generate imports: \n{}", it));
     if output.status.success().not() {
         panic!(
-            "Failed to generate bindings: \n{}",
+            "Failed to generate imports: \n{}",
             String::from_utf8(output.stderr).unwrap()
         );
     }

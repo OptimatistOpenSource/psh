@@ -17,8 +17,8 @@
 mod imports;
 
 use imports::profiling::data_export::{
+    common::FieldValue,
     measurement::{export_point, Point},
-    types::FieldValue,
 };
 
 fn main() {

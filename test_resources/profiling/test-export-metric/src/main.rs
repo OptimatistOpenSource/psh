@@ -17,8 +17,8 @@
 mod imports;
 
 use imports::profiling::data_export::{
+    common::FieldValue,
     metric::{export_sample, Sample},
-    types::FieldValue,
 };
 
 fn main() {

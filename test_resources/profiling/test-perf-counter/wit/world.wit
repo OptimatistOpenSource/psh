@@ -1,6 +1,0 @@
-package psh:profiling;
-
-world bindings {
-  import profiling:perf/config@0.0.0;
-  import profiling:perf/counter@0.0.0;
-}

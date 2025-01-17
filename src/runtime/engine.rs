@@ -32,7 +32,7 @@ impl PshEngine {
     pub fn run(mut self, binary: &[u8], time_slice: u64) -> anyhow::Result<()> {
         let component =
             Component::from_binary(&self.engine, binary).context("Failed to load component!")?;
-        let (cmd, _inst) = Command::instantiate(&mut self.store, &component, &self.linker)
+        let cmd = Command::instantiate(&mut self.store, &component, &self.linker)
             .context("Failed to instantiate Wasi Command!")?;
         self.store.set_epoch_deadline(1);
         thread::spawn(move || {
