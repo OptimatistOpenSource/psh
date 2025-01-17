@@ -34,14 +34,12 @@ jobs:
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: 1.81.0
+          targets: wasm32-wasip1
 
       - name: Install cargo-binstall
         uses: taiki-e/install-action@v2
         with:
           tool: cargo-binstall
-
-      - name: Install cargo-component
-        run: cargo binstall cargo-component
 
       - name: Show env
         uses: ./.github/actions/show-env
@@ -49,8 +47,16 @@ jobs:
       - name: Setup build cache
         uses: mozilla-actions/sccache-action@v0.0.6
 
+      - name: Install cargo-component
+        run: cargo install cargo-component
+
       - name: Setup protoc
         uses: arduino/setup-protoc@v3
+
+      - name: Build test resource
+        run:
+          git submodule update --init --recursive
+          ./scripts/build-test-resources.sh
 
       - name: Test
         uses: ./.github/actions/test
