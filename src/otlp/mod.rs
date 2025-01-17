@@ -44,7 +44,7 @@ pub struct Otlp {
 
 impl Otlp {
     pub fn new(token: String, interval: Duration, export_config: ExportConfig) -> Result<Self> {
-        let provider = meter_provider(export_config, token.clone())?;
+        let provider = meter_provider(export_config, token.clone(), interval)?;
         let meter = provider.meter("SystemProfile");
         Ok(Self {
             token,
@@ -93,7 +93,11 @@ impl Otlp {
     }
 }
 
-fn meter_provider(export_config: ExportConfig, token: String) -> Result<SdkMeterProvider> {
+fn meter_provider(
+    export_config: ExportConfig,
+    token: String,
+    interval: Duration,
+) -> Result<SdkMeterProvider> {
     let mut meta = MetadataMap::new();
     meta.insert("authorization", format!("Bearer {}", token).parse()?);
     let otlp_exporter = MetricExporter::builder()
@@ -104,7 +108,7 @@ fn meter_provider(export_config: ExportConfig, token: String) -> Result<SdkMeter
         .with_export_config(export_config)
         .build()?;
     let reader = PeriodicReader::builder(otlp_exporter, runtime::Tokio)
-        .with_interval(Duration::from_secs(1))
+        .with_interval(interval)
         .build();
 
     let a = SdkMeterProvider::builder()

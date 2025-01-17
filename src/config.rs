@@ -62,6 +62,8 @@ pub struct RpcConfig {
 pub struct OtlpConfig {
     pub enable: bool,
     pub addr: String,
+    /// in seconds
+    pub interval: u64,
 }
 
 #[derive(Deserialize)]

@@ -26,3 +26,4 @@ buf_watermark = 2048
 [remote.otlp]
 enable = false
 addr = "https://otel-col.optimatist.com"
+interval = 10
