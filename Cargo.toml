@@ -49,6 +49,7 @@ tracing-subscriber = { workspace = true, features = ["env-filter"] }
 daemonize = { workspace = true }
 local-ip-address = { workspace = true }
 TinyUFO = { workspace = true }
+crossbeam = { workspace = true }
 
 [build-dependencies]
 tonic-build = { workspace = true }
@@ -90,6 +91,7 @@ which = "^6"
 num_cpus = "^1"
 local-ip-address = "^0.6"
 TinyUFO = "0.4"
+crossbeam = "0.8"
 
 [workspace.lints.rust]
 
