@@ -157,7 +157,9 @@ async fn async_tasks(remote_cfg: RemoteConfig, mut task_rt: TaskRuntime) -> Resu
                 })
                 .await?;
 
-            task_rt.finished_task_id().map(|it| client.task_done(it));
+            if let Some(id) = task_rt.finished_task_id() {
+                let _ = client.task_done(id).await;
+            }
 
             tokio::time::sleep(duration).await;
         }
