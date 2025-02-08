@@ -18,3 +18,4 @@ pub mod interrupt;
 pub mod memory;
 pub mod network;
 pub mod rps;
+pub mod vmstat;

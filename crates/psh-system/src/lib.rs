@@ -22,6 +22,7 @@ pub mod os;
 pub mod process;
 pub mod rps;
 mod utils;
+pub mod vmstat;
 
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
