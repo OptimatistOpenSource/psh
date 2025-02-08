@@ -86,6 +86,9 @@ impl Otlp {
         if let Err(e) = self.rps_gauges() {
             tracing::error!("Otlp rps: {e}")
         }
+        if let Err(e) = self.vmstat_gauges() {
+            tracing::error!("Otlp vmstat: {e}")
+        }
 
         loop {
             tokio::time::sleep(interval).await;
