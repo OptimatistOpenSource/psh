@@ -20,18 +20,22 @@ mod network;
 mod os;
 mod process;
 mod rps;
+mod vmstat;
 
 use std::sync::Arc;
 
-use psh_system::cpu::CpuHandle;
-use psh_system::disk::DiskHandle;
-use psh_system::interrupt::InterruptHandle;
-use psh_system::memory::MemoryHandle;
-use psh_system::network::NetworkHandle;
-use psh_system::os::OsHandle;
-use psh_system::process::{Process, ProcessHandle};
-use psh_system::rps::RpsHandle;
-use psh_system::System;
+use psh_system::{
+    cpu::CpuHandle,
+    disk::DiskHandle,
+    interrupt::InterruptHandle,
+    memory::MemoryHandle,
+    network::NetworkHandle,
+    os::OsHandle,
+    process::{Process, ProcessHandle},
+    rps::RpsHandle,
+    vmstat::VmstatHandle,
+    System,
+};
 use wasmtime::component::{Linker, ResourceTable};
 
 pub type HostProc = Arc<Process>;
@@ -73,6 +77,7 @@ pub struct SysCtx {
     rps: RpsHandle,
     network: NetworkHandle,
     interrupt: InterruptHandle,
+    vmstat: VmstatHandle,
 }
 
 pub fn add_to_linker<T>(
