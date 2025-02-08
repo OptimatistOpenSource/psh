@@ -1,0 +1,21 @@
+[package]
+name = "test-vmstat"
+version = "0.0.0"
+edition = "2021"
+
+[dependencies]
+# wit-bindgen-rt = { version = "0.39.0", features = ["bitflags"] }
+wit-bindgen = { version = "0.37.0", default-features = false, features = ["realloc"] }
+ahash = "0.8.11"
+
+[profile.release]
+codegen-units = 1
+opt-level = "s"
+debug = false
+strip = true
+lto = true
+
+[package.metadata.component]
+package = "component:test-vmstat"
+
+[package.metadata.component.dependencies]
