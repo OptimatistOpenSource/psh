@@ -20,13 +20,12 @@ use std::{
     thread::{self, JoinHandle},
 };
 
-use chrono::{TimeZone, Utc};
 use crossbeam::queue::SegQueue;
+use influxdb_line_protocol::{builder::FieldValue, LineProtocolBuilder};
 use profiling::data_export::common::FieldValue as WitFieldValue;
 use profiling::data_export::measurement::Point;
 use profiling::data_export::metric::Sample;
 use prost::Message;
-use rinfluxdb::line_protocol::{FieldValue, LineBuilder};
 use tokio::runtime::Runtime;
 use wasmtime::component::Linker;
 
@@ -45,6 +44,19 @@ wasmtime::component::bindgen!({
     // previous implementations.
     trappable_imports: true,
 });
+
+impl FieldValue for WitFieldValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Float(x) => write!(f, "{}", x),
+            Self::Int(x) => write!(f, "{}i", x),
+            Self::Uint(x) => write!(f, "{}u", x),
+            Self::Text(s) => write!(f, "\"{}\"", s),
+            Self::Boolean(b) => write!(f, "{}", b),
+            Self::NsTs(x) => write!(f, "{}i", x),
+        }
+    }
+}
 
 pub struct DataExporter {
     bytes_len: Arc<AtomicUsize>,
@@ -145,19 +157,6 @@ pub struct DataExportCtx {
     pub ctx: Option<Ctx>,
 }
 
-impl From<WitFieldValue> for FieldValue {
-    fn from(value: WitFieldValue) -> Self {
-        match value {
-            WitFieldValue::Float(x) => Self::Float(x),
-            WitFieldValue::Int(x) => Self::Integer(x),
-            WitFieldValue::Uint(x) => Self::UnsignedInteger(x),
-            WitFieldValue::Text(x) => Self::String(x),
-            WitFieldValue::Boolean(x) => Self::Boolean(x),
-            WitFieldValue::NsTs(x) => Self::Timestamp(Utc.timestamp_nanos(x as _)),
-        }
-    }
-}
-
 impl profiling::data_export::common::Host for DataExportCtx {
     fn flush_buf(&mut self) -> wasmtime::Result<Result<(), String>> {
         if let Some(ctx) = &mut self.ctx {
@@ -193,19 +192,15 @@ impl profiling::data_export::metric::Host for DataExportCtx {
             .tags
             .push(("instance_id".to_string(), ctx.instance_id.clone()));
 
-        let bytes = {
-            let mut lb = LineBuilder::new(sample.name).insert_field("value", sample.value);
-            for (k, v) in sample.tags.clone() {
-                lb = lb.insert_tag(k, v);
-            }
-
-            if let Some(s) = sample.ns_ts {
-                let timestamp = Utc.timestamp_nanos(s as _);
-                lb = lb.set_timestamp(timestamp)
-            };
-
-            lb.build().to_string().into_bytes()
+        let lp = LineProtocolBuilder::new().measurement(&sample.name);
+        let lp = sample.tags.iter().fold(lp, |lp, (k, v)| lp.tag(k, v));
+        let lp = lp.field::<WitFieldValue>("value", sample.value);
+        let bytes = if let Some(ts) = sample.ns_ts {
+            lp.timestamp(ts as i64).close_line().build()
+        } else {
+            lp.close_line().build()
         };
+
         let data = Data {
             ty: DataType::LineProtocol as _,
             bytes,
@@ -226,22 +221,23 @@ impl profiling::data_export::measurement::Host for DataExportCtx {
             .tags
             .push(("instance_id".to_string(), ctx.instance_id.clone()));
 
-        let bytes = {
-            let mut lb = LineBuilder::new(point.name);
-            for (k, v) in point.tags.clone() {
-                lb = lb.insert_tag(k, v);
-            }
-            for (k, v) in point.fields {
-                lb = lb.insert_field(k, v);
-            }
+        let lp = LineProtocolBuilder::new().measurement(&point.name);
+        let lp = point.tags.iter().fold(lp, |lp, (k, v)| lp.tag(k, v));
 
-            if let Some(s) = point.ns_ts {
-                let timestamp = Utc.timestamp_nanos(s as _);
-                lb = lb.set_timestamp(timestamp)
-            };
+        let mut fields = point.fields.into_iter();
 
-            lb.build().to_string().into_bytes()
+        let Some((first_key, first_val)) = fields.next() else {
+            return Ok(Err("No fields provided in point".to_string()));
         };
+
+        let lp = lp.field::<WitFieldValue>(&first_key, first_val);
+        let lp = fields.fold(lp, |lp, (k, v)| lp.field::<WitFieldValue>(&k, v));
+        let bytes = if let Some(ts) = point.ns_ts {
+            lp.timestamp(ts as i64).close_line().build()
+        } else {
+            lp.close_line().build()
+        };
+
         let data = Data {
             ty: DataType::LineProtocol as _,
             bytes,
