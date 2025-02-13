@@ -29,10 +29,8 @@ use prost::Message;
 use tokio::runtime::Runtime;
 use wasmtime::component::Linker;
 
-use crate::services::{
-    pb::{Data, DataType, ExportDataReq},
-    rpc::RpcClient,
-};
+use crate::services::rpc::RpcClient;
+use psh_proto::{Data, DataType, ExportDataReq};
 
 wasmtime::component::bindgen!({
     path: "psh-sdk-wit/wit/deps/data-export",

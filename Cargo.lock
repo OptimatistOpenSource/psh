@@ -2229,16 +2229,26 @@ dependencies = [
  "opentelemetry-otlp",
  "opentelemetry_sdk",
  "prost",
+ "psh-proto",
  "psh-system",
  "serde",
  "tokio",
  "toml",
  "tonic",
- "tonic-build",
  "tracing",
  "tracing-subscriber",
  "wasmtime",
  "wasmtime-wasi",
+]
+
+[[package]]
+name = "psh-proto"
+version = "0.1.0"
+source = "git+https://github.com/OptimatistOpenSource/psh-proto.git?rev=7aff49c162fdb318e81c6ab51143b74062e91505#7aff49c162fdb318e81c6ab51143b74062e91505"
+dependencies = [
+ "prost",
+ "tonic",
+ "tonic-build",
 ]
 
 [[package]]

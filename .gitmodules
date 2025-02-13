@@ -1,6 +1,3 @@
-[submodule "src/services/proto"]
-	path = src/services/proto
-	url = https://github.com/OptimatistOpenSource/psh-proto.git
 [submodule "psh-sdk-wit"]
 	path = psh-sdk-wit
 	url = https://github.com/OptimatistOpenSource/psh-sdk-wit.git

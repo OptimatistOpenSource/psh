@@ -32,8 +32,8 @@ use daemon::{get_daemon_wasm_args, spawn_daemon};
 use log::log_init;
 use nix::unistd::geteuid;
 use opentelemetry_otlp::ExportConfig;
+use psh_proto::HeartbeatReq;
 use runtime::{Task, TaskRuntime};
-use services::pb::HeartbeatReq;
 use services::rpc::RpcClient;
 use tokio::try_join;
 
