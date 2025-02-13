@@ -50,9 +50,7 @@ local-ip-address = { workspace = true }
 TinyUFO = { workspace = true }
 crossbeam = { workspace = true }
 influxdb-line-protocol = { workspace = true }
-
-[build-dependencies]
-tonic-build = { workspace = true }
+psh-proto = { workspace = true }
 
 [lints]
 workspace = true
@@ -71,7 +69,6 @@ opentelemetry-otlp = "^0.27"
 opentelemetry = "^0.27"
 opentelemetry_sdk = "^0.27"
 tonic = "^0.12"
-tonic-build = "0.12"
 prost = "^0.13"
 wasmtime = "^28"
 wasmtime-wasi = "^28"
@@ -91,6 +88,7 @@ local-ip-address = "^0.6"
 TinyUFO = "0.4"
 crossbeam = "0.8"
 influxdb-line-protocol = "2"
+psh-proto = { git = "https://github.com/OptimatistOpenSource/psh-proto.git", rev = "7aff49c162fdb318e81c6ab51143b74062e91505" }
 
 [workspace.lints.rust]
 

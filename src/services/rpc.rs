@@ -13,16 +13,17 @@
 // see <https://www.gnu.org/licenses/>.
 
 use anyhow::{bail, Result};
-use chrono::offset::LocalResult;
-use chrono::{TimeZone, Utc};
-use tonic::transport::{Channel, ClientTlsConfig, Endpoint};
-use tonic::Request;
+use chrono::{offset::LocalResult, TimeZone, Utc};
+use tonic::{
+    transport::{Channel, ClientTlsConfig, Endpoint},
+    Request,
+};
 
-use super::pb::{ExportDataReq, HeartbeatReq, TaskDoneReq, Unit};
-use crate::config::RpcConfig;
-use crate::runtime::Task;
-use crate::services::pb::psh_service_client::PshServiceClient;
-use crate::services::pb::{GetTaskReq, SendHostInfoReq};
+use crate::{config::RpcConfig, runtime::Task, services::host_info::new_info_req};
+use psh_proto::{
+    psh_service_client::PshServiceClient, ExportDataReq, GetTaskReq, HeartbeatReq, TaskDoneReq,
+    Unit,
+};
 
 #[derive(Clone)]
 pub struct RpcClient {
@@ -46,7 +47,7 @@ impl RpcClient {
     }
 
     pub async fn send_host_info(&mut self, instance_id: String) -> Result<()> {
-        let req = into_req(SendHostInfoReq::new(instance_id), &self.token)?;
+        let req = into_req(new_info_req(instance_id), &self.token)?;
         let resp = self.client.send_host_info(req).await?;
         tracing::trace!("{:?}", resp.get_ref());
         Ok(())
