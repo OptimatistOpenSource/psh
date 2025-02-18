@@ -37,6 +37,11 @@ use runtime::{Task, TaskRuntime};
 use services::rpc::RpcClient;
 use tokio::try_join;
 
+use tikv_jemallocator::Jemalloc;
+
+#[global_allocator]
+static GLOBAL: Jemalloc = Jemalloc;
+
 fn main() -> Result<()> {
     log_init();
 
