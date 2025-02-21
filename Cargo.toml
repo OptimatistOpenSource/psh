@@ -51,7 +51,7 @@ TinyUFO = { workspace = true }
 crossbeam = { workspace = true }
 influxdb-line-protocol = { workspace = true }
 psh-proto = { workspace = true }
-tikv-jemallocator = { workspace = true }
+mimalloc = { workspace = true }
 
 [lints]
 workspace = true
@@ -90,7 +90,7 @@ TinyUFO = "0.4"
 crossbeam = "0.8"
 influxdb-line-protocol = "2"
 psh-proto = { git = "https://github.com/OptimatistOpenSource/psh-proto.git", rev = "7aff49c162fdb318e81c6ab51143b74062e91505" }
-tikv-jemallocator = "0.6"
+mimalloc = "0.1"
 
 [workspace.lints.rust]
 
