@@ -60,6 +60,7 @@ pub struct DataExporter {
     bytes_len: Arc<AtomicUsize>,
     bytes_watermark: usize,
     data_queue: Arc<SegQueue<Option<Data>>>,
+    task_id: String,
     exporter: JoinHandle<()>,
 }
 
@@ -79,6 +80,7 @@ impl DataExporter {
         let exporter = thread::spawn({
             let data_queue = Arc::clone(&data_queue);
             let bytes_len = Arc::clone(&bytes_len);
+            let task_id = task_id.clone();
             move || {
                 let rt = Runtime::new().expect("Failed to init exporter runtime");
                 let mut data = Vec::new();
@@ -117,6 +119,7 @@ impl DataExporter {
             bytes_len,
             bytes_watermark,
             data_queue,
+            task_id,
             exporter,
         }
     }
@@ -186,9 +189,9 @@ impl profiling::data_export::metric::Host for DataExportCtx {
             return Ok(Ok(()));
         };
 
-        sample
-            .tags
-            .push(("instance_id".to_string(), ctx.instance_id.clone()));
+        let tags = &mut sample.tags;
+        tags.push(("task_id".to_string(), ctx.exporter.task_id.clone()));
+        tags.push(("instance_id".to_string(), ctx.instance_id.clone()));
 
         let lp = LineProtocolBuilder::new().measurement(&sample.name);
         let lp = sample.tags.iter().fold(lp, |lp, (k, v)| lp.tag(k, v));
@@ -215,9 +218,9 @@ impl profiling::data_export::measurement::Host for DataExportCtx {
             return Ok(Ok(()));
         };
 
-        point
-            .tags
-            .push(("instance_id".to_string(), ctx.instance_id.clone()));
+        let tags = &mut point.tags;
+        tags.push(("task_id".to_string(), ctx.exporter.task_id.clone()));
+        tags.push(("instance_id".to_string(), ctx.instance_id.clone()));
 
         let lp = LineProtocolBuilder::new().measurement(&point.name);
         let lp = point.tags.iter().fold(lp, |lp, (k, v)| lp.tag(k, v));
