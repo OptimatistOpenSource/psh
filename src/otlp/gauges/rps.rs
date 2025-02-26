@@ -12,7 +12,7 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use opentelemetry::{metrics::ObservableGauge, Array, KeyValue, Value};
+use opentelemetry::{Array, KeyValue, Value, metrics::ObservableGauge};
 use psh_system::rps::RpsHandle;
 
 impl super::super::Otlp {

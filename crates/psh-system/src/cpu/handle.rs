@@ -16,7 +16,7 @@ use std::{sync::LazyLock, time::Duration};
 
 use procfs::CurrentSI;
 
-use super::{raw::parse_cpuinfo, CpuInfo, CpuStats};
+use super::{CpuInfo, CpuStats, raw::parse_cpuinfo};
 use crate::{error::Result, utils::Handle};
 
 static INFO_GLOBAL: LazyLock<Handle<CpuInfo>> =

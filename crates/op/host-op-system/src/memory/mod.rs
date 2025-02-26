@@ -16,10 +16,12 @@ use std::time::Duration;
 
 use psh_system::memory::{Meminfo as HostMemoryStat, MemoryModule as HostMemoryInfo};
 
-use crate::profiling::system::memory::{
-    self, MemoryInfo as GuestMemoryInfo, MemoryStat as GuestMemoryStat,
+use crate::{
+    SysCtx,
+    profiling::system::memory::{
+        self, MemoryInfo as GuestMemoryInfo, MemoryStat as GuestMemoryStat,
+    },
 };
-use crate::SysCtx;
 
 impl From<&HostMemoryStat> for GuestMemoryStat {
     fn from(value: &HostMemoryStat) -> Self {

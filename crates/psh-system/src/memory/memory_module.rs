@@ -168,9 +168,7 @@ pub fn parse_memory_module(input: &str) -> Vec<MemoryModule> {
 
 #[cfg(test)]
 mod test {
-    use std::fs;
-    use std::path::PathBuf;
-    use std::process::Command;
+    use std::{fs, path::PathBuf, process::Command};
 
     use super::parse_memory_module;
     use crate::memory::MemoryModule;

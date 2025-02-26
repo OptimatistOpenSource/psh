@@ -12,23 +12,26 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use std::ffi::CString;
-use std::rc::Rc;
+use std::{ffi::CString, rc::Rc};
 
-use perf_event_rs::event::{
-    BreakpointEvent as RawBpEv, BreakpointType as RawBpTy, CacheOp as RawCacheOp,
-    CacheOpResult as RawCacheOpResult, Event as RawEv, HardwareEvent as RawHwEv,
-    KprobeConfig as RawKpCfg, RawEvent as RawRawEv, SoftwareEvent as RawSwEv,
-    TracepointEvent as RawTpEv, UprobeConfig as RawUpCfg,
+use perf_event_rs::{
+    BreakpointLen as RawBpLen, DynamicPmuEvent as RawDpEv,
+    event::{
+        BreakpointEvent as RawBpEv, BreakpointType as RawBpTy, CacheOp as RawCacheOp,
+        CacheOpResult as RawCacheOpResult, Event as RawEv, HardwareEvent as RawHwEv,
+        KprobeConfig as RawKpCfg, RawEvent as RawRawEv, SoftwareEvent as RawSwEv,
+        TracepointEvent as RawTpEv, UprobeConfig as RawUpCfg,
+    },
 };
-use perf_event_rs::{BreakpointLen as RawBpLen, DynamicPmuEvent as RawDpEv};
 
-use crate::convert::{Error, Wrap};
-use crate::profiling::perf::config::{
-    BreakpointLen as BpLen, BreakpointType as BpTy, CacheOp, CacheOpResult,
-    DpKprobeConfig as KpCfg, DpKprobeConfigVar as KpCfgVar, DpOtherConfig as OtherCfg,
-    DpUprobeConfig as UpCfg, DynamicPmuEvent as DpEv, Event as Ev, HardwareEvent as HwEv,
-    SoftwareEvent as SwEv,
+use crate::{
+    convert::{Error, Wrap},
+    profiling::perf::config::{
+        BreakpointLen as BpLen, BreakpointType as BpTy, CacheOp, CacheOpResult,
+        DpKprobeConfig as KpCfg, DpKprobeConfigVar as KpCfgVar, DpOtherConfig as OtherCfg,
+        DpUprobeConfig as UpCfg, DynamicPmuEvent as DpEv, Event as Ev, HardwareEvent as HwEv,
+        SoftwareEvent as SwEv,
+    },
 };
 
 type FromT = Ev;

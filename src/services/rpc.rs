@@ -12,18 +12,18 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use anyhow::{bail, Result};
-use chrono::{offset::LocalResult, TimeZone, Utc};
+use anyhow::{Result, bail};
+use chrono::{TimeZone, Utc, offset::LocalResult};
+use psh_proto::{
+    ExportDataReq, GetTaskReq, HeartbeatReq, TaskDoneReq, Unit,
+    psh_service_client::PshServiceClient,
+};
 use tonic::{
-    transport::{Channel, ClientTlsConfig, Endpoint},
     Request,
+    transport::{Channel, ClientTlsConfig, Endpoint},
 };
 
 use crate::{config::RpcConfig, runtime::Task, services::host_info::new_info_req};
-use psh_proto::{
-    psh_service_client::PshServiceClient, ExportDataReq, GetTaskReq, HeartbeatReq, TaskDoneReq,
-    Unit,
-};
 
 #[derive(Clone)]
 pub struct RpcClient {

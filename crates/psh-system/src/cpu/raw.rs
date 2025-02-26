@@ -12,8 +12,10 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use std::fs::File;
-use std::io::{self, BufRead, BufReader};
+use std::{
+    fs::File,
+    io::{self, BufRead, BufReader},
+};
 
 use super::{AddressSizes, Arm64CpuInfo, CpuInfo, TlbSize, X86_64CpuInfo};
 

@@ -69,7 +69,7 @@ pub(crate) use parse_rps;
 mod tests {
     use std::path::PathBuf;
 
-    use super::{parse_rps_impl, RpsDetails, RpsQueue};
+    use super::{RpsDetails, RpsQueue, parse_rps_impl};
     use crate::cpu::CpuMask;
 
     #[test]

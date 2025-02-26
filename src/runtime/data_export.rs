@@ -14,23 +14,23 @@
 
 use std::{
     sync::{
-        atomic::{AtomicUsize, Ordering},
         Arc,
+        atomic::{AtomicUsize, Ordering},
     },
     thread::{self, JoinHandle},
 };
 
 use crossbeam::queue::SegQueue;
-use influxdb_line_protocol::{builder::FieldValue, LineProtocolBuilder};
-use profiling::data_export::common::FieldValue as WitFieldValue;
-use profiling::data_export::measurement::Point;
-use profiling::data_export::metric::Sample;
+use influxdb_line_protocol::{LineProtocolBuilder, builder::FieldValue};
+use profiling::data_export::{
+    common::FieldValue as WitFieldValue, measurement::Point, metric::Sample,
+};
 use prost::Message;
+use psh_proto::{Data, DataType, ExportDataReq};
 use tokio::runtime::Runtime;
 use wasmtime::component::Linker;
 
 use crate::services::rpc::RpcClient;
-use psh_proto::{Data, DataType, ExportDataReq};
 
 wasmtime::component::bindgen!({
     path: "psh-sdk-wit/wit/deps/data-export",

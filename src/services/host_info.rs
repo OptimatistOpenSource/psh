@@ -14,10 +14,11 @@
 
 use std::net::IpAddr;
 
-use psh_system::cpu::{CpuHandle, CpuInfo};
-use psh_system::os::OsHandle;
-
 use psh_proto::SendHostInfoReq;
+use psh_system::{
+    cpu::{CpuHandle, CpuInfo},
+    os::OsHandle,
+};
 
 pub fn new_info_req(instance_id: String) -> SendHostInfoReq {
     let hostname = nix::unistd::gethostname()

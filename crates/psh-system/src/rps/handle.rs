@@ -16,7 +16,7 @@ use std::sync::LazyLock;
 
 use crate::{
     error::Result,
-    rps::{raw::parse_rps, RpsDetails},
+    rps::{RpsDetails, raw::parse_rps},
     utils::Handle,
 };
 

@@ -15,11 +15,13 @@
 use anyhow::Context;
 use host_op_perf::PerfCtx;
 use host_op_system::SysCtx;
-use wasmtime::component::{Linker, ResourceTable};
-use wasmtime::{Config, Engine, Store};
+use wasmtime::{
+    Config, Engine, Store,
+    component::{Linker, ResourceTable},
+};
 use wasmtime_wasi::{DirPerms, FilePerms, StdinStream, StdoutStream, WasiCtxBuilder};
 
-use super::{data_export, DataExportCtx, PshEngine, PshState};
+use super::{DataExportCtx, PshEngine, PshState, data_export};
 
 #[allow(dead_code)]
 pub struct PshEngineBuilder {

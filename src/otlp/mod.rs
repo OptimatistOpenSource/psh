@@ -18,13 +18,14 @@ use std::{sync::LazyLock, time::Duration};
 
 use anyhow::Result;
 use opentelemetry::{
-    metrics::{Meter, MeterProvider},
     KeyValue,
+    metrics::{Meter, MeterProvider},
 };
 use opentelemetry_otlp::{ExportConfig, MetricExporter, WithExportConfig, WithTonicConfig};
 use opentelemetry_sdk::{
+    Resource,
     metrics::{PeriodicReader, SdkMeterProvider},
-    runtime, Resource,
+    runtime,
 };
 use tinyufo::TinyUfo;
 use tonic::{metadata::MetadataMap, transport::ClientTlsConfig};

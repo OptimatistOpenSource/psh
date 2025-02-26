@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::{profiling::system::vmstat, SysCtx};
+use crate::{SysCtx, profiling::system::vmstat};
 
 impl vmstat::Host for SysCtx {
     fn stat(&mut self, interval_ms: u64) -> Result<Vec<(String, i64)>, String> {

@@ -12,5 +12,4 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-pub(crate) use super::irq::parse_irq;
-pub(crate) use super::stat::parse_interrupts;
+pub(crate) use super::{irq::parse_irq, stat::parse_interrupts};
