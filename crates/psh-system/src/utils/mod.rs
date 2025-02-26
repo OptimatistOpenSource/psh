@@ -75,7 +75,7 @@ where
         let Ok(mut guard) = self.0.lock() else {
             return Err(Error::Sync);
         };
-        let is_outdated = interval.map_or(true, |interval| (now - guard.timestamp) * 10 > interval);
+        let is_outdated = interval.is_none_or(|interval| (now - guard.timestamp) * 10 > interval);
 
         if is_outdated || guard.resource.is_none() {
             guard.update()?;

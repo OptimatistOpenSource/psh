@@ -31,10 +31,7 @@ static INFO_GLOBAL: LazyLock<Handle<Vec<MemoryModule>>> = LazyLock::new(|| {
         let output = Command::new(dmidecode_exe).arg("-t").arg("17").output()?;
         let content = std::str::from_utf8(&output.stdout)?;
 
-        Ok(parse_memory_module(content)
-            .into_iter()
-            .map(Into::into)
-            .collect::<Vec<_>>())
+        Ok(parse_memory_module(content).into_iter().collect::<Vec<_>>())
     })
 });
 
