@@ -14,8 +14,7 @@
 
 use std::borrow::Cow;
 
-use opentelemetry::metrics::ObservableGauge;
-use opentelemetry::KeyValue;
+use opentelemetry::{KeyValue, metrics::ObservableGauge};
 use psh_system::interrupt::InterruptHandle;
 
 impl super::super::Otlp {

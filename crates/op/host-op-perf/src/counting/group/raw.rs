@@ -14,9 +14,11 @@
 
 use std::io;
 
-use perf_event_rs::config::{Cpu, Error, Process};
-use perf_event_rs::counting::{
-    Config, CounterGroup, CounterGroupStat, CounterGuard, CounterStat, FixedCounterGroup,
+use perf_event_rs::{
+    config::{Cpu, Error, Process},
+    counting::{
+        Config, CounterGroup, CounterGroupStat, CounterGuard, CounterStat, FixedCounterGroup,
+    },
 };
 
 pub fn counter_group_new(process: &Process, cpu: &Cpu) -> Result<CounterGroup, Error> {

@@ -25,6 +25,7 @@ mod vmstat;
 use std::sync::Arc;
 
 use psh_system::{
+    System,
     cpu::CpuHandle,
     disk::DiskHandle,
     interrupt::InterruptHandle,
@@ -34,7 +35,6 @@ use psh_system::{
     process::{Process, ProcessHandle},
     rps::RpsHandle,
     vmstat::VmstatHandle,
-    System,
 };
 use wasmtime::component::{Linker, ResourceTable};
 

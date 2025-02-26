@@ -12,12 +12,13 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use std::thread;
-use std::time::Duration;
+use std::{thread, time::Duration};
 
 use anyhow::Context;
-use wasmtime::component::{Component, Linker};
-use wasmtime::{Engine, Store};
+use wasmtime::{
+    Engine, Store,
+    component::{Component, Linker},
+};
 use wasmtime_wasi::bindings::sync::Command;
 
 use super::PshState;

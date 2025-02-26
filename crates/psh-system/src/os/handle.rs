@@ -15,8 +15,8 @@
 use std::sync::LazyLock;
 
 use super::{
-    raw::{get_kernel_version, parse_distro_version},
     OsInfo,
+    raw::{get_kernel_version, parse_distro_version},
 };
 use crate::{
     error::{Error, Result},

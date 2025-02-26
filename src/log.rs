@@ -14,9 +14,7 @@
 
 use std::io;
 
-use tracing_subscriber::layer::SubscriberExt;
-use tracing_subscriber::util::SubscriberInitExt;
-use tracing_subscriber::EnvFilter;
+use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 
 /// It is also possible to set the `RUST_LOG` environment variable for other level.
 pub fn log_init() {

@@ -15,12 +15,9 @@
 mod consts;
 mod helpers;
 
-use std::env;
-use std::path::Path;
-use std::process::Command;
+use std::{env, path::Path, process::Command};
 
-use crate::consts::LINUX_FEATURE_VERSIONS;
-use crate::helpers::parse_linux_version_h;
+use crate::{consts::LINUX_FEATURE_VERSIONS, helpers::parse_linux_version_h};
 
 fn main() {
     // update git submodule
@@ -79,10 +76,7 @@ fn main() {
             println!(
                 "cargo:warning=\
                 Selected feature `{}` may not compatible with compile against Linux version `{}.{}.{}`",
-                selected_linux_feature,
-                major,
-                patch_level,
-                sub_level,
+                selected_linux_feature, major, patch_level, sub_level,
             );
             println!(
                 "cargo:warning=\

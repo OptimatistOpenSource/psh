@@ -20,24 +20,22 @@ mod otlp;
 mod runtime;
 mod services;
 
-use std::time::Duration;
-use std::{fs, thread};
+use std::{fs, thread, time::Duration};
 
-use anyhow::{bail, Error, Result};
+use anyhow::{Error, Result, bail};
 use args::Args;
 use chrono::{TimeZone, Utc};
 use clap::Parser;
 use config::RemoteConfig;
 use daemon::{get_daemon_wasm_args, spawn_daemon};
 use log::log_init;
+use mimalloc::MiMalloc;
 use nix::unistd::geteuid;
 use opentelemetry_otlp::ExportConfig;
 use psh_proto::HeartbeatReq;
 use runtime::{Task, TaskRuntime};
 use services::rpc::RpcClient;
 use tokio::try_join;
-
-use mimalloc::MiMalloc;
 
 #[global_allocator]
 static GLOBAL: MiMalloc = mimalloc::MiMalloc;

@@ -17,8 +17,8 @@ use std::{process::Command, sync::LazyLock, time::Duration};
 use procfs::Meminfo;
 
 use super::{
-    raw::{parse_meminfo, parse_memory_module},
     MemoryModule,
+    raw::{parse_meminfo, parse_memory_module},
 };
 use crate::{error::Result, utils::Handle};
 
@@ -31,10 +31,7 @@ static INFO_GLOBAL: LazyLock<Handle<Vec<MemoryModule>>> = LazyLock::new(|| {
         let output = Command::new(dmidecode_exe).arg("-t").arg("17").output()?;
         let content = std::str::from_utf8(&output.stdout)?;
 
-        Ok(parse_memory_module(content)
-            .into_iter()
-            .map(Into::into)
-            .collect::<Vec<_>>())
+        Ok(parse_memory_module(content).into_iter().collect::<Vec<_>>())
     })
 });
 

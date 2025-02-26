@@ -14,12 +14,12 @@
 
 use std::io;
 
-use perf_event_rs::config::{Cpu as RawCpu, Process as RawProcess};
-use perf_event_rs::counting::{
-    Config as RawConfig, Counter, CounterStat, ExtraConfig as RawExtraConfig,
+use perf_event_rs::{
+    EventScope as RawEvScope, config,
+    config::{Cpu as RawCpu, Process as RawProcess},
+    counting::{Config as RawConfig, Counter, CounterStat, ExtraConfig as RawExtraConfig},
+    event::Event as RawEv,
 };
-use perf_event_rs::event::Event as RawEv;
-use perf_event_rs::{config, EventScope as RawEvScope};
 
 use crate::convert::{Error, Wrap};
 

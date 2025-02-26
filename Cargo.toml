@@ -11,7 +11,7 @@ exclude = ["test_resources/profiling"]
 
 [workspace.package]
 version = "0.0.0"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
 chrono = { workspace = true }

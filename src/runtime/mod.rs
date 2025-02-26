@@ -20,11 +20,15 @@ mod state;
 #[cfg(test)]
 mod tests;
 
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::mpsc::{channel, Receiver, Sender};
-use std::sync::{Arc, Mutex};
-use std::thread;
-use std::thread::JoinHandle;
+use std::{
+    sync::{
+        Arc, Mutex,
+        atomic::{AtomicUsize, Ordering},
+        mpsc::{Receiver, Sender, channel},
+    },
+    thread,
+    thread::JoinHandle,
+};
 
 use anyhow::{Context, Result};
 pub use builder::PshEngineBuilder;

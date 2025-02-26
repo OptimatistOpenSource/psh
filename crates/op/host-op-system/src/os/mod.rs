@@ -17,11 +17,13 @@ use psh_system::os::{
     KernelVersion as HostKernelVersion, OsInfo as HostOsInfo,
 };
 
-use crate::profiling::system::os::{
-    self, DistroKind as GuestDistroKind, DistroVersion as GuestDistroVersion,
-    KernelVersion as GuestKernelVersion, OsInfo as GuestOsInfo,
+use crate::{
+    SysCtx,
+    profiling::system::os::{
+        self, DistroKind as GuestDistroKind, DistroVersion as GuestDistroVersion,
+        KernelVersion as GuestKernelVersion, OsInfo as GuestOsInfo,
+    },
 };
-use crate::SysCtx;
 
 impl From<&HostDistroKind> for GuestDistroKind {
     fn from(value: &HostDistroKind) -> Self {

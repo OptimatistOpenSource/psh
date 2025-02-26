@@ -14,8 +14,10 @@
 
 use psh_system::rps::{RpsDetails as HostRpsInfo, RpsQueue as HostRpsQueue};
 
-use crate::profiling::system::rps::{self, RpsInfo as GuestRpsInfo, RpsQueue as GuestRpsQueue};
-use crate::SysCtx;
+use crate::{
+    SysCtx,
+    profiling::system::rps::{self, RpsInfo as GuestRpsInfo, RpsQueue as GuestRpsQueue},
+};
 
 impl From<&HostRpsQueue> for GuestRpsQueue {
     fn from(value: &HostRpsQueue) -> Self {

@@ -12,8 +12,10 @@
 // You should have received a copy of the GNU Lesser General Public License along with Performance Savior Home (PSH). If not,
 // see <https://www.gnu.org/licenses/>.
 
-use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant};
+use std::{
+    sync::{Arc, Mutex},
+    time::{Duration, Instant},
+};
 
 use crate::error::{Error, Result};
 
@@ -75,7 +77,7 @@ where
         let Ok(mut guard) = self.0.lock() else {
             return Err(Error::Sync);
         };
-        let is_outdated = interval.map_or(true, |interval| (now - guard.timestamp) * 10 > interval);
+        let is_outdated = interval.is_none_or(|interval| (now - guard.timestamp) * 10 > interval);
 
         if is_outdated || guard.resource.is_none() {
             guard.update()?;

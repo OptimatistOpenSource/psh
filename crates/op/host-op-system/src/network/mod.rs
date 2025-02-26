@@ -16,8 +16,10 @@ use std::time::Duration;
 
 use psh_system::network::DeviceStatus;
 
-use crate::profiling::system::network::{self, NetworkStat as GuestNetworkStat};
-use crate::SysCtx;
+use crate::{
+    SysCtx,
+    profiling::system::network::{self, NetworkStat as GuestNetworkStat},
+};
 
 impl From<&DeviceStatus> for GuestNetworkStat {
     fn from(value: &DeviceStatus) -> Self {
