@@ -29,9 +29,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Setup Rust toolchain
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: 1.81.0
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Show env
         uses: ./.github/actions/show-env
