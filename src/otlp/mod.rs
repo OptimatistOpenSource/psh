@@ -36,7 +36,7 @@ static NET_DEV_SPEED: LazyLock<TinyUfo<String, Option<u32>>> =
 
 #[derive(Debug, Clone)]
 pub struct Otlp {
-    token: String,
+    host: String,
     interval: Duration,
     meter: Meter,
     // NOTE: the field avoid provider early drop see: <https://github.com/open-telemetry/opentelemetry-rust/issues/1661>
@@ -45,10 +45,14 @@ pub struct Otlp {
 
 impl Otlp {
     pub fn new(token: String, interval: Duration, export_config: ExportConfig) -> Result<Self> {
-        let provider = meter_provider(export_config, token.clone(), interval)?;
+        let provider = meter_provider(export_config, &token, interval)?;
+        let host = nix::unistd::gethostname()
+            .ok()
+            .map(|v| v.to_string_lossy().to_string())
+            .unwrap_or_else(|| token.clone());
         let meter = provider.meter("SystemProfile");
         Ok(Self {
-            token,
+            host,
             interval,
             meter,
             _provider: provider,
@@ -99,7 +103,7 @@ impl Otlp {
 
 fn meter_provider(
     export_config: ExportConfig,
-    token: String,
+    token: &str,
     interval: Duration,
 ) -> Result<SdkMeterProvider> {
     let mut meta = MetadataMap::new();

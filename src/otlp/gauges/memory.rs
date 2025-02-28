@@ -18,7 +18,7 @@ use psh_system::memory::MemoryHandle;
 impl super::super::Otlp {
     pub fn mem_gauges(&self) -> anyhow::Result<ObservableGauge<u64>> {
         let interval = self.interval;
-        let token = self.token.clone();
+        let host = self.host.clone();
         let memory = MemoryHandle::new();
 
         let gauge = self
@@ -59,7 +59,7 @@ impl super::super::Otlp {
                     vmalloc_chunk,
                 ];
                 gauges.into_iter().for_each(|(m, kv)| {
-                    gauge.observe(m, &[KeyValue::new("token", token.clone()), kv]);
+                    gauge.observe(m, &[KeyValue::new("host", host.clone()), kv]);
                 });
 
                 macro_rules! gauges {
@@ -114,7 +114,7 @@ impl super::super::Otlp {
                 ];
 
                 gauges.into_iter().for_each(|(m, kv)| {
-                    gauge.observe(m, &[KeyValue::new("token", token.clone()), kv]);
+                    gauge.observe(m, &[KeyValue::new("host", host.clone()), kv]);
                 })
             })
             .build();

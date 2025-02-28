@@ -17,7 +17,7 @@ use psh_system::rps::RpsHandle;
 
 impl super::super::Otlp {
     pub fn rps_gauges(&self) -> anyhow::Result<ObservableGauge<u64>> {
-        let token = self.token.clone();
+        let host = self.host.clone();
         let rps = RpsHandle::new();
 
         let gauge = self
@@ -43,7 +43,7 @@ impl super::super::Otlp {
                             ],
                         )];
                         gauges.into_iter().for_each(|(m, [kv1, kv2, kv3])| {
-                            let a = &[KeyValue::new("token", token.clone()), kv1, kv2, kv3];
+                            let a = &[KeyValue::new("host", host.clone()), kv1, kv2, kv3];
                             gauge.observe(m, a);
                         });
                     }

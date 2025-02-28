@@ -18,7 +18,7 @@ use psh_system::network::NetworkHandle;
 impl super::super::Otlp {
     pub fn net_gauges(&self) -> anyhow::Result<ObservableGauge<u64>> {
         let interval = self.interval;
-        let token = self.token.clone();
+        let host = self.host.clone();
         let network = NetworkHandle::new();
 
         let gauge = self
@@ -71,7 +71,7 @@ impl super::super::Otlp {
                         sent_compressed,
                     ];
                     gauges.into_iter().for_each(|(m, [kv1, kv2])| {
-                        let a = [KeyValue::new("token", token.clone()), kv1, kv2];
+                        let a = [KeyValue::new("host", host.clone()), kv1, kv2];
                         gauge.observe(m, &a);
                     })
                 }

@@ -19,7 +19,7 @@ use psh_system::interrupt::InterruptHandle;
 
 impl super::super::Otlp {
     pub fn irq_gauges(&self) -> anyhow::Result<ObservableGauge<u64>> {
-        let token = self.token.clone();
+        let host = self.host.clone();
         let interval = self.interval;
         let interrupt = InterruptHandle::new();
 
@@ -36,7 +36,7 @@ impl super::super::Otlp {
                     let desc = Cow::from(int.description);
                     for (cpu, &cnt) in int.cpu_counts.iter().enumerate() {
                         let a = [
-                            KeyValue::new("token", token.clone()),
+                            KeyValue::new("host", host.clone()),
                             KeyValue::new("desc", desc.clone()),
                             KeyValue::new("cpu", cpu as i64),
                             KeyValue::new("type", int.interrupt_type.to_string()),

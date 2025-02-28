@@ -17,7 +17,7 @@ use psh_system::vmstat::VmstatHandle;
 
 impl super::super::Otlp {
     pub fn vmstat_gauges(&self) -> anyhow::Result<ObservableGauge<u64>> {
-        let token = self.token.clone();
+        let host = self.host.clone();
         let interval = self.interval;
         let vmstat = VmstatHandle::new();
 
@@ -35,7 +35,7 @@ impl super::super::Otlp {
                         v as u64,
                         &[
                             KeyValue::new("stat", k),
-                            KeyValue::new("token", token.clone()),
+                            KeyValue::new("host", host.clone()),
                         ],
                     )
                 }

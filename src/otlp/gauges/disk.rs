@@ -17,7 +17,7 @@ use psh_system::disk::DiskHandle;
 
 impl super::super::Otlp {
     pub fn disk_gagues(&self) -> anyhow::Result<ObservableGauge<u64>> {
-        let token = self.token.clone();
+        let host = self.host.clone();
         let interval = self.interval;
         let disk = DiskHandle::new();
 
@@ -57,7 +57,7 @@ impl super::super::Otlp {
                         weighted_time_in_progress,
                     ];
                     gauges.into_iter().for_each(|(m, [kv1, kv2])| {
-                        let a = &[KeyValue::new("token", token.clone()), kv1, kv2];
+                        let a = &[KeyValue::new("host", host.clone()), kv1, kv2];
                         gauge.observe(m, a);
                     });
 
@@ -81,7 +81,7 @@ impl super::super::Otlp {
                         time_flushing,
                     ];
                     gauges.into_iter().for_each(|(m, [kv1, kv2])| {
-                        let a = &[KeyValue::new("token", token.clone()), kv1, kv2];
+                        let a = &[KeyValue::new("host", host.clone()), kv1, kv2];
                         gauge.observe(m, a);
                     });
                 }
