@@ -18,7 +18,7 @@ use psh_system::cpu::CpuHandle;
 impl super::super::Otlp {
     pub fn cpu_gauges(&self) -> anyhow::Result<ObservableGauge<u64>> {
         let cpu = CpuHandle::new();
-        let token = self.token.clone();
+        let host = self.host.clone();
         let interval = self.interval;
 
         let gauge = self
@@ -82,7 +82,7 @@ impl super::super::Otlp {
                         ),
                     ];
                     gauges.into_iter().for_each(|(m, [kv1, kv2, kv3])| {
-                        let a = &[KeyValue::new("token", token.clone()), kv1, kv2, kv3];
+                        let a = &[KeyValue::new("host", host.clone()), kv1, kv2, kv3];
                         gauge.observe(m, a);
                     });
 
@@ -102,7 +102,7 @@ impl super::super::Otlp {
                     }
                     let gauges = gauges![system, idle, user, nice,];
                     gauges.into_iter().for_each(|(m, [kv1, kv2, kv3])| {
-                        let a = &[KeyValue::new("token", token.clone()), kv1, kv2, kv3];
+                        let a = &[KeyValue::new("host", host.clone()), kv1, kv2, kv3];
                         gauge.observe(m, a);
                     });
 
@@ -122,7 +122,7 @@ impl super::super::Otlp {
                     }
                     let gauges = gauges![user_ms, nice_ms, system_ms, idle_ms,];
                     gauges.into_iter().for_each(|(m, [kv1, kv2, kv3])| {
-                        let a = &[KeyValue::new("token", token.clone()), kv1, kv2, kv3];
+                        let a = &[KeyValue::new("host", host.clone()), kv1, kv2, kv3];
                         gauge.observe(m, a);
                     });
 
@@ -142,7 +142,7 @@ impl super::super::Otlp {
                     }
                     let gauges = gauges![iowait, irq, softirq, steal, guest, guest_nice,];
                     gauges.into_iter().for_each(|(m, [kv1, kv2, kv3])| {
-                        let a = &[KeyValue::new("token", token.clone()), kv1, kv2, kv3];
+                        let a = &[KeyValue::new("host", host.clone()), kv1, kv2, kv3];
                         gauge.observe(m, a);
                     });
 
@@ -169,7 +169,7 @@ impl super::super::Otlp {
                         guest_nice_ms,
                     ];
                     gauges.into_iter().for_each(|(m, [kv1, kv2, kv3])| {
-                        let a = &[KeyValue::new("token", token.clone()), kv1, kv2, kv3];
+                        let a = &[KeyValue::new("host", host.clone()), kv1, kv2, kv3];
                         gauge.observe(m, a);
                     });
                 }
