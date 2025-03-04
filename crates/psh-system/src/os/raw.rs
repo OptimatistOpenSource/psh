@@ -57,10 +57,7 @@ pub fn parse_distro_version_impl(path: &str) -> anyhow::Result<DistroVersion> {
                 version.version = Some(value.trim_matches('"').to_string());
             } else if key == "NAME" {
                 let name = value.trim_matches('"');
-                // NOTE:
-                // The parsing is `Infallible`.
-                // At 1.82 it can be written as `let Ok(distro) = name.parse();`
-                let distro = unsafe { name.parse().unwrap_unchecked() };
+                let Ok(distro) = name.parse();
                 version.distro = distro;
             }
         }
