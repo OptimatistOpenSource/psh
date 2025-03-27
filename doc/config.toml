@@ -14,7 +14,7 @@ token = ""
 
 [remote.rpc]
 enable = false
-addr = "https://rpc.optimatist.com"
+addr = "https://api.optimatist.com"
 # in seconds
 heartbeat_interval = 1
 instance_id_file = "/etc/psh/instance.id"
@@ -25,5 +25,5 @@ buf_watermark = 2048
 
 [remote.otlp]
 enable = false
-addr = "https://otel-col.optimatist.com"
+addr = "https://api.optimatist.com"
 interval = 10
