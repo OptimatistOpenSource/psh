@@ -105,7 +105,6 @@ impl TaskRuntime {
                 };
                 envs.push(("TASK_TIME_SLICE".to_string(), task_time_slice.to_string()));
 
-                #[expect(clippy::significant_drop_in_scrutinee)]
                 let ctx = match (rpc_client.clone(), task.id.clone()) {
                     (Some(rpc_client), Some(task_id)) => Some(Ctx {
                         instance_id: instance_id.clone(),

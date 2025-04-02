@@ -104,7 +104,6 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-#[expect(clippy::significant_drop_tightening)]
 async fn async_tasks(remote_cfg: RemoteConfig, mut task_rt: TaskRuntime) -> Result<()> {
     let token_cloned = remote_cfg.token.clone();
     let rpc_task = async move {
