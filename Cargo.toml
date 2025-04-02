@@ -17,7 +17,7 @@ edition = "2024"
 [dependencies]
 chrono = { workspace = true }
 clap = { workspace = true, features = ["derive", "wrap_help"] }
-tonic = { workspace = true, features = ["tls-roots"] }
+tonic = { workspace = true }
 prost = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 nix = { workspace = true, features = ["user", "hostname"] }
@@ -28,20 +28,16 @@ host-op-perf = { workspace = true }
 host-op-system = { workspace = true }
 psh-system = { workspace = true }
 opentelemetry-otlp = { workspace = true, features = [
-  "metrics",
-  "tls-roots",
-  "opentelemetry-http",
-  "http-proto",
-  "reqwest",
-  "reqwest-blocking-client",
+    "grpc-tonic",
+    "metrics",
+    "tls-roots",
+    "opentelemetry-http",
+    "http-proto",
+    "reqwest",
+    "reqwest-blocking-client",
 ] }
 opentelemetry = { workspace = true, features = ["metrics"] }
-opentelemetry_sdk = { workspace = true, features = [
-  "metrics",
-  "opentelemetry-http",
-  "rt-tokio",
-  "tokio",
-] }
+opentelemetry_sdk = { workspace = true, features = ["metrics", "opentelemetry-http", "rt-tokio", "tokio"] }
 toml = { workspace = true }
 serde = { workspace = true }
 tracing = { workspace = true }
@@ -67,10 +63,10 @@ libc = "^0.2"
 chrono = "^0.4"
 nix = "^0.29"
 clap = "^4"
-opentelemetry-otlp = "^0.27"
-opentelemetry = "^0.27"
-opentelemetry_sdk = "^0.27"
-tonic = "^0.12"
+opentelemetry-otlp = { git = "https://github.com/open-telemetry/opentelemetry-rust.git", rev = "99cb67d19ca6ad4df9a87cb31473a130827740c9" }
+opentelemetry = { git = "https://github.com/open-telemetry/opentelemetry-rust.git", rev = "99cb67d19ca6ad4df9a87cb31473a130827740c9" }
+opentelemetry_sdk = { git = "https://github.com/open-telemetry/opentelemetry-rust.git", rev = "99cb67d19ca6ad4df9a87cb31473a130827740c9" }
+tonic = "0.13"
 prost = "^0.13"
 wasmtime = "^28"
 wasmtime-wasi = "^28"
@@ -90,7 +86,7 @@ local-ip-address = "^0.6"
 TinyUFO = "0.4"
 crossbeam = "0.8"
 influxdb-line-protocol = "2"
-psh-proto = { git = "https://github.com/OptimatistOpenSource/psh-proto.git", rev = "7aff49c162fdb318e81c6ab51143b74062e91505" }
+psh-proto = { git = "https://github.com/OptimatistOpenSource/psh-proto.git", rev = "ca2919053029cb584b478611f8bf8496bf3cf7f7" }
 mimalloc = "0.1"
 
 [workspace.lints.rust]
@@ -100,4 +96,4 @@ perf = { level = "deny", priority = -1 }
 
 ### nursery group
 nursery = { level = "warn", priority = -1 }
-trivial_regex = "allow"                     # see: https://github.com/rust-lang/rust-clippy/issues/6690
+trivial_regex = "allow" # see: https://github.com/rust-lang/rust-clippy/issues/6690
