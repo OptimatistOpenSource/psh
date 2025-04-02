@@ -25,7 +25,6 @@ use opentelemetry_otlp::{ExportConfig, MetricExporter, WithExportConfig, WithTon
 use opentelemetry_sdk::{
     Resource,
     metrics::{PeriodicReader, SdkMeterProvider},
-    runtime,
 };
 use tinyufo::TinyUfo;
 use tonic::{metadata::MetadataMap, transport::ClientTlsConfig};
@@ -115,13 +114,15 @@ fn meter_provider(
         .with_timeout(Duration::from_secs(10))
         .with_export_config(export_config)
         .build()?;
-    let reader = PeriodicReader::builder(otlp_exporter, runtime::Tokio)
+    let reader = PeriodicReader::builder(otlp_exporter)
         .with_interval(interval)
         .build();
-
+    let resource = Resource::builder()
+        .with_attribute(KeyValue::new("service.name", "PSH"))
+        .build();
     let a = SdkMeterProvider::builder()
         .with_reader(reader)
-        .with_resource(Resource::new(vec![KeyValue::new("service.name", "PSH")]))
+        .with_resource(resource)
         .build();
 
     Ok(a)
