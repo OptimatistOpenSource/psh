@@ -49,6 +49,7 @@ crossbeam = { workspace = true }
 influxdb-line-protocol = { workspace = true }
 psh-proto = { workspace = true }
 mimalloc = { workspace = true }
+nvml-wrapper = { workspace = true }
 
 [lints]
 workspace = true
@@ -88,6 +89,7 @@ crossbeam = "0.8"
 influxdb-line-protocol = "2"
 psh-proto = { git = "https://github.com/OptimatistOpenSource/psh-proto.git", rev = "ca2919053029cb584b478611f8bf8496bf3cf7f7" }
 mimalloc = "0.1"
+nvml-wrapper = "0.10.0"
 
 [workspace.lints.rust]
 

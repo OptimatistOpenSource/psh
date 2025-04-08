@@ -9,6 +9,8 @@ procfs = { workspace = true }
 thiserror = { workspace = true }
 uname = { workspace = true }
 which = { workspace = true }
+nvml-wrapper = { workspace = true }
+tracing = { workspace = true }
 
 [dev-dependencies]
 num_cpus = { workspace = true }
