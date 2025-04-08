@@ -14,6 +14,7 @@
 
 use std::{io, str::Utf8Error};
 
+use nvml_wrapper::error::NvmlError;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -32,6 +33,8 @@ pub enum Error {
     InvalidCpuMask(String),
     #[error("Value is empty")]
     EmptyValue,
+    #[error("Failed to init nvml: {0}.")]
+    Nvml(#[from] NvmlError),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
