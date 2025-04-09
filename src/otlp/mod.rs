@@ -93,6 +93,9 @@ impl Otlp {
         if let Err(e) = self.vmstat_gauges() {
             tracing::error!("Otlp vmstat: {e}")
         }
+        if let Err(e) = self.gpu_gauges() {
+            tracing::error!("Otlp gpu: {e}")
+        }
 
         loop {
             tokio::time::sleep(interval).await;
