@@ -44,7 +44,7 @@ pub struct Otlp {
 
 impl Otlp {
     pub fn new(token: String, interval: Duration, export_config: ExportConfig) -> Result<Self> {
-        let provider = meter_provider(export_config, &token, interval)?;
+        let provider = Self::meter_provider(export_config, &token, interval)?;
         let host = nix::unistd::gethostname()
             .ok()
             .map(|v| v.to_string_lossy().to_string())
@@ -85,32 +85,32 @@ impl Otlp {
             tokio::time::sleep(interval).await;
         }
     }
-}
 
-fn meter_provider(
-    export_config: ExportConfig,
-    token: &str,
-    interval: Duration,
-) -> Result<SdkMeterProvider> {
-    let mut meta = MetadataMap::new();
-    meta.insert("authorization", format!("Bearer {}", token).parse()?);
-    let otlp_exporter = MetricExporter::builder()
-        .with_tonic()
-        .with_tls_config(ClientTlsConfig::new().with_native_roots())
-        .with_metadata(meta)
-        .with_timeout(Duration::from_secs(10))
-        .with_export_config(export_config)
-        .build()?;
-    let reader = PeriodicReader::builder(otlp_exporter)
-        .with_interval(interval)
-        .build();
-    let resource = Resource::builder()
-        .with_attribute(KeyValue::new("service.name", "PSH"))
-        .build();
-    let a = SdkMeterProvider::builder()
-        .with_reader(reader)
-        .with_resource(resource)
-        .build();
+    fn meter_provider(
+        export_config: ExportConfig,
+        token: &str,
+        interval: Duration,
+    ) -> Result<SdkMeterProvider> {
+        let mut meta = MetadataMap::new();
+        meta.insert("authorization", format!("Bearer {}", token).parse()?);
+        let otlp_exporter = MetricExporter::builder()
+            .with_tonic()
+            .with_tls_config(ClientTlsConfig::new().with_native_roots())
+            .with_metadata(meta)
+            .with_timeout(Duration::from_secs(10))
+            .with_export_config(export_config)
+            .build()?;
+        let reader = PeriodicReader::builder(otlp_exporter)
+            .with_interval(interval)
+            .build();
+        let resource = Resource::builder()
+            .with_attribute(KeyValue::new("service.name", "PSH"))
+            .build();
+        let a = SdkMeterProvider::builder()
+            .with_reader(reader)
+            .with_resource(resource)
+            .build();
 
-    Ok(a)
+        Ok(a)
+    }
 }
