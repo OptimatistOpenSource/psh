@@ -18,7 +18,7 @@ use opentelemetry::{KeyValue, metrics::ObservableGauge};
 use psh_system::interrupt::InterruptHandle;
 
 impl super::super::Otlp {
-    pub fn irq_gauges(&self) -> anyhow::Result<ObservableGauge<u64>> {
+    pub fn irq_gauges(&self) -> ObservableGauge<u64> {
         let host = self.host.clone();
         let interval = self.interval;
         let interrupt = InterruptHandle::new();
@@ -46,6 +46,6 @@ impl super::super::Otlp {
                 }
             })
             .build();
-        Ok(gauge)
+        gauge
     }
 }

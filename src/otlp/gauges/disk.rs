@@ -16,7 +16,7 @@ use opentelemetry::{KeyValue, metrics::ObservableGauge};
 use psh_system::disk::DiskHandle;
 
 impl super::super::Otlp {
-    pub fn disk_gagues(&self) -> anyhow::Result<ObservableGauge<u64>> {
+    pub fn disk_gagues(&self) -> ObservableGauge<u64> {
         let host = self.host.clone();
         let interval = self.interval;
         let disk = DiskHandle::new();
@@ -87,6 +87,6 @@ impl super::super::Otlp {
                 }
             })
             .build();
-        Ok(gauge)
+        gauge
     }
 }

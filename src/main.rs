@@ -185,7 +185,7 @@ async fn async_tasks(remote_cfg: RemoteConfig, mut task_rt: TaskRuntime) -> Resu
             export_conf,
         )?;
 
-        otlp.otlp_tasks().await?;
+        otlp.otlp_tasks().await;
         Ok::<(), Error>(())
     };
 

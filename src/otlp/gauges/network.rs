@@ -16,7 +16,7 @@ use opentelemetry::{KeyValue, metrics::ObservableGauge};
 use psh_system::network::NetworkHandle;
 
 impl super::super::Otlp {
-    pub fn net_gauges(&self) -> anyhow::Result<ObservableGauge<u64>> {
+    pub fn net_gauges(&self) -> ObservableGauge<u64> {
         let interval = self.interval;
         let host = self.host.clone();
         let network = NetworkHandle::new();
@@ -77,6 +77,6 @@ impl super::super::Otlp {
                 }
             })
             .build();
-        Ok(gauge)
+        gauge
     }
 }

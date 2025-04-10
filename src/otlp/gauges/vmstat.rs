@@ -16,7 +16,7 @@ use opentelemetry::{KeyValue, metrics::ObservableGauge};
 use psh_system::vmstat::VmstatHandle;
 
 impl super::super::Otlp {
-    pub fn vmstat_gauges(&self) -> anyhow::Result<ObservableGauge<u64>> {
+    pub fn vmstat_gauges(&self) -> ObservableGauge<u64> {
         let host = self.host.clone();
         let interval = self.interval;
         let vmstat = VmstatHandle::new();
@@ -41,6 +41,6 @@ impl super::super::Otlp {
                 }
             })
             .build();
-        Ok(gauge)
+        gauge
     }
 }

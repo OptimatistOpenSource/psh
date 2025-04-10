@@ -69,33 +69,17 @@ impl Otlp {
         speed
     }
 
-    pub async fn otlp_tasks(&self) -> anyhow::Result<()> {
+    pub async fn otlp_tasks(&self) {
         let interval = self.interval;
 
-        if let Err(e) = self.mem_gauges() {
-            tracing::error!("Otlp memory: {e}")
-        }
-        if let Err(e) = self.net_gauges() {
-            tracing::error!("Otlp network: {e}")
-        }
-        if let Err(e) = self.disk_gagues() {
-            tracing::error!("Otlp disk: {e}")
-        }
-        if let Err(e) = self.irq_gauges() {
-            tracing::error!("Otlp interrupt: {e}")
-        }
-        if let Err(e) = self.cpu_gauges() {
-            tracing::error!("Otlp cpu: {e}")
-        }
-        if let Err(e) = self.rps_gauges() {
-            tracing::error!("Otlp rps: {e}")
-        }
-        if let Err(e) = self.vmstat_gauges() {
-            tracing::error!("Otlp vmstat: {e}")
-        }
-        if let Err(e) = self.gpu_gauges() {
-            tracing::error!("Otlp gpu: {e}")
-        }
+        self.mem_gauges();
+        self.net_gauges();
+        self.disk_gagues();
+        self.irq_gauges();
+        self.cpu_gauges();
+        self.rps_gauges();
+        self.vmstat_gauges();
+        self.gpu_gauges();
 
         loop {
             tokio::time::sleep(interval).await;

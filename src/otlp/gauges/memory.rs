@@ -16,7 +16,7 @@ use opentelemetry::{KeyValue, metrics::ObservableGauge};
 use psh_system::memory::MemoryHandle;
 
 impl super::super::Otlp {
-    pub fn mem_gauges(&self) -> anyhow::Result<ObservableGauge<u64>> {
+    pub fn mem_gauges(&self) -> ObservableGauge<u64> {
         let interval = self.interval;
         let host = self.host.clone();
         let memory = MemoryHandle::new();
@@ -118,6 +118,6 @@ impl super::super::Otlp {
                 })
             })
             .build();
-        Ok(gauge)
+        gauge
     }
 }

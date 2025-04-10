@@ -16,7 +16,7 @@ use opentelemetry::{KeyValue, metrics::ObservableGauge};
 use psh_system::cpu::CpuHandle;
 
 impl super::super::Otlp {
-    pub fn cpu_gauges(&self) -> anyhow::Result<ObservableGauge<u64>> {
+    pub fn cpu_gauges(&self) -> ObservableGauge<u64> {
         let cpu = CpuHandle::new();
         let host = self.host.clone();
         let interval = self.interval;
@@ -175,6 +175,6 @@ impl super::super::Otlp {
                 }
             })
             .build();
-        Ok(gauge)
+        gauge
     }
 }
