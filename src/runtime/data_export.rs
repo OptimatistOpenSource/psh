@@ -27,10 +27,9 @@ use profiling::data_export::{
 };
 use prost::Message;
 use psh_proto::{Data, DataType, ExportDataReq};
-use tokio::runtime::Runtime;
 use wasmtime::component::Linker;
 
-use crate::services::rpc::RpcClient;
+use crate::{TOKIO_RUNTIME, services::rpc::RpcClient};
 
 wasmtime::component::bindgen!({
     path: "psh-sdk-wit/wit/deps/data-export",
@@ -82,7 +81,6 @@ impl DataExporter {
             let bytes_len = Arc::clone(&bytes_len);
             let task_id = task_id.clone();
             move || {
-                let rt = Runtime::new().expect("Failed to init exporter runtime");
                 let mut data = Vec::new();
                 loop {
                     match data_queue.pop() {
@@ -99,7 +97,7 @@ impl DataExporter {
                                 };
 
                                 let mut rpc_client = rpc_client.clone();
-                                rt.block_on(async move {
+                                TOKIO_RUNTIME.block_on(async move {
                                     let _ = rpc_client.export_data(merged).await;
                                 });
                                 data.clear();
