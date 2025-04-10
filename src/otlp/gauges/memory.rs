@@ -63,14 +63,14 @@ impl super::super::Otlp {
                 });
 
                 macro_rules! gauges {
-                ($($stat:ident,)+) => {
-                    [
-                        $(
-                        (mem.$stat.unwrap_or(0), KeyValue::new("stat", stringify!($stat))),
-                        )*
-                    ]
-                };
-            }
+                    ($($stat:ident,)+) => {
+                        [
+                            $(
+                            (mem.$stat.unwrap_or(0), KeyValue::new("stat", stringify!($stat))),
+                            )*
+                        ]
+                    };
+                }
                 let gauges = gauges![
                     cma_total,
                     cma_free,
