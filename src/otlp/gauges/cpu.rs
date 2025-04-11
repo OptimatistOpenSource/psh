@@ -16,7 +16,7 @@ use opentelemetry::{KeyValue, metrics::ObservableGauge};
 use psh_system::cpu::CpuHandle;
 
 impl super::super::Otlp {
-    pub fn cpu_gauges(&self) -> anyhow::Result<ObservableGauge<u64>> {
+    pub fn cpu_gauges(&self) -> ObservableGauge<u64> {
         let cpu = CpuHandle::new();
         let host = self.host.clone();
         let interval = self.interval;
@@ -107,26 +107,6 @@ impl super::super::Otlp {
                     });
 
                     macro_rules! gauges {
-                        ($($item:ident,)+) => {
-                            [
-                                $((
-                                    cpu_time.$item(),
-                                    [
-                                        KeyValue::new("cpu", cpu as i64),
-                                        KeyValue::new("stat", stringify!($item)),
-                                        KeyValue::new("desc", desc),
-                                    ],
-                                ),)*
-                            ]
-                        };
-                    }
-                    let gauges = gauges![user_ms, nice_ms, system_ms, idle_ms,];
-                    gauges.into_iter().for_each(|(m, [kv1, kv2, kv3])| {
-                        let a = &[KeyValue::new("host", host.clone()), kv1, kv2, kv3];
-                        gauge.observe(m, a);
-                    });
-
-                    macro_rules! gauges {
                         ($($item_o:ident,)+) => {
                             [
                                 $((
@@ -145,36 +125,9 @@ impl super::super::Otlp {
                         let a = &[KeyValue::new("host", host.clone()), kv1, kv2, kv3];
                         gauge.observe(m, a);
                     });
-
-                    macro_rules! gauges {
-                        ($($item_o:ident,)+) => {
-                            [
-                                $((
-                                    cpu_time.$item_o().unwrap_or(0),
-                                    [
-                                        KeyValue::new("cpu", cpu as i64),
-                                        KeyValue::new("stat", stringify!($item_o)),
-                                        KeyValue::new("desc", desc),
-                                    ],
-                                ),)*
-                            ]
-                        };
-                    }
-                    let gauges = gauges![
-                        iowait_ms,
-                        irq_ms,
-                        softirq_ms,
-                        steal_ms,
-                        guest_ms,
-                        guest_nice_ms,
-                    ];
-                    gauges.into_iter().for_each(|(m, [kv1, kv2, kv3])| {
-                        let a = &[KeyValue::new("host", host.clone()), kv1, kv2, kv3];
-                        gauge.observe(m, a);
-                    });
                 }
             })
             .build();
-        Ok(gauge)
+        gauge
     }
 }

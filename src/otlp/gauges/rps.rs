@@ -16,7 +16,7 @@ use opentelemetry::{Array, KeyValue, Value, metrics::ObservableGauge};
 use psh_system::rps::RpsHandle;
 
 impl super::super::Otlp {
-    pub fn rps_gauges(&self) -> anyhow::Result<ObservableGauge<u64>> {
+    pub fn rps_gauges(&self) -> ObservableGauge<u64> {
         let host = self.host.clone();
         let rps = RpsHandle::new();
 
@@ -50,6 +50,6 @@ impl super::super::Otlp {
                 }
             })
             .build();
-        Ok(gauge)
+        gauge
     }
 }

@@ -44,7 +44,7 @@ pub struct Otlp {
 
 impl Otlp {
     pub fn new(token: String, interval: Duration, export_config: ExportConfig) -> Result<Self> {
-        let provider = meter_provider(export_config, &token, interval)?;
+        let provider = Self::meter_provider(export_config, &token, interval)?;
         let host = nix::unistd::gethostname()
             .ok()
             .map(|v| v.to_string_lossy().to_string())
@@ -69,64 +69,48 @@ impl Otlp {
         speed
     }
 
-    pub async fn otlp_tasks(&self) -> anyhow::Result<()> {
+    pub async fn otlp_tasks(&self) {
         let interval = self.interval;
 
-        if let Err(e) = self.mem_gauges() {
-            tracing::error!("Otlp memory: {e}")
-        }
-        if let Err(e) = self.net_gauges() {
-            tracing::error!("Otlp network: {e}")
-        }
-        if let Err(e) = self.disk_gagues() {
-            tracing::error!("Otlp disk: {e}")
-        }
-        if let Err(e) = self.irq_gauges() {
-            tracing::error!("Otlp interrupt: {e}")
-        }
-        if let Err(e) = self.cpu_gauges() {
-            tracing::error!("Otlp cpu: {e}")
-        }
-        if let Err(e) = self.rps_gauges() {
-            tracing::error!("Otlp rps: {e}")
-        }
-        if let Err(e) = self.vmstat_gauges() {
-            tracing::error!("Otlp vmstat: {e}")
-        }
-        if let Err(e) = self.gpu_gauges() {
-            tracing::error!("Otlp gpu: {e}")
-        }
+        self.mem_gauges();
+        self.net_gauges();
+        self.disk_gagues();
+        self.irq_gauges();
+        self.cpu_gauges();
+        self.rps_gauges();
+        self.vmstat_gauges();
+        self.gpu_gauges();
 
         loop {
             tokio::time::sleep(interval).await;
         }
     }
-}
 
-fn meter_provider(
-    export_config: ExportConfig,
-    token: &str,
-    interval: Duration,
-) -> Result<SdkMeterProvider> {
-    let mut meta = MetadataMap::new();
-    meta.insert("authorization", format!("Bearer {}", token).parse()?);
-    let otlp_exporter = MetricExporter::builder()
-        .with_tonic()
-        .with_tls_config(ClientTlsConfig::new().with_native_roots())
-        .with_metadata(meta)
-        .with_timeout(Duration::from_secs(10))
-        .with_export_config(export_config)
-        .build()?;
-    let reader = PeriodicReader::builder(otlp_exporter)
-        .with_interval(interval)
-        .build();
-    let resource = Resource::builder()
-        .with_attribute(KeyValue::new("service.name", "PSH"))
-        .build();
-    let a = SdkMeterProvider::builder()
-        .with_reader(reader)
-        .with_resource(resource)
-        .build();
+    fn meter_provider(
+        export_config: ExportConfig,
+        token: &str,
+        interval: Duration,
+    ) -> Result<SdkMeterProvider> {
+        let mut meta = MetadataMap::new();
+        meta.insert("authorization", format!("Bearer {}", token).parse()?);
+        let otlp_exporter = MetricExporter::builder()
+            .with_tonic()
+            .with_tls_config(ClientTlsConfig::new().with_native_roots())
+            .with_metadata(meta)
+            .with_timeout(Duration::from_secs(10))
+            .with_export_config(export_config)
+            .build()?;
+        let reader = PeriodicReader::builder(otlp_exporter)
+            .with_interval(interval)
+            .build();
+        let resource = Resource::builder()
+            .with_attribute(KeyValue::new("service.name", "PSH"))
+            .build();
+        let a = SdkMeterProvider::builder()
+            .with_reader(reader)
+            .with_resource(resource)
+            .build();
 
-    Ok(a)
+        Ok(a)
+    }
 }

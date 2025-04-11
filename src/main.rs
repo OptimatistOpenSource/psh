@@ -20,7 +20,7 @@ mod otlp;
 mod runtime;
 mod services;
 
-use std::{fs, thread, time::Duration};
+use std::{fs, sync::LazyLock, thread, time::Duration};
 
 use anyhow::{Error, Result, bail};
 use args::Args;
@@ -35,10 +35,13 @@ use opentelemetry_otlp::ExportConfig;
 use psh_proto::HeartbeatReq;
 use runtime::{Task, TaskRuntime};
 use services::rpc::RpcClient;
-use tokio::try_join;
+use tokio::{runtime::Runtime, try_join};
 
 #[global_allocator]
 static GLOBAL: MiMalloc = mimalloc::MiMalloc;
+
+static TOKIO_RUNTIME: LazyLock<Runtime> =
+    LazyLock::new(|| Runtime::new().expect("Create tokio runtime failed"));
 
 fn main() -> Result<()> {
     log_init();
@@ -93,9 +96,8 @@ fn main() -> Result<()> {
     };
 
     thread::spawn(move || -> Result<()> {
-        let rt = tokio::runtime::Runtime::new()?;
         let tasks = async_tasks(cfg.remote, task_rt);
-        rt.block_on(tasks)?;
+        TOKIO_RUNTIME.block_on(tasks)?;
         Ok(())
     })
     .join()
@@ -183,7 +185,7 @@ async fn async_tasks(remote_cfg: RemoteConfig, mut task_rt: TaskRuntime) -> Resu
             export_conf,
         )?;
 
-        otlp.otlp_tasks().await?;
+        otlp.otlp_tasks().await;
         Ok::<(), Error>(())
     };
 

@@ -16,7 +16,7 @@ use opentelemetry::{KeyValue, metrics::ObservableGauge};
 use psh_system::gpu::NvidiaHandle;
 
 impl super::super::Otlp {
-    pub fn gpu_gauges(&self) -> anyhow::Result<ObservableGauge<u64>> {
+    pub fn gpu_gauges(&self) -> ObservableGauge<u64> {
         let host = self.host.clone();
         let interval = self.interval;
         let nvgpu = NvidiaHandle::new();
@@ -69,6 +69,6 @@ impl super::super::Otlp {
                 }
             })
             .build();
-        Ok(gauge)
+        gauge
     }
 }
