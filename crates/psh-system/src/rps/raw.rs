@@ -33,6 +33,10 @@ fn parse_queue_impl(dir: fs::DirEntry) -> Option<RpsQueue> {
 
 fn parse_device_impl(dir: fs::DirEntry) -> Option<RpsDetails> {
     let dev_path = dir.path();
+    // Check if device file exists
+    if !dev_path.join("device").exists() {
+        return None;
+    }
     let cur_path = dev_path.join("queues");
     match (dev_path.file_name(), fs::read_dir(cur_path)) {
         (Some(dev_name), Ok(rx_list)) => {
@@ -78,20 +82,7 @@ mod tests {
         rps_path.push("./test_resources/arch/x86_64/intel/net");
         let result = parse_rps_impl(rps_path.to_str().unwrap());
 
-        assert_eq!(result.len(), 3);
-
-        let rps_lo = result.iter().find(|rps| rps.dev == "lo");
-        assert_eq!(
-            rps_lo,
-            Some(&RpsDetails {
-                dev: "lo".to_string(),
-                queues: vec![RpsQueue {
-                    name: "rx-0".to_string(),
-                    cpus: Some(CpuMask(vec![false; 20])),
-                    flow_cnt: Some(0),
-                }]
-            })
-        );
+        assert_eq!(result.len(), 2);
 
         let rps_enp3s0 = result.iter().find(|rps| rps.dev == "enp3s0");
         assert_eq!(
