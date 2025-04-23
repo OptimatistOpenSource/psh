@@ -39,7 +39,9 @@ jobs:
         uses: arduino/setup-protoc@v3
 
       - name: Setup build cache
-        uses: mozilla-actions/sccache-action@v0.0.6
+        uses: mozilla-actions/sccache-action@v0.0.9
+        with:
+          version: 'v0.10.0'
 
       - name: Clippy
         uses: ./.github/actions/clippy
