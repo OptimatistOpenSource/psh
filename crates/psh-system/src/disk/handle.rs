@@ -36,6 +36,14 @@ impl DiskHandle {
     }
 
     pub fn stat(&self, interval: Option<Duration>) -> Result<Vec<DiskStat>> {
-        self.0.get(interval)
+        self.0
+            .get(interval)
+            // remove loop* devices from results
+            .map(|stats| {
+                stats
+                    .into_iter()
+                    .filter(|stat| !stat.name.starts_with("loop"))
+                    .collect()
+            })
     }
 }

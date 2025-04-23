@@ -36,6 +36,20 @@ impl NetworkHandle {
     }
 
     pub fn stat(&self, interval: Option<Duration>) -> Result<HashMap<String, DeviceStatus>> {
-        self.0.get(interval)
+        self.0.get(interval).map(|stats| {
+            stats
+                .into_iter()
+                .filter(|(dev, _)| {
+                    !(dev == "lo"
+                        // TODO: docker network interface statistics may be useful
+                        || dev.starts_with("docker")
+                        || dev.starts_with("veth")
+                        || dev.starts_with("br-")
+                        || dev.starts_with("virbr")
+                        || dev.starts_with("tun")
+                        || dev.starts_with("tap"))
+                })
+                .collect()
+        })
     }
 }
