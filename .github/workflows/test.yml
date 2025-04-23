@@ -46,7 +46,9 @@ jobs:
         uses: ./.github/actions/show-env
 
       - name: Setup build cache
-        uses: mozilla-actions/sccache-action@v0.0.6
+        uses: mozilla-actions/sccache-action@v0.0.9
+        with:
+          version: 'v0.10.0'
 
       - name: Setup protoc
         uses: arduino/setup-protoc@v3
