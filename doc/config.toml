@@ -18,6 +18,9 @@ addr = "https://api.optimatist.com"
 # in seconds
 heartbeat_interval = 1
 instance_id_file = "/etc/psh/instance.id"
+max_retries = 3
+# in seconds
+base_delay = 1
 
 [remote.rpc.data_export]
 buf_size = 4096

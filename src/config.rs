@@ -16,6 +16,7 @@ use std::{fs, path::Path};
 
 use anyhow::Result;
 use serde::Deserialize;
+use std::time::Duration;
 
 const TEMPLATE: &str = include_str!("../doc/config.toml");
 
@@ -56,6 +57,17 @@ pub struct RpcConfig {
     pub heartbeat_interval: u64,
     pub instance_id_file: String,
     pub data_export: DataExportConfig,
+    pub max_retries: Option<u32>,
+    #[serde(deserialize_with = "deserialize_duration")]
+    pub base_delay: Option<Duration>,
+}
+
+fn deserialize_duration<'de, D>(deserializer: D) -> Result<Option<Duration>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let seconds: u64 = serde::Deserialize::deserialize(deserializer)?;
+    Ok(Some(Duration::from_secs(seconds)))
 }
 
 #[derive(Deserialize)]
