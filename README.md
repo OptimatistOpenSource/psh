@@ -89,6 +89,35 @@ reviewer willing to assess your PR may be reduced. Therefore, it is essential to
 diligently follow the outlined steps to increase the likelihood of a successful
 and timely review for your pull request.
 
+## Known issues:
+### Warning: Failed to initialize NVML with all available methods
+PSH requires NVIDIA Management Library (NVML) to collect GPU statistics. This warning appears when PSH cannot find or initialize the NVML library. PSH attempts to initialize NVML in the following order:
+
+1. Default system path
+2. Architecture-specific paths:
+   - For x86_64:
+     - `/usr/lib/x86_64-linux-gnu/libnvidia-ml.so`
+     - `/usr/lib/x86_64-linux-gnu/libnvidia-ml.so.1`
+   - For ARM64:
+     - `/usr/lib/aarch64-linux-gnu/libnvidia-ml.so`
+     - `/usr/lib/aarch64-linux-gnu/libnvidia-ml.so.1`
+
+To resolve this issue, you can:
+
+1. Install the NVIDIA driver if not already installed
+2. If the library is installed in a non-standard location, add it to `LD_LIBRARY_PATH`:
+   ```bash
+   export LD_LIBRARY_PATH=/path/to/nvidia/lib:$LD_LIBRARY_PATH
+   ```
+3. Create a symbolic link to the library in the standard path for your architecture:
+   ```bash
+   # For x86_64
+   sudo ln -s /path/to/libnvidia-ml.so /usr/lib/x86_64-linux-gnu/libnvidia-ml.so
+
+   # For ARM64
+   sudo ln -s /path/to/libnvidia-ml.so /usr/lib/aarch64-linux-gnu/libnvidia-ml.so
+   ```
+
 ## Acknowledgments
 
 The development of the Performance Savior Home (PSH) project can be attributed

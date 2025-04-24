@@ -1,4 +1,4 @@
-use std::sync::LazyLock;
+use std::{ffi::OsStr, path::Path, sync::LazyLock};
 
 use nvml_wrapper::{Nvml, enum_wrappers::device::TemperatureSensor, error::NvmlError};
 
@@ -6,12 +6,38 @@ use crate::error::Result;
 
 use super::{GpuInfo, GpuStats};
 
-static NVML: LazyLock<Option<Nvml>> = LazyLock::new(|| match Nvml::init() {
-    Ok(n) => Some(n),
-    Err(e) => {
-        tracing::warn!("{e}");
-        None
+#[cfg(target_arch = "x86_64")]
+const LIB_PATHS: &[&str] = &[
+    "/usr/lib/x86_64-linux-gnu/libnvidia-ml.so",
+    "/usr/lib/x86_64-linux-gnu/libnvidia-ml.so.1",
+];
+
+#[cfg(target_arch = "aarch64")]
+const LIB_PATHS: &[&str] = &[
+    "/usr/lib/aarch64-linux-gnu/libnvidia-ml.so",
+    "/usr/lib/aarch64-linux-gnu/libnvidia-ml.so.1",
+];
+
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+const LIB_PATHS: &[&str] = &[];
+
+static NVML: LazyLock<Option<Nvml>> = LazyLock::new(|| {
+    // First try default initialization
+    if let Ok(nvml) = Nvml::init() {
+        return Some(nvml);
     }
+
+    // If default fails, try with specific library paths
+    for path in LIB_PATHS {
+        if Path::new(path).exists() {
+            if let Ok(nvml) = Nvml::builder().lib_path(OsStr::new(path)).init() {
+                return Some(nvml);
+            }
+        }
+    }
+
+    tracing::warn!("Failed to initialize NVML with all available methods");
+    None
 });
 
 pub fn gpu_info() -> Result<GpuInfo> {

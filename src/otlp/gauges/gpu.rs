@@ -14,6 +14,7 @@
 
 use opentelemetry::{KeyValue, metrics::ObservableGauge};
 use psh_system::gpu::NvidiaHandle;
+use tracing::error;
 
 impl super::super::Otlp {
     pub fn gpu_gauges(&self) -> ObservableGauge<u64> {
@@ -26,8 +27,12 @@ impl super::super::Otlp {
             .u64_observable_gauge("NvGpuStat")
             .with_description("System profile nvgpu statistics.")
             .with_callback(move |gauge| {
-                let Ok(gpustats) = nvgpu.stat(Some(interval)) else {
-                    return;
+                let gpustats = match nvgpu.stat(Some(interval)) {
+                    Ok(stats) => stats,
+                    Err(e) => {
+                        error!("Failed to collect GPU stats: {}", e);
+                        return;
+                    }
                 };
 
                 for stat in gpustats {
