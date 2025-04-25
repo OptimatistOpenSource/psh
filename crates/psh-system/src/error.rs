@@ -33,7 +33,7 @@ pub enum Error {
     InvalidCpuMask(String),
     #[error("Value is empty")]
     EmptyValue,
-    #[error("Failed to init nvml: {0}.")]
+    #[error(transparent)]
     Nvml(#[from] NvmlError),
 }
 
