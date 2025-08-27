@@ -15,7 +15,8 @@ impl HostSampler for PerfCtx {
     ) -> wasmtime::Result<Result<Resource<Sampler>, String>> {
         let process = Wrap::<RawProcess>::from(&process).into_inner();
         let cpu = Wrap::<RawCpu>::from(&cpu).into_inner();
-        let sampler = perf_event_rs::sampling::Sampler::new(&process, &cpu, 512, &cfg.try_into()?)?;
+        let sampler =
+            perf_event_rs::sampling::Sampler::new(&process, &cpu, 512 + 1, &cfg.try_into()?)?;
         Ok(self.table.push(sampler).map_err(|v| v.to_string()))
     }
 
