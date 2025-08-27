@@ -425,7 +425,10 @@ impl From<perf_event_rs::sampling::MemberCount> for crate::profiling::perf::samp
     fn from(value: perf_event_rs::sampling::MemberCount) -> Self {
         Self {
             event_count: value.event_count,
+            #[cfg(feature = "linux-6.0")]
             event_lost: value.event_lost,
+            #[cfg(not(feature = "linux-6.0"))]
+            event_lost: 0,
         }
     }
 }
@@ -561,7 +564,10 @@ impl From<perf_event_rs::sampling::SamplerStat> for crate::profiling::perf::samp
         Self {
             event_id: value.event_id,
             event_count: value.event_count,
+            #[cfg(feature = "linux-6.0")]
             event_lost: value.event_lost,
+            #[cfg(not(feature = "linux-6.0"))]
+            event_lost: 0,
             time_enabled: value.time_enabled,
             time_running: value.time_running,
         }
