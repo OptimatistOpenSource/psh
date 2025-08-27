@@ -20,6 +20,7 @@ mod event;
 mod event_scope;
 mod extra_config;
 mod process;
+mod sample_record;
 mod stat;
 
 pub use config::*;

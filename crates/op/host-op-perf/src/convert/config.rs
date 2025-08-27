@@ -17,11 +17,15 @@ use std::io;
 use perf_event_rs::{
     EventScope as RawEvScope, config,
     config::{Cpu as RawCpu, Process as RawProcess},
-    counting::{Config as RawConfig, Counter, CounterStat, ExtraConfig as RawExtraConfig},
+    counting::{Config as RawConfig, Counter, CounterStat, ExtraConfig as CountExtraConfig},
     event::Event as RawEv,
+    sampling::ExtraConfig as SampleExtraConfig,
 };
 
-use crate::convert::{Error, Wrap};
+use crate::{
+    convert::{Error, Wrap},
+    profiling::perf::config::OverflowBy,
+};
 
 type FromT = crate::profiling::perf::config::Config;
 type IntoT = perf_event_rs::counting::Config;
@@ -36,8 +40,38 @@ impl TryFrom<&FromT> for Wrap<IntoT> {
             .map(|it| Wrap::<RawEvScope>::from(it).into_inner())
             .collect();
         let event = Wrap::<RawEv>::try_from(&value.event)?.into_inner();
-        let extra_config = Wrap::<RawExtraConfig>::try_from(&value.extra_config)?.into_inner();
+        let extra_config = Wrap::<CountExtraConfig>::try_from(&value.extra_config)?.into_inner();
 
         Ok(Self(RawConfig::extra_new(&event, &scopes, &extra_config)))
+    }
+}
+
+impl TryInto<perf_event_rs::sampling::Config> for crate::profiling::perf::config::SamplingConfig {
+    type Error = Error;
+
+    fn try_into(self) -> Result<perf_event_rs::sampling::Config, Self::Error> {
+        let scopes: Vec<_> = self
+            .scopes
+            .iter()
+            .map(|it| Wrap::<RawEvScope>::from(it).into_inner())
+            .collect();
+        let event = Wrap::<RawEv>::try_from(&self.event)?.into_inner();
+        Ok(perf_event_rs::sampling::Config::extra_new(
+            &event,
+            &scopes,
+            &self.overflow_by.into(),
+            &self.extra_config.into(),
+        ))
+    }
+}
+
+type HostOverflowBy = perf_event_rs::sampling::OverflowBy;
+
+impl From<OverflowBy> for HostOverflowBy {
+    fn from(val: OverflowBy) -> Self {
+        match val {
+            OverflowBy::Period(p) => Self::Period(p),
+            OverflowBy::Freq(f) => Self::Freq(f),
+        }
     }
 }

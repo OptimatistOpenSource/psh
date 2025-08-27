@@ -16,7 +16,9 @@ use wasmtime::component::{Linker, ResourceTable};
 
 pub mod convert;
 pub mod counting;
+pub mod sampling;
 
+pub type Sampler = perf_event_rs::sampling::Sampler;
 pub type Counter = perf_event_rs::counting::Counter;
 pub type CounterGroup = perf_event_rs::counting::CounterGroup;
 pub type FixedCounterGroup = perf_event_rs::counting::FixedCounterGroup;
@@ -26,6 +28,7 @@ wasmtime::component::bindgen!({
     path: "../../../psh-sdk-wit/wit/deps/perf",
     world: "imports",
     with: {
+        "profiling:perf/sampler/sampler"                  : Sampler,
         "profiling:perf/counter/counter"                  : Counter,
         "profiling:perf/counter-group/counter-group"      : CounterGroup,
         "profiling:perf/counter-group/fixed-counter-group": FixedCounterGroup,
@@ -52,6 +55,7 @@ impl PerfCtx {
     }
 }
 
+impl profiling::perf::sampler::Host for PerfCtx {}
 impl profiling::perf::config::Host for PerfCtx {}
 impl profiling::perf::counter::Host for PerfCtx {}
 impl profiling::perf::counter_group::Host for PerfCtx {}
